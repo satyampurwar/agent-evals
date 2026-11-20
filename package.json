@@ -1,0 +1,17 @@
+{ 
+  "name": "agent-evals",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "workers/node-worker"
+  ],
+  "scripts": {
+    "dev:api": "npm run start:dev -w @agent-evals/api",
+    "dev:web": "npm run dev -w @agent-evals/web",
+    "dev:worker:node": "npm run start -w @agent-evals/node-worker",
+    "dev:worker:python": "cd workers/python-worker && uv run uvicorn app.main:app --reload --port 8001",
+    "test": "npm run test --workspaces --if-present",
+    "seed:tasks": "npx tsx scripts/seed-tasks.ts"
+  }
+}
