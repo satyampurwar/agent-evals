@@ -1,4 +1,5 @@
-import type { GradeResult, Task, Trace } from '@agent-evals/domain';
+import { costUsd, unpricedModels } from '@agent-evals/domain';
+import type { GradeResult, PriceTable, Task, TokenUsage, Trace } from '@agent-evals/domain';
 import { createTrialMemory } from '@agent-evals/adapters-harness';
 import type { HarnessAdapter, HarnessRunOutput } from '@agent-evals/adapters-harness';
 import { createModelAdapter } from '@agent-evals/adapters-model';
@@ -30,6 +31,11 @@ export interface RunTrialInput {
   judge?: ModelAdapter;
   /** Facts the trial's memory starts with (`task.setup.memory`). Unreachable unless a memory tool is in `toolIds`. */
   memorySeed?: Record<string, string>;
+  /**
+   * List prices for `estimatedCostUsd`. Every model the trial calls (the agent's, and each llm_judge grader's) must be
+   * in the table, or the trial fails before it starts with `price_missing`.
+   */
+  prices: PriceTable;
 }
 
 /**
@@ -60,10 +66,18 @@ export interface RunTrialResult {
     promptTokens: number;
     completionTokens: number;
     totalTokens: number;
+    /** Agent tokens at list price, plus each llm_judge call at its judge model's list price. */
+    estimatedCostUsd: number;
     stepCount: number;
   };
   error: TrialError | null;
   trace: Trace;
+}
+
+/** One llm_judge grader's token usage, priced at its judge model. */
+interface JudgeCall {
+  modelId: string;
+  usage: TokenUsage;
 }
 
 /** Errors the runner raises on purpose. `code` and `retryable` flow into the trial's error field. */
@@ -85,10 +99,17 @@ export async function runTrial(input: RunTrialInput): Promise<RunTrialResult> {
   const trace = createTraceBuffer();
   const startedAt = Date.now();
 
+  // Preflight: an unpriced model cannot be costed, so refuse before the sandbox exists or a model is called.
+  const unpriced = unpricedModels(input.prices, [input.modelId, ...judgeModelIds(input.task)]);
+  if (unpriced.length > 0) {
+    return priceMissingResult(input.trialId, unpriced, Date.now() - startedAt);
+  }
+
   let status: TrialStatus = 'failed';
   let error: TrialError | null = null;
   let output: HarnessRunOutput | null = null;
   let grade: GradeResult | null = null;
+  const judgeCalls: JudgeCall[] = [];
   let sandbox: Sandbox | undefined;
 
   try {
@@ -121,7 +142,7 @@ export async function runTrial(input: RunTrialInput): Promise<RunTrialResult> {
     } else {
       output = ran;
       // Graders run before cleanup: state checks read the sandbox.
-      grade = await gradeTask(input.task, output.finalAnswer, sandbox.dir, input.judge);
+      grade = await gradeTask(input.task, output.finalAnswer, sandbox.dir, input.judge, judgeCalls);
 
       if (output.stoppedReason === 'error') {
         status = 'failed';
@@ -148,6 +169,8 @@ export async function runTrial(input: RunTrialInput): Promise<RunTrialResult> {
   const passed = status === 'succeeded' && grade?.passed === true;
   const promptTokens = output?.usage.promptTokens ?? 0;
   const completionTokens = output?.usage.completionTokens ?? 0;
+  // Judge tokens are priced but not added to the token counts: those count the agent's own calls only.
+  const estimatedCostUsd = estimateCost(input.prices, input.modelId, { promptTokens, completionTokens }, judgeCalls);
 
   return {
     status,
@@ -161,6 +184,7 @@ export async function runTrial(input: RunTrialInput): Promise<RunTrialResult> {
       promptTokens,
       completionTokens,
       totalTokens: promptTokens + completionTokens,
+      estimatedCostUsd,
       stepCount: output?.stepCount ?? 0,
     },
     error,
@@ -172,11 +196,55 @@ export async function runTrial(input: RunTrialInput): Promise<RunTrialResult> {
   };
 }
 
+/** Judge model ids the task's llm_judge graders will call. */
+function judgeModelIds(task: Task): string[] {
+  return task.graders.flatMap((g) => (g.type === 'llm_judge' ? [g.judgeModel] : []));
+}
+
+/** Estimated cost of the agent's calls plus every judge call, at list prices. Throws if a model is unpriced. */
+function estimateCost(
+  prices: PriceTable,
+  modelId: string,
+  agent: TokenUsage,
+  judgeCalls: readonly JudgeCall[],
+): number {
+  return judgeCalls.reduce(
+    (sum, call) => sum + costUsd(prices, call.modelId, call.usage),
+    costUsd(prices, modelId, agent),
+  );
+}
+
+function priceMissingResult(trialId: string, unpriced: string[], latencyMs: number): RunTrialResult {
+  return {
+    status: 'failed',
+    passed: false,
+    score: 0,
+    grade: null,
+    stoppedReason: null,
+    finalAnswer: '',
+    metrics: {
+      latencyMs,
+      promptTokens: 0,
+      completionTokens: 0,
+      totalTokens: 0,
+      estimatedCostUsd: 0,
+      stepCount: 0,
+    },
+    error: {
+      code: 'price_missing',
+      message: `no list price for: ${unpriced.join(', ')}. Add it to prices.json before running.`,
+      retryable: false,
+    },
+    trace: { trialId, events: [] },
+  };
+}
+
 async function gradeTask(
   task: Task,
   finalAnswer: string,
   sandboxDir: string,
   judge: ModelAdapter | undefined,
+  judgeCalls: JudgeCall[],
 ): Promise<GradeResult> {
   const graderResults: GradeResult['graderResults'] = [];
   for (const g of task.graders) {
@@ -213,6 +281,7 @@ async function gradeTask(
           model: judge ?? createModelAdapter('openrouter'),
           modelId: g.judgeModel,
         });
+        judgeCalls.push({ modelId: g.judgeModel, usage: r.usage });
         graderResults.push({
           graderType: g.type,
           passed: r.passed,

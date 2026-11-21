@@ -1,0 +1,9 @@
+{
+  "asOf": "2026-11-21",
+  "source": "OpenRouter public model list (https://openrouter.ai/api/v1/models), pricing.prompt and pricing.completion, converted to USD per million tokens. Cache-read prices are not used (see COST.md).",
+  "models": {
+    "openai/gpt-4.1-mini": { "inputPerMTok": 0.4, "outputPerMTok": 1.6 },
+    "anthropic/claude-haiku-4.5": { "inputPerMTok": 1.0, "outputPerMTok": 5.0 },
+    "google/gemini-2.5-flash": { "inputPerMTok": 0.3, "outputPerMTok": 2.5 }
+  }
+}

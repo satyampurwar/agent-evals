@@ -8,6 +8,114 @@ Working copy: `/Users/turing-satyam/work/beyond/task/agent-evals`.
 
 ---
 
+## Start here
+
+### What it does
+
+Agent Evals compares two agent configurations on the same tasks. A config is immutable data (harness, model, memory, tools, budgets) with a content hash. An experiment runs N trials per config per task, each in its own sandbox, and grades every trial with deterministic graders and, where a task needs one, an LLM judge. The comparison reports the macro pass rate with a paired bootstrap interval over tasks, an exact McNemar test, per-task deltas, a noise verdict, and the cost, latency and tokens beside the quality numbers. Every trial keeps its full trace, and results export as JSON or CSV.
+
+The two harnesses are a TypeScript tool-calling loop (`baseline`) and Hermes Agent in a Python worker (`hermes`). The models are reached through OpenRouter.
+
+### Prerequisites
+
+- Docker with Compose, for the full stack.
+- An OpenRouter API key with some credit.
+- For local development and tests: Node.js 24 (the image base), `uv`, and Python 3.12 or later (the worker).
+
+### `.env`
+
+```bash
+cp .env.example .env
+# set OPENROUTER_API_KEY=...
+```
+
+`.env` is never committed or copied into the image (`.dockerignore`). Useful settings: `TRIAL_CONCURRENCY=1` on a small balance (the provider rejects concurrent reservations it cannot cover, see EXPERIMENT.md, Amendment 1), `PRICE_TABLE_PATH` to use a different price table, and the `*_HOST_PORT` variables if a port is taken.
+
+### Run it
+
+```bash
+docker compose up --build
+```
+
+- Web UI: http://localhost:5173
+- API: http://localhost:3000
+- The `seed` service loads the 21-task catalog once and exits.
+
+From a clean clone this is the whole setup. Phase 13 checked it on a fresh copy of the tree with empty volumes (§13.4), not on a git clone. Phase 15 did not repeat that check, so run it once on a new machine before you rely on it.
+
+### Add a task
+
+1. Write `tasks/<group>/<name>.json` with the fields in `TaskSchema` (`packages/domain/src/schemas.ts`): `id`, `version`, `name`, `description`, `prompt`, `graders`, `tags`, and optionally `setup`, `toolsAllowed`, `expectedDiscriminators`. Copy a file from the same group and change it.
+2. Add its path to `tasks/manifest.json`.
+3. Check the set: `npx tsx scripts/validate-task-set.ts`. It enforces the 20-task minimum, grader coverage, rubric existence, and that every judge model has a price.
+4. Load it: `npm run seed:tasks` (or `docker compose up seed`).
+
+### Add a harness
+
+1. Create `packages/adapters-harness/src/<id>.ts` implementing `HarnessAdapter` (`run(input)`): emit trace events through `context.emit`, honour `maxSteps`, `maxTokens` and `timeoutMs`, and return a `HarnessRunOutput`.
+2. Register it in `packages/adapters-harness/src/registry.ts`: add the id to `HARNESS_IDS` and a `case` to `createHarness`.
+3. Add a spec beside it, then create a config with `harness.id` set to the new id.
+
+DESIGN.md §2 has the interface and the Hermes contract.
+
+### Add a model
+
+- **A model on OpenRouter** needs only a price. Add `"<provider>/<model>": { "inputPerMTok": …, "outputPerMTok": … }` to `prices.json`. A model without a price fails its trials before any call (`price_missing`).
+- **A new provider** needs an adapter in `packages/adapters-model/src/<provider>.ts` implementing `ModelAdapter`, a `case` in `createModelAdapter` (`registry.ts`), and a price entry.
+
+DESIGN.md §3 has the interface.
+
+### Run the sample experiment
+
+The memory A/B from Phase 14 runs with one command. It creates the two configs and the experiment, starts it, waits for it, and writes the results under `results/memory-ab/`:
+
+```bash
+npx tsx scripts/run-experiment.ts --dry-run   # print the plan; sends nothing
+npx tsx scripts/run-experiment.ts --name memory-ab --n 10 --configs mem-off,mem-on --tasks memory,control
+```
+
+It sends about 100 trials, roughly $0.13 at list price (COST.md §2). The same thing can be done in the UI, with one limit: the Configs page creates baseline configs only. The memory arms use the `hermes` harness, so create them with `POST /configs` (the body is in §13.1).
+
+### Export results
+
+```bash
+curl -s "localhost:3000/experiments/<ID>/export?format=json" -o exp.json
+curl -s "localhost:3000/experiments/<ID>/export?format=csv"  -o exp.csv
+```
+
+The JSON carries the experiment, its configs (with content hashes), and every trial. The CSV has one row per trial. Details are in §13.2.
+
+### Documents
+
+- [DESIGN.md](DESIGN.md): architecture, adapter interfaces, data model, isolation, graders and judge validation, statistics and the choice of N.
+- [EXPERIMENT.md](EXPERIMENT.md): the pre-registered memory experiment, its pilot, amendments, both runs, and the conclusion.
+- [LIMITS.md](LIMITS.md): what the platform and its results cannot support.
+- [COST.md](COST.md): the cost formula, a hand check against the data, actual spend, and reduction strategies.
+
+### Tests
+
+```bash
+npm install
+npm test                                    # all TypeScript workspaces, no network or keys
+npm run test:e2e -w @agent-evals/api        # needs Postgres and Redis running
+cd workers/python-worker && uv run pytest   # Python worker, 35 tests
+```
+
+### Video
+
+Not recorded. The walkthrough script is in implementation.md §25 (≤10 minutes: the compare view, a failed trial's trajectory, and the judge agreement). The assistant that wrote this repo cannot record video, so this is still open.
+
+### Known open items
+
+- The Configs page creates baseline configs only (`harness.id` is hard-coded). Hermes configs go through the API.
+- The API is not linked to NestJS Observe (placeholder-keys warning in worker logs).
+- The Phase 11 UI drill (by hand, in a browser) has not been run.
+- `persistAcrossTrials` is stored but not implemented.
+
+Full list with evidence: LIMITS.md.
+
+---
+
 ## Phase 1 — Scaffold
 
 ### 1.1 npm workspace
@@ -1419,7 +1527,7 @@ npm run build:packages
 npm test
 ```
 
-Expected: ten workspaces pass (`stats` was added in Phase 10, `web` in Phase 11). The totals are `api` 50, `adapters-harness` 52, `adapters-model` 19, `domain` 8, `graders` 36, `runner` 11, `sandbox` 9, `stats` 31, `trace` 4, `web` 29 (these counts are current as of Phase 13; Phase 13 raised `api` from 35 to 50 with the export tests). The Python worker has its own suite: 35 tests, see Phase 12. The runner tests cover pass, scored fail, model error (retryable), wall-clock timeout, unsupported grader, and a `unit_test` grader running against the agent's file.
+Expected: ten workspaces pass (`stats` was added in Phase 10, `web` in Phase 11). The totals are `api` 50, `adapters-harness` 52, `adapters-model` 19, `domain` 17, `graders` 36, `runner` 15, `sandbox` 9, `stats` 31, `trace` 4, `web` 29 (current as of Phase 15: Phase 15 raised `domain` from 8 to 17 with the pricing tests and `runner` from 11 to 15 with the cost tests; Phase 13 had raised `api` from 35 to 50 with the export tests). The Python worker has its own suite: 35 tests, see Phase 12. The runner tests cover pass, scored fail, model error (retryable), wall-clock timeout, unsupported grader, and a `unit_test` grader running against the agent's file.
 
 The API e2e test needs Postgres and Redis running:
 
@@ -2488,7 +2596,7 @@ curl -s "localhost:3000/experiments/<ID>/export?format=csv" -o exp.csv
 - **CSV**: one row per trial, with the columns in `TRIAL_EXPORT_COLUMNS` (`apps/api/src/experiments/export.ts`). Each row carries `configName`, `harnessId`, and `modelId`, so a file with two models stays readable without the JSON.
 - Both responses set `Content-Disposition: attachment`, so a browser downloads them.
 - Errors: `format` other than `json` or `csv` is 400. An unknown experiment is 404. A value that is not a UUID is 400.
-- `estimatedCostUsd` is blank. The runner does not measure cost yet (§10.7).
+- `estimatedCostUsd` is blank for trials recorded before Phase 15. From Phase 15 on, it holds the list-price estimate for the trial, agent and judge calls together (§15.1, COST.md).
 - The Experiment page's own CSV button is unchanged. It still builds the file in the browser from `/trials`.
 
 ### 13.3 The full stack
@@ -2633,3 +2741,50 @@ The full results, trajectories and limitations are in `EXPERIMENT.md`.
 
 - **No statistical power claim.** Two memory tasks and N = 10 give a wide interval. Expect a `likely_noise` verdict, and report it as such.
 - **No retry of infrastructure failures.** A failed trial stays failed. The experiment is re-run, not patched (EXPERIMENT.md, Amendment 1).
+
+---
+
+## Phase 15 — Docs, cost, limits, submit
+
+### 15.0 What changed in this phase
+
+- **Cost metering.** `estimatedCostUsd` was never stored before this phase. Now the runner prices every agent and judge call from `prices.json` (`packages/domain/src/pricing.ts`: `costUsd`, `unpricedModels`, `PriceTableSchema`). A model with no price fails its trial before any call (`price_missing`, not retryable). The API loads the table once (`apps/api/src/execution/prices.ts`; `PRICE_TABLE_PATH` overrides it, and the image copies it to `/app/prices.json`).
+- **Validator.** `scripts/validate-task-set.ts` also fails when a judge model has no price. The catalog's judge model, `google/gemini-2.5-flash`, was missing from the first version of `prices.json`, which would have failed all five judge tasks.
+- **Docs.** `DESIGN.md`, `LIMITS.md`, `COST.md`, and the Start section at the top of this README. `EXPERIMENT.md` has a dated note on its cost figures.
+- **Stale comments** in `packages/stats/src/compare.ts` and `apps/api/src/experiments/compare-input.ts` now describe metering.
+
+### 15.1 Check the metering
+
+```bash
+npx tsx scripts/validate-task-set.ts          # 21 tasks, judge prices present
+npm test                                      # domain 17, runner 15, all workspaces green
+```
+
+The pricing tests cover the arithmetic, zero tokens, per-model rates, the unknown-model error, and the schema. The runner tests cover the agent-only cost, agent plus judge, and refusal before any model call for an unpriced agent or judge.
+
+One live judge trial (`judge_summary_01`, agent `openai/gpt-4.1-mini`, judge `google/gemini-2.5-flash`) stored `estimatedCostUsd = 0.0006746`. The hand sum of the agent tokens and the judge tokens from the grade gives the same value.
+
+### 15.2 Cost exercise
+
+The formula, the per-arm hand check on the 204 Phase 14 trials, and the gap to the provider's bill are in **COST.md**. The short version:
+
+- List-price estimate for the 204 trials: **$0.39270**.
+- Provider-billed for the pilot and main runs: **≈ $0.19**.
+- The gap is mostly prompt caching, which the list price ignores. This is consistent with a single probe call, not measured per trial, because the adapter does not store the cached-token fields.
+- The stored database has no cost for those trials, because metering came after the runs (COST.md §3).
+
+### 15.3 Final checklist
+
+`implementation.md` §28 was ticked against the repo. Still open:
+
+- The compose check from a clean clone was done in Phase 13 on a copy of the tree, not in this phase.
+- The video (§25) was not recorded.
+- The pre-submit dry run (fresh machine path, re-reading the assignment) was not done.
+
+### 15.4 What this phase does not do
+
+- **No video.** This assistant cannot record video. The script is in implementation.md §25.
+- **No stop-reason export.** A trial that runs out of budget is still recorded as `succeeded` (LIMITS.md §8, §11).
+- **No cache modelling and no response cache.** The list-price estimate is about twice the billed amount for these runs (COST.md §4, §6).
+- **No experiment-level spend ceiling.** Caps are per trial.
+- **Observe, the Phase 11 UI drill, and the Configs page's harness choice** are unchanged (README "Known open items").

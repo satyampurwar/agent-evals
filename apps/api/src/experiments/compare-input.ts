@@ -27,7 +27,7 @@ export function toSideInput(configId: string, rows: readonly TrialRowForCompare[
       case 'succeeded':
       case 'timeout': {
         const m = row.metrics;
-        // Cost is optional: the runner does not compute estimatedCostUsd yet, so most trials lack it.
+        // Cost is optional: trials recorded before Phase 15 have no estimatedCostUsd.
         // Latency and tokens are required for a trial to count toward those means.
         const hasMetrics = m.latencyMs !== undefined && m.totalTokens !== undefined;
         trials.push({

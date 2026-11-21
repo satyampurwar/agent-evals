@@ -17,7 +17,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { TaskSchema, type GraderSpec, type Task } from '@agent-evals/domain';
+import { PriceTableSchema, TaskSchema, type GraderSpec, type PriceTable, type Task } from '@agent-evals/domain';
 import { TOOL_SPECS } from '@agent-evals/adapters-harness';
 import { getRubric } from '@agent-evals/graders';
 
@@ -30,6 +30,12 @@ const knownTools = new Set(TOOL_SPECS.map((s) => s.name));
 
 interface Manifest {
   tasks: string[];
+}
+
+function loadPriceTableFile(): PriceTable {
+  const parsed = PriceTableSchema.safeParse(JSON.parse(readFileSync(resolve(repoRoot, 'prices.json'), 'utf8')));
+  if (!parsed.success) throw new Error(`prices.json is invalid: ${parsed.error.issues[0]?.message ?? 'unknown'}`);
+  return parsed.data;
 }
 
 function listJsonFiles(dir: string): string[] {
@@ -101,6 +107,16 @@ function main(): void {
       if (g.type === 'unit_test' && g.command.trim() === '') problems.push(`${t.id}: unit_test has an empty command`);
       if (g.type === 'llm_judge' && !getRubric(g.rubricId)) {
         problems.push(`${t.id}: llm_judge names rubric "${g.rubricId}", which does not exist`);
+      }
+    }
+  }
+
+  // Phase 15: a judge model without a list price would fail every trial that grades with it (price_missing).
+  const priceTable = loadPriceTableFile();
+  for (const t of tasks) {
+    for (const g of t.graders) {
+      if (g.type === 'llm_judge' && !priceTable.models[g.judgeModel]) {
+        problems.push(`${t.id}: judge model "${g.judgeModel}" has no price in prices.json`);
       }
     }
   }

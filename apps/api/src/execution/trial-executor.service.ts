@@ -8,6 +8,7 @@ import { runTrial } from '@agent-evals/runner';
 import type { RunTrialResult } from '@agent-evals/runner';
 import { serializeTrace } from '@agent-evals/trace';
 import { TraceStore } from '../common/trace-store.js';
+import { loadPriceTable } from './prices.js';
 import { ConfigEntity } from '../entities/config.entity.js';
 import { ExperimentEntity } from '../entities/experiment.entity.js';
 import { TaskEntity } from '../entities/task.entity.js';
@@ -91,6 +92,7 @@ export class TrialExecutor {
       return await runTrial({
         trialId: trial.id,
         task: taskDoc,
+        prices: loadPriceTable(),
         harness: createHarness(cfg.harness.id),
         model: createModelAdapter(cfg.model.provider),
         modelId: cfg.model.modelId,
@@ -161,7 +163,7 @@ function setupFailure(trialId: string, err: unknown): RunTrialResult {
     grade: null,
     stoppedReason: null,
     finalAnswer: '',
-    metrics: { latencyMs: 0, promptTokens: 0, completionTokens: 0, totalTokens: 0, stepCount: 0 },
+    metrics: { latencyMs: 0, promptTokens: 0, completionTokens: 0, totalTokens: 0, estimatedCostUsd: 0, stepCount: 0 },
     error: {
       code: 'setup_error',
       message: err instanceof Error ? err.message : String(err),

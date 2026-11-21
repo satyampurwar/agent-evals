@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Task } from '@agent-evals/domain';
+import type { PriceTable, Task } from '@agent-evals/domain';
 import { BaselineHarness } from '@agent-evals/adapters-harness';
 import type { HarnessAdapter } from '@agent-evals/adapters-harness';
 import { MockModelAdapter, ScriptedModelAdapter } from '@agent-evals/adapters-model';
@@ -16,6 +16,15 @@ const addTask: Task = {
   tags: ['deterministic'],
 };
 
+const testPrices: PriceTable = {
+  asOf: 'test',
+  source: 'test',
+  models: {
+    'mock-model': { inputPerMTok: 1, outputPerMTok: 2 },
+    'google/gemini-2.5-flash': { inputPerMTok: 0.3, outputPerMTok: 2.5 },
+  },
+};
+
 function input(overrides: Partial<RunTrialInput> = {}): RunTrialInput {
   return {
     trialId: 'trial-test',
@@ -27,6 +36,7 @@ function input(overrides: Partial<RunTrialInput> = {}): RunTrialInput {
     seed: 1,
     budgets: { maxSteps: 4, maxTokens: 256, timeoutMs: 5_000 },
     toolIds: [],
+    prices: testPrices,
     ...overrides,
   };
 }
@@ -131,6 +141,56 @@ describe('runTrial', () => {
       const r = await runTrial(input({ task: judgeTask('no_such_rubric_v9'), judge: new ScriptedModelAdapter([]) }));
       expect(r.status).toBe('failed');
       expect(r.error).toMatchObject({ code: 'rubric_not_found', retryable: false });
+    });
+  });
+
+  describe('estimatedCostUsd', () => {
+    it('prices the agent call at list price: (10 × $1 + 2 × $2) per million tokens', async () => {
+      const r = await runTrial(input());
+      expect(r.metrics).toMatchObject({ promptTokens: 10, completionTokens: 2 });
+      expect(r.metrics.estimatedCostUsd).toBeCloseTo(14 / 1e6, 12);
+    });
+
+    it('adds every llm_judge call at its judge model price, without adding judge tokens to the token counts', async () => {
+      const judgeTask: Task = {
+        ...addTask,
+        graders: [{ type: 'llm_judge', rubricId: 'summary_v1', judgeModel: 'google/gemini-2.5-flash', passThreshold: 0.7 }],
+      };
+      const allMet = JSON.stringify({
+        criteria: { outage_cause: 1, affected_region: 1, fix_date: 1, two_sentences: 1 },
+        reasoning: 'Covers all four required points.',
+      });
+      const judge = new ScriptedModelAdapter([
+        { message: { role: 'assistant', content: allMet }, usage: { promptTokens: 7, completionTokens: 3 } },
+      ]);
+      const r = await runTrial(input({ task: judgeTask, judge }));
+      expect(r.status).toBe('succeeded');
+      expect(r.metrics).toMatchObject({ promptTokens: 10, completionTokens: 2 });
+      // Agent: 14 / 1e6. Judge: (7 × $0.30 + 3 × $2.50) / 1e6 = 9.6 / 1e6. Total 23.6 / 1e6.
+      expect(r.metrics.estimatedCostUsd).toBeCloseTo(23.6 / 1e6, 12);
+    });
+
+    it('refuses a trial whose agent model has no price, before any model call', async () => {
+      const model = new ScriptedModelAdapter([]);
+      const r = await runTrial(input({ modelId: 'unpriced/model', model }));
+      expect(r.status).toBe('failed');
+      expect(r.error).toMatchObject({ code: 'price_missing', retryable: false });
+      expect(r.error?.message).toMatch(/unpriced\/model/);
+      expect(r.metrics.estimatedCostUsd).toBe(0);
+      expect(r.trace.events).toEqual([]);
+      expect(model.requests).toHaveLength(0);
+    });
+
+    it('refuses a trial whose llm_judge model has no price', async () => {
+      const judgeTask: Task = {
+        ...addTask,
+        graders: [{ type: 'llm_judge', rubricId: 'summary_v1', judgeModel: 'unpriced/judge', passThreshold: 0.7 }],
+      };
+      const judge = new ScriptedModelAdapter([]);
+      const r = await runTrial(input({ task: judgeTask, judge }));
+      expect(r.error).toMatchObject({ code: 'price_missing' });
+      expect(r.error?.message).toMatch(/unpriced\/judge/);
+      expect(judge.requests).toHaveLength(0);
     });
   });
 

@@ -126,7 +126,7 @@ Per group (descriptive, from the same trials): memory group Δ **+50 pts** (mem-
 | mem-on | 299,470 / 2,387 | $0.124 | 7,385 ms |
 | mem-off | 19,763 / 380 | $0.009 | 2,254 ms |
 
-Total about $0.13. `estimatedCostUsd` is still not measured by the API, so these are computed from tokens and the OpenRouter list price.
+Total about $0.13. `estimatedCostUsd` was not measured by the API when these runs happened, so these are computed from tokens and the OpenRouter list price. (Phase 15 added metering; the stored database has no cost for these 200 trials. The hand calculation and the list-to-billed comparison are in COST.md §2 to §4.)
 
 ### Stop reasons
 

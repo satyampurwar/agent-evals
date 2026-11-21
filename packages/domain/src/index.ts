@@ -18,6 +18,8 @@ export {
   TrialSchema,
 } from './schemas.js';
 
+export { PriceEntrySchema, PriceTableSchema, UnknownPriceError, costUsd, unpricedModels } from './pricing.js';
+
 export type {
   Config,
   ConfigId,
@@ -37,3 +39,5 @@ export type {
   Trial,
   TrialId,
 } from './schemas.js';
+
+export type { PriceEntry, PriceTable, TokenUsage } from './pricing.js';
