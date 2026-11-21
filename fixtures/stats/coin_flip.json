@@ -1,0 +1,613 @@
+{
+  "name": "coin_flip",
+  "description": "A and B both pass ~50% of trials at random, on 20 tasks with 5 trials each. Any difference here is noise.",
+  "generator": {
+    "seed": 202,
+    "tasks": 20,
+    "trialsPerTask": 5,
+    "pA": 0.5,
+    "pB": 0.5
+  },
+  "outcomes": [
+    {
+      "taskId": "task_01",
+      "trialIndex": 0,
+      "a": true,
+      "b": false
+    },
+    {
+      "taskId": "task_01",
+      "trialIndex": 1,
+      "a": true,
+      "b": true
+    },
+    {
+      "taskId": "task_01",
+      "trialIndex": 2,
+      "a": true,
+      "b": true
+    },
+    {
+      "taskId": "task_01",
+      "trialIndex": 3,
+      "a": true,
+      "b": true
+    },
+    {
+      "taskId": "task_01",
+      "trialIndex": 4,
+      "a": true,
+      "b": true
+    },
+    {
+      "taskId": "task_02",
+      "trialIndex": 0,
+      "a": true,
+      "b": false
+    },
+    {
+      "taskId": "task_02",
+      "trialIndex": 1,
+      "a": false,
+      "b": false
+    },
+    {
+      "taskId": "task_02",
+      "trialIndex": 2,
+      "a": true,
+      "b": false
+    },
+    {
+      "taskId": "task_02",
+      "trialIndex": 3,
+      "a": true,
+      "b": false
+    },
+    {
+      "taskId": "task_02",
+      "trialIndex": 4,
+      "a": true,
+      "b": true
+    },
+    {
+      "taskId": "task_03",
+      "trialIndex": 0,
+      "a": false,
+      "b": true
+    },
+    {
+      "taskId": "task_03",
+      "trialIndex": 1,
+      "a": true,
+      "b": true
+    },
+    {
+      "taskId": "task_03",
+      "trialIndex": 2,
+      "a": false,
+      "b": true
+    },
+    {
+      "taskId": "task_03",
+      "trialIndex": 3,
+      "a": false,
+      "b": false
+    },
+    {
+      "taskId": "task_03",
+      "trialIndex": 4,
+      "a": false,
+      "b": false
+    },
+    {
+      "taskId": "task_04",
+      "trialIndex": 0,
+      "a": true,
+      "b": false
+    },
+    {
+      "taskId": "task_04",
+      "trialIndex": 1,
+      "a": true,
+      "b": false
+    },
+    {
+      "taskId": "task_04",
+      "trialIndex": 2,
+      "a": true,
+      "b": true
+    },
+    {
+      "taskId": "task_04",
+      "trialIndex": 3,
+      "a": true,
+      "b": false
+    },
+    {
+      "taskId": "task_04",
+      "trialIndex": 4,
+      "a": false,
+      "b": false
+    },
+    {
+      "taskId": "task_05",
+      "trialIndex": 0,
+      "a": false,
+      "b": false
+    },
+    {
+      "taskId": "task_05",
+      "trialIndex": 1,
+      "a": true,
+      "b": true
+    },
+    {
+      "taskId": "task_05",
+      "trialIndex": 2,
+      "a": false,
+      "b": false
+    },
+    {
+      "taskId": "task_05",
+      "trialIndex": 3,
+      "a": false,
+      "b": false
+    },
+    {
+      "taskId": "task_05",
+      "trialIndex": 4,
+      "a": true,
+      "b": false
+    },
+    {
+      "taskId": "task_06",
+      "trialIndex": 0,
+      "a": true,
+      "b": false
+    },
+    {
+      "taskId": "task_06",
+      "trialIndex": 1,
+      "a": false,
+      "b": true
+    },
+    {
+      "taskId": "task_06",
+      "trialIndex": 2,
+      "a": false,
+      "b": false
+    },
+    {
+      "taskId": "task_06",
+      "trialIndex": 3,
+      "a": false,
+      "b": false
+    },
+    {
+      "taskId": "task_06",
+      "trialIndex": 4,
+      "a": false,
+      "b": true
+    },
+    {
+      "taskId": "task_07",
+      "trialIndex": 0,
+      "a": true,
+      "b": false
+    },
+    {
+      "taskId": "task_07",
+      "trialIndex": 1,
+      "a": true,
+      "b": false
+    },
+    {
+      "taskId": "task_07",
+      "trialIndex": 2,
+      "a": true,
+      "b": false
+    },
+    {
+      "taskId": "task_07",
+      "trialIndex": 3,
+      "a": false,
+      "b": false
+    },
+    {
+      "taskId": "task_07",
+      "trialIndex": 4,
+      "a": false,
+      "b": false
+    },
+    {
+      "taskId": "task_08",
+      "trialIndex": 0,
+      "a": false,
+      "b": false
+    },
+    {
+      "taskId": "task_08",
+      "trialIndex": 1,
+      "a": false,
+      "b": true
+    },
+    {
+      "taskId": "task_08",
+      "trialIndex": 2,
+      "a": false,
+      "b": false
+    },
+    {
+      "taskId": "task_08",
+      "trialIndex": 3,
+      "a": false,
+      "b": true
+    },
+    {
+      "taskId": "task_08",
+      "trialIndex": 4,
+      "a": false,
+      "b": true
+    },
+    {
+      "taskId": "task_09",
+      "trialIndex": 0,
+      "a": false,
+      "b": false
+    },
+    {
+      "taskId": "task_09",
+      "trialIndex": 1,
+      "a": false,
+      "b": true
+    },
+    {
+      "taskId": "task_09",
+      "trialIndex": 2,
+      "a": false,
+      "b": true
+    },
+    {
+      "taskId": "task_09",
+      "trialIndex": 3,
+      "a": true,
+      "b": true
+    },
+    {
+      "taskId": "task_09",
+      "trialIndex": 4,
+      "a": true,
+      "b": true
+    },
+    {
+      "taskId": "task_10",
+      "trialIndex": 0,
+      "a": false,
+      "b": false
+    },
+    {
+      "taskId": "task_10",
+      "trialIndex": 1,
+      "a": true,
+      "b": false
+    },
+    {
+      "taskId": "task_10",
+      "trialIndex": 2,
+      "a": true,
+      "b": true
+    },
+    {
+      "taskId": "task_10",
+      "trialIndex": 3,
+      "a": true,
+      "b": true
+    },
+    {
+      "taskId": "task_10",
+      "trialIndex": 4,
+      "a": false,
+      "b": false
+    },
+    {
+      "taskId": "task_11",
+      "trialIndex": 0,
+      "a": true,
+      "b": false
+    },
+    {
+      "taskId": "task_11",
+      "trialIndex": 1,
+      "a": true,
+      "b": false
+    },
+    {
+      "taskId": "task_11",
+      "trialIndex": 2,
+      "a": true,
+      "b": false
+    },
+    {
+      "taskId": "task_11",
+      "trialIndex": 3,
+      "a": true,
+      "b": true
+    },
+    {
+      "taskId": "task_11",
+      "trialIndex": 4,
+      "a": false,
+      "b": true
+    },
+    {
+      "taskId": "task_12",
+      "trialIndex": 0,
+      "a": true,
+      "b": false
+    },
+    {
+      "taskId": "task_12",
+      "trialIndex": 1,
+      "a": true,
+      "b": false
+    },
+    {
+      "taskId": "task_12",
+      "trialIndex": 2,
+      "a": true,
+      "b": true
+    },
+    {
+      "taskId": "task_12",
+      "trialIndex": 3,
+      "a": true,
+      "b": false
+    },
+    {
+      "taskId": "task_12",
+      "trialIndex": 4,
+      "a": true,
+      "b": true
+    },
+    {
+      "taskId": "task_13",
+      "trialIndex": 0,
+      "a": true,
+      "b": true
+    },
+    {
+      "taskId": "task_13",
+      "trialIndex": 1,
+      "a": false,
+      "b": true
+    },
+    {
+      "taskId": "task_13",
+      "trialIndex": 2,
+      "a": false,
+      "b": true
+    },
+    {
+      "taskId": "task_13",
+      "trialIndex": 3,
+      "a": false,
+      "b": false
+    },
+    {
+      "taskId": "task_13",
+      "trialIndex": 4,
+      "a": false,
+      "b": false
+    },
+    {
+      "taskId": "task_14",
+      "trialIndex": 0,
+      "a": false,
+      "b": false
+    },
+    {
+      "taskId": "task_14",
+      "trialIndex": 1,
+      "a": false,
+      "b": false
+    },
+    {
+      "taskId": "task_14",
+      "trialIndex": 2,
+      "a": true,
+      "b": false
+    },
+    {
+      "taskId": "task_14",
+      "trialIndex": 3,
+      "a": false,
+      "b": false
+    },
+    {
+      "taskId": "task_14",
+      "trialIndex": 4,
+      "a": true,
+      "b": false
+    },
+    {
+      "taskId": "task_15",
+      "trialIndex": 0,
+      "a": false,
+      "b": false
+    },
+    {
+      "taskId": "task_15",
+      "trialIndex": 1,
+      "a": false,
+      "b": true
+    },
+    {
+      "taskId": "task_15",
+      "trialIndex": 2,
+      "a": false,
+      "b": true
+    },
+    {
+      "taskId": "task_15",
+      "trialIndex": 3,
+      "a": true,
+      "b": true
+    },
+    {
+      "taskId": "task_15",
+      "trialIndex": 4,
+      "a": false,
+      "b": false
+    },
+    {
+      "taskId": "task_16",
+      "trialIndex": 0,
+      "a": false,
+      "b": false
+    },
+    {
+      "taskId": "task_16",
+      "trialIndex": 1,
+      "a": false,
+      "b": false
+    },
+    {
+      "taskId": "task_16",
+      "trialIndex": 2,
+      "a": false,
+      "b": true
+    },
+    {
+      "taskId": "task_16",
+      "trialIndex": 3,
+      "a": false,
+      "b": true
+    },
+    {
+      "taskId": "task_16",
+      "trialIndex": 4,
+      "a": true,
+      "b": true
+    },
+    {
+      "taskId": "task_17",
+      "trialIndex": 0,
+      "a": false,
+      "b": false
+    },
+    {
+      "taskId": "task_17",
+      "trialIndex": 1,
+      "a": true,
+      "b": false
+    },
+    {
+      "taskId": "task_17",
+      "trialIndex": 2,
+      "a": true,
+      "b": true
+    },
+    {
+      "taskId": "task_17",
+      "trialIndex": 3,
+      "a": false,
+      "b": false
+    },
+    {
+      "taskId": "task_17",
+      "trialIndex": 4,
+      "a": false,
+      "b": true
+    },
+    {
+      "taskId": "task_18",
+      "trialIndex": 0,
+      "a": false,
+      "b": true
+    },
+    {
+      "taskId": "task_18",
+      "trialIndex": 1,
+      "a": true,
+      "b": false
+    },
+    {
+      "taskId": "task_18",
+      "trialIndex": 2,
+      "a": false,
+      "b": false
+    },
+    {
+      "taskId": "task_18",
+      "trialIndex": 3,
+      "a": false,
+      "b": true
+    },
+    {
+      "taskId": "task_18",
+      "trialIndex": 4,
+      "a": true,
+      "b": false
+    },
+    {
+      "taskId": "task_19",
+      "trialIndex": 0,
+      "a": true,
+      "b": false
+    },
+    {
+      "taskId": "task_19",
+      "trialIndex": 1,
+      "a": true,
+      "b": true
+    },
+    {
+      "taskId": "task_19",
+      "trialIndex": 2,
+      "a": true,
+      "b": false
+    },
+    {
+      "taskId": "task_19",
+      "trialIndex": 3,
+      "a": true,
+      "b": false
+    },
+    {
+      "taskId": "task_19",
+      "trialIndex": 4,
+      "a": true,
+      "b": false
+    },
+    {
+      "taskId": "task_20",
+      "trialIndex": 0,
+      "a": false,
+      "b": false
+    },
+    {
+      "taskId": "task_20",
+      "trialIndex": 1,
+      "a": true,
+      "b": true
+    },
+    {
+      "taskId": "task_20",
+      "trialIndex": 2,
+      "a": true,
+      "b": false
+    },
+    {
+      "taskId": "task_20",
+      "trialIndex": 3,
+      "a": false,
+      "b": true
+    },
+    {
+      "taskId": "task_20",
+      "trialIndex": 4,
+      "a": false,
+      "b": false
+    }
+  ]
+}

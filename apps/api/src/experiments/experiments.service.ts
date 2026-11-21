@@ -7,7 +7,8 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
 import type { Experiment, ExperimentInput } from '@agent-evals/domain';
-import { DataSource, Repository } from 'typeorm';
+import { compareConfigs, NothingToCompareError, type CompareResult } from '@agent-evals/stats';
+import { DataSource, In, Repository } from 'typeorm';
 import { isUuid } from '../common/uuid.js';
 import { ConfigsService } from '../configs/configs.service.js';
 import { ConfigEntity } from '../entities/config.entity.js';
@@ -15,6 +16,7 @@ import { ExperimentEntity, type ConfigRef, type TaskRef } from '../entities/expe
 import { TrialEntity } from '../entities/trial.entity.js';
 import { TrialQueue } from '../queue/trial-queue.js';
 import { TasksService } from '../tasks/tasks.service.js';
+import { toSideInput } from './compare-input.js';
 import { countTrialsByStatus, type TrialCounts } from './experiment-status.js';
 import { expandMatrix } from './expand-matrix.js';
 
@@ -151,6 +153,41 @@ export class ExperimentsService {
 
   countTrials(experimentId: string): Promise<TrialCounts> {
     return countTrialsByStatus(this.dataSource.manager, experimentId);
+  }
+
+  /**
+   * Compares two configs of one experiment on their scored trials (see toSideInput for what counts).
+   * Both configs must belong to the experiment, and the comparison needs at least one task with a
+   * scored trial on both sides.
+   */
+  async compare(experimentId: string, aConfigId: string, bConfigId: string): Promise<CompareResult & { experimentId: string }> {
+    const experiment = await this.findOne(experimentId);
+    if (aConfigId === bConfigId) {
+      throw new BadRequestException('a and b must be different configs');
+    }
+    const inExperiment = new Set(experiment.configRefs.map((c) => c.id));
+    const notInExperiment = [aConfigId, bConfigId].filter((id) => !inExperiment.has(id));
+    if (notInExperiment.length) {
+      throw new BadRequestException({
+        message: 'config is not part of this experiment',
+        configIds: notInExperiment,
+      });
+    }
+
+    const rows = await this.dataSource.manager.find(TrialEntity, {
+      where: { experimentId, configId: In([aConfigId, bConfigId]) },
+      select: { taskId: true, trialIndex: true, configId: true, status: true, passed: true, metrics: true },
+    });
+    const a = toSideInput(aConfigId, rows.filter((r) => r.configId === aConfigId));
+    const b = toSideInput(bConfigId, rows.filter((r) => r.configId === bConfigId));
+    try {
+      return { experimentId, ...compareConfigs(a, b) };
+    } catch (err) {
+      if (err instanceof NothingToCompareError) {
+        throw new ConflictException(`${err.message}; the trials may still be running`);
+      }
+      throw err;
+    }
   }
 
   /** Maps the stored row to the public Experiment shape from the domain package. */

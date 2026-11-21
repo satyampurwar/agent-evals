@@ -1419,7 +1419,7 @@ npm run build:packages
 npm test
 ```
 
-Expected: eight workspaces pass. The totals are `api` 30, `adapters-harness` 43, `adapters-model` 19, `domain` 8, `graders` 36, `runner` 11, `sandbox` 9, `trace` 4 (these counts are current as of Phase 9). The runner tests cover pass, scored fail, model error (retryable), wall-clock timeout, unsupported grader, and a `unit_test` grader running against the agent's file.
+Expected: nine workspaces pass (`stats` was added in Phase 10). The totals are `api` 35, `adapters-harness` 43, `adapters-model` 19, `domain` 8, `graders` 36, `runner` 11, `sandbox` 9, `stats` 31, `trace` 4 (these counts are current as of Phase 10). The runner tests cover pass, scored fail, model error (retryable), wall-clock timeout, unsupported grader, and a `unit_test` grader running against the agent's file.
 
 The API e2e test needs Postgres and Redis running:
 
@@ -1815,7 +1815,7 @@ npm run build:packages
 npm test
 ```
 
-Expected totals: `api` 30, `adapters-harness` 43, `adapters-model` 19, `domain` 8, `graders` 36, `runner` 11, `sandbox` 9, `trace` 4. The new `graders` tests cover the scoring rule, the prompt, the parsing (fenced JSON, missing criteria, out-of-range scores), the retry after a malformed reply, and the error when both replies are malformed. The `runner` tests cover the rubric-not-found and invalid-output paths.
+Expected totals as of Phase 9: `api` 30, `adapters-harness` 43, `adapters-model` 19, `domain` 8, `graders` 36, `runner` 11, `sandbox` 9, `trace` 4. Phase 10 raises `api` to 35 and adds `stats`; §7.2 has the current totals. The new `graders` tests cover the scoring rule, the prompt, the parsing (fenced JSON, missing criteria, out-of-range scores), the retry after a malformed reply, and the error when both replies are malformed. The `runner` tests cover the rubric-not-found and invalid-output paths.
 
 ### 9.2 How the judge scores
 
@@ -1955,3 +1955,155 @@ Both disagreements are kept as they are. The rubric was not edited to make them 
 - **κ is measured on 25 labels, from one author.** I wrote the labels, and the rubric and labels were written in the same session. That is a circularity risk. Relabel a sample blind before you trust the number. One label changes the agreement by 4 points.
 - **Judge and agent are different families**, so the judge does not grade its own family's output. That reduces one bias. It does not remove position, length, or wording bias, and the rubrics here do not test for those.
 - **Commit:** the work is uncommitted, as in earlier phases.
+
+## Phase 10 — Statistics package and the compare endpoint
+
+**Goal:** Answer "A vs B" with intervals, and say so when the difference is noise. Aggregate scores hide regressions, so the endpoint also returns per-task deltas.
+
+Run every command from the repo root:
+
+```bash
+cd /Users/turing-satyam/work/beyond/task/agent-evals
+```
+
+### 10.0 What changed in this phase
+
+| Area | Change |
+|---|---|
+| `packages/stats` | New package, pure functions with no dependencies: `passRate`, `wilsonInterval`, `bootstrapMeanCI`, `pairedBootstrapDelta`, `mcNemar`, and `compareConfigs` (the A/B analysis). Seeded resampling, so results are reproducible |
+| `apps/api` | `GET /experiments/:id/compare?a=&b=`. The service selects the two configs' trials, `compare-input.ts` splits them into scored and excluded, and `compareConfigs` does the analysis |
+| `fixtures/stats/` | `known_gap.json` (A passes ~90%, B ~40%) and `coin_flip.json` (both ~50%). 20 tasks × 5 paired trials each. Seeds 101 and 202 were fixed before the results were looked at |
+| `scripts/stats-fixtures.ts` | Checks both fixtures (exit 0 when both behave as expected). `--generate` rewrites the JSON |
+| root `package.json` | `build:packages` builds `stats`. Run `npm install` once so the workspace link exists (`node_modules/@agent-evals/stats`) |
+
+### 10.1 Install and build
+
+```bash
+npm install
+npm run build:packages
+```
+
+If npm reports `SELF_SIGNED_CERT_IN_CHAIN`, use `NODE_OPTIONS=--use-system-ca npm install` (see Phase 6). The install adds a workspace entry to `package-lock.json`.
+
+### 10.2 Offline tests (no key, no network)
+
+```bash
+npm test
+```
+
+Expected: nine workspaces pass. `stats` runs 31 tests: the hand-checked vector from the plan (`A = [1,1,0,1,0]`, `B = [1,0,0,0,0]`) gives a delta of +0.4, and McNemar gives p = 0.5 (two discordant pairs, both favouring A). Other tests cover the Wilson interval at 0 and n passes, the exact McNemar tail, the comparison rules, and the two fixtures.
+
+### 10.3 Checkpoint 10a: the known gap is significant, the coin flip is noise (expect OK twice)
+
+```bash
+npx tsx scripts/stats-fixtures.ts
+echo "exit=$?"
+```
+
+Expected output (from our run, which is deterministic because the fixtures and the bootstrap seed are fixed):
+
+```
+known_gap
+  macro pass rate  A 0.950  B 0.370  delta 0.580
+  delta 95% CI     [0.480, 0.670]
+  McNemar p        0.0000  (discordant A-only 59, B-only 1)
+  verdict          a_better  noise=false
+  expected         OK
+
+coin_flip
+  macro pass rate  A 0.500  B 0.410  delta 0.090
+  delta 95% CI     [-0.100, 0.270]
+  McNemar p        0.2529  (discordant A-only 29, B-only 20)
+  verdict          likely_noise  noise=true
+  expected         OK
+```
+
+`exit=0`. The coin flip has a 9-point gap in its raw rates, and the interval still spans 0, so the verdict is noise. That is the point of the check.
+
+To rebuild the fixtures from their seeds: `npx tsx scripts/stats-fixtures.ts --generate`.
+
+### 10.4 Checkpoint 10b: compare two configs on a live experiment
+
+The API must be running (`npm run start:dev -w @agent-evals/api`) and the judge tasks seeded (Phase 9 §9.3). This creates a second config with a tight token budget (`maxTokens` 60, against 4096 for the Phase 9 base config). The judge answers are long enough that the tight budget cuts them short, so B should lose:
+
+```bash
+A=http://localhost:3000
+BASE=$(curl -s $A/configs | jq -r '.[] | select(.name=="p9-judge-base") | .id')
+TIGHT=$(curl -s -X POST $A/configs -H 'content-type: application/json' -d '{
+  "name": "p10-tight-budget",
+  "harness": { "id": "baseline", "settings": {
+    "skillsEnabled": [], "memory": { "enabled": false, "persistAcrossTrials": false },
+    "tools": ["read_file", "write_file", "list_dir"], "maxSteps": 8, "maxTokens": 60, "timeoutMs": 60000 } },
+  "model": { "provider": "openrouter", "modelId": "openai/gpt-4.1-mini", "temperature": 0 }
+}' | jq -r .id)
+
+EXP=$(curl -s -X POST $A/experiments -H 'content-type: application/json' \
+  -d "{\"name\":\"p10-compare-check\",\"hypothesis\":\"a tight token budget hurts judge tasks\",\"taskIds\":[\"judge_summary_01\",\"judge_explain_01\",\"judge_email_01\",\"judge_bugreport_01\",\"judge_tradeoff_01\"],\"configIds\":[\"$BASE\",\"$TIGHT\"],\"nTrials\":4}" | jq -r .id)
+curl -s -o /dev/null -w "start: HTTP %{http_code}\n" -X POST $A/experiments/$EXP/start
+until [ "$(curl -s $A/experiments/$EXP/status | jq -r .status)" != "running" ]; do sleep 3; done
+curl -s $A/experiments/$EXP/status | jq -c '{status, trials}'
+
+curl -s "$A/experiments/$EXP/compare?a=$BASE&b=$TIGHT" | jq '{verdict, noise, commonTasks, pairedTrials, delta, a: {passRate: .a.passRate, passRateCI: .a.passRateCI}, b: {passRate: .b.passRate, passRateCI: .b.passRateCI}}'
+curl -s "$A/experiments/$EXP/compare?a=$BASE&b=$TIGHT" | jq -r '.perTask[] | [.taskId, .passRateA, .passRateB, .delta] | @tsv'
+```
+
+Expected: the status is `completed` with 40 succeeded trials. The compare shows `verdict: "a_better"`, `noise: false`, and a delta CI that excludes 0. In our run, the delta was +0.75 with CI [0.35, 1.00], McNemar p ≈ 0.00006 (15 A-only discordant pairs and 0 B-only), and the per-task table was:
+
+| Task | A (base) | B (tight) | Delta |
+|---|---|---|---|
+| `judge_bugreport_01` | 1.00 | 0.00 | +1.00 |
+| `judge_email_01` | 1.00 | 0.00 | +1.00 |
+| `judge_explain_01` | 1.00 | 0.25 | +0.75 |
+| `judge_summary_01` | 1.00 | 1.00 | 0.00 |
+| `judge_tradeoff_01` | 1.00 | 0.00 | +1.00 |
+
+We checked the mechanism in the trace files. All 16 tight-budget answers for the four tasks that fail stop mid-sentence (for example "…Could we reschedule it to Tuesday at 10am next week" and "…Click the"). The tight answers are capped at about 240–350 characters, roughly the 60-token budget. So the judge fails them for being incomplete, which is a real regression from the config. The numbers come from one run of a live model. A rerun can move them, though this gap is large.
+
+`judge_summary_01` is the only task where both configs pass. Its answers fit inside the budget in both configs (243–262 characters), so the config makes no difference there. That is the per-task view doing its job: the aggregate says B is worse, and the table says where.
+
+**Reading the response**
+
+| Field | Meaning |
+|---|---|
+| `delta.value` | Macro pass rate of A minus B. Positive means A is better |
+| `delta.ci` | Paired bootstrap CI over tasks. Resampling tasks, not trials, because trials of one task are not independent |
+| `delta.pValue` | Exact McNemar p-value on the paired trials, `(task, trialIndex)` |
+| `delta.discordant` | Paired trials where only A passed (`aOnly`) or only B passed (`bOnly`) |
+| `noise` | `true` when the delta CI includes 0, or when there are fewer than 2 common tasks |
+| `verdict` | `a_better`, `b_better`, `likely_noise`, or `insufficient_data` |
+| `a.passRate`, `a.passRateCI` | Macro pass rate (each task counts once) and its task-level bootstrap CI |
+| `a.meanLatencyMs`, `a.meanTotalTokens`, `a.meanCostUsd` | Means over scored trials that have the metric. Cost is `null` until the runner computes it (it does not yet) |
+| `a.excluded` | Trials that did not reach a verdict: `failed`, `cancelled`, `pending` |
+| `perTask` | Per-task pass rates and delta, for tasks both configs scored |
+| `notes` | Plain-language warnings, such as excluded counts or too few tasks |
+
+### 10.5 Decisions in this phase
+
+- **The unit is the task.** The macro pass rate averages per-task rates, so a task with 10 trials does not outweigh one with 2. The delta CI resamples tasks.
+- **Timeouts count as fails.** A config that exceeds its time budget did not finish, and that is a property of the config. Infrastructure failures (`failed`) and `cancelled` trials are excluded and reported, so they cannot lower a config's pass rate.
+- **The verdict uses the CI, not the p-value.** The CI accounts for task-to-task variation. McNemar treats trials as independent, which makes it optimistic when trials cluster by task. Read the p-value as a secondary signal.
+- **Delta is A minus B.** Positive means A is better.
+- **Pairing is by `(taskId, trialIndex)`.** Seeds differ between configs by design (they are derived from the config id), so they cannot be used to pair.
+- **Small samples say so.** With one common task the response returns `insufficient_data` and no interval, and it does not guess.
+
+### 10.6 Troubleshooting
+
+| Response | Cause | Fix |
+|---|---|---|
+| `400` with `config is not part of this experiment` | `a` or `b` is not in the experiment's `configIds` | Use the config ids from the experiment. Configs are not compared across experiments |
+| `400` with `a and b must be different configs` | Both query parameters name the same config | Pass two different config ids |
+| `400` on a missing `a` or `b`, or a bad UUID | A query parameter is missing or not a UUID | Pass both `a=` and `b=` as config UUIDs |
+| `409` with `no task has a scored trial for both configs` | No task has a scored trial on both sides yet | Wait for the trials to finish (`/status`), or check that both configs ran the same tasks |
+| `verdict: "insufficient_data"` | Fewer than 2 common tasks | Add tasks. One task cannot give an interval |
+| `meanCostUsd: null` | The runner does not compute `estimatedCostUsd` | Expected for now. Cost reporting needs a price table, which is not in this project |
+| `pending` count above 0 in `excluded` | Trials are still queued or running | Wait for `status` to be `completed`, then compare again |
+
+### 10.7 What this phase does not do
+
+- **The plan's manual exercise (A always answers 42, B answers 41) is not run as written.** The API has no mock model, and the offline fixtures cover the same question directly. The tight-budget config is a live check of a real regression.
+- **No multiple-comparison correction.** Per-task rows are descriptive. With 20 tasks and 4 trials each, some per-task deltas will look large by chance, so the table does not come with per-task p-values.
+- **No UI.** The compare view is Phase 11.
+- **No cost.** The runner does not compute `estimatedCostUsd`, so cost comparisons are null.
+- **The p-value assumes independent trials.** The CI is the primary evidence, as §10.5 says.
+- **Two configs per call.** `compare` takes exactly two configs from one experiment.
+- **No persisted results.** The compare is computed from the trials on each request.

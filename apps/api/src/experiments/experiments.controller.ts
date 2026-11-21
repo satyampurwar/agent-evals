@@ -6,6 +6,7 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
+  Query,
 } from '@nestjs/common';
 import { ExperimentInputSchema, type ExperimentInput } from '@agent-evals/domain';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
@@ -33,6 +34,16 @@ export class ExperimentsController {
   async get(@Param('id', ParseUUIDPipe) id: string) {
     const experiment = await this.experiments.findOne(id);
     return this.experiments.toView(experiment);
+  }
+
+  /** Compares config `a` with config `b` on this experiment's scored trials. Delta is a minus b. */
+  @Get(':id/compare')
+  async compare(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query('a', ParseUUIDPipe) a: string,
+    @Query('b', ParseUUIDPipe) b: string,
+  ) {
+    return this.experiments.compare(id, a, b);
   }
 
   @Get(':id/status')
