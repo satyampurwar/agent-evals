@@ -1419,7 +1419,7 @@ npm run build:packages
 npm test
 ```
 
-Expected: ten workspaces pass (`stats` was added in Phase 10, `web` in Phase 11). The totals are `api` 35, `adapters-harness` 43, `adapters-model` 19, `domain` 8, `graders` 36, `runner` 11, `sandbox` 9, `stats` 31, `trace` 4, `web` 29 (these counts are current as of Phase 11). The runner tests cover pass, scored fail, model error (retryable), wall-clock timeout, unsupported grader, and a `unit_test` grader running against the agent's file.
+Expected: ten workspaces pass (`stats` was added in Phase 10, `web` in Phase 11). The totals are `api` 35, `adapters-harness` 52, `adapters-model` 19, `domain` 8, `graders` 36, `runner` 11, `sandbox` 9, `stats` 31, `trace` 4, `web` 29 (these counts are current as of Phase 12; Phase 12 raised `adapters-harness` from 43 to 52). The Python worker has its own suite: 35 tests, see Phase 12. The runner tests cover pass, scored fail, model error (retryable), wall-clock timeout, unsupported grader, and a `unit_test` grader running against the agent's file.
 
 The API e2e test needs Postgres and Redis running:
 
@@ -2229,3 +2229,208 @@ Checked in this phase:
 - **Notes are not part of the data.** They stay in the browser, not in the trial record.
 - **The compare page does not refresh.** Press **Compare** again after the trials finish.
 - **Cost is still a dash.** The runner does not compute cost yet (Phase 10 §10.7).
+
+## Phase 12 — Second harness: Hermes
+
+**Goal:** Prove the abstraction. Hermes Agent runs as a second harness behind the same `HarnessAdapter` interface. The runner, graders, trace, stats, sandbox, and API do not change. Only an adapter is added.
+
+Run every command from the repo root unless a step says otherwise:
+
+```bash
+cd /Users/turing-satyam/work/beyond/task/agent-evals
+```
+
+### 12.0 What changed in this phase
+
+| Area | Change |
+|---|---|
+| `workers/python-worker` | Hermes Agent (`hermes-agent==0.19.0`) as a dependency. New modules under `src/agent_evals_python_worker/`: `contract.py` (request and response), `settings.py`, `sandbox.py` (path rules ported from `packages/sandbox`), `tools.py` (the six tools, same names, schemas, and error strings as the baseline), `events.py` (trace events), `hermes_runner.py` (runs one trial), `server.py` (the HTTP routes). `app/main.py` now re-exports the app, so the `dev:worker:python` command is unchanged |
+| `workers/python-worker/tests` | 35 pytest tests. They run Hermes's real tool loop against a scripted fake OpenAI endpoint. No network |
+| `packages/adapters-harness` | `hermes.ts` (`HermesHarness`, an HTTP client for the worker). The registry maps `hermes` to it. 9 new Node tests (8 in `hermes.spec.ts`, 1 for the registry) |
+| `scripts/run-one-trial.ts` | New `--max-tokens <n>` flag. The default stays 256 (see 12.5, why it matters here) |
+| `.gitignore` | `workers/python-worker/.hermes-home/`, the Hermes state directory |
+
+The core packages (`domain`, `runner`, `trace`, `stats`, `sandbox`, `graders`, `adapters-model`) and `apps/api` have no changes in this phase.
+
+### 12.1 Install
+
+```bash
+cd workers/python-worker
+UV_SYSTEM_CERTS=1 uv sync --all-groups
+cd ../..
+```
+
+`UV_SYSTEM_CERTS=1` makes `uv` trust the system certificate store. Use it behind a corporate proxy that re-signs TLS. Without it, the download fails with a certificate error.
+
+Hermes requires Python `>=3.11,<3.14` and pins `pydantic==2.13.4` exactly. The project therefore pins that same version. The earlier `>=2.14.4` cannot resolve together with Hermes.
+
+### 12.2 Start the worker
+
+The worker reads `OPENROUTER_API_KEY` from the repo-root `.env`, the same file the Node side reads. Start it in its own terminal and keep it running:
+
+```bash
+npm run dev:worker:python
+```
+
+The worker listens on port 8001 and reloads on file changes. Health check, from another terminal:
+
+```bash
+curl -s localhost:8001/health
+# {"ok":true,"worker":"python"}
+```
+
+The Node side finds the worker at `HERMES_WORKER_URL`, which defaults to `http://127.0.0.1:8001`.
+
+### 12.3 The contract: `POST /run-trial`
+
+Request (the Node side builds this in `packages/adapters-harness/src/hermes.ts`):
+
+```json
+{
+  "trialId": "trial-…",
+  "task": { "id": "det_add_01", "prompt": "What is 17 + 25? Reply with only the number." },
+  "config": { "modelId": "openai/gpt-4.1-mini", "temperature": 0, "maxSteps": 10, "maxTokens": 8000, "timeoutMs": 60000 },
+  "toolIds": [],
+  "memorySeed": {},
+  "sandboxDir": "/tmp/…",
+  "seed": 0
+}
+```
+
+Response:
+
+```json
+{
+  "finalAnswer": "42",
+  "stoppedReason": "completed",
+  "events": [ { "ts": "…", "type": "message", "role": "user", "content": "…" } ],
+  "usage": { "promptTokens": 148, "completionTokens": 3 },
+  "stepCount": 1
+}
+```
+
+The plan's sketch had `{trialId, task, config, sandboxDir, seed}`. Two fields were added: `toolIds` (which tools this trial may use) and `memorySeed` (the task's starting memory). The runner needs both, and the plan's sketch had no place for them.
+
+`events` use the same shape as `TraceEventSchema` in `packages/domain`. The Node side checks every event with that schema before it emits it. A bad event fails the trial as an infrastructure error.
+
+Errors: an unreachable worker is `hermes worker unreachable at <url>`. A worker error is `hermes worker returned <status>: <detail>`. Both are infrastructure errors, so the runner retries them (§7.8).
+
+### 12.4 How the config maps to Hermes
+
+| Config or task field | What the worker does |
+|---|---|
+| `harness.id: "hermes"` | The registry returns `HermesHarness`. Nothing else in the API changes |
+| `tools` and the task's `toolsAllowed` | Become `toolIds`. Hermes gets a toolset built from exactly those tools. The model is offered no other tools |
+| `memory.enabled` | Adds `memory_read` and `memory_write` to `toolIds`. The trial's memory starts from `task.setup.memory`. Hermes's own memory store is off (`skip_memory=True`), so the trial's memory is the only one |
+| `skillsEnabled` | Adds the skill's tools to `toolIds`. Today the only skill is `csv_summary` |
+| `temperature`, `topP` | Sent to OpenRouter in the request body (Hermes's `request_overrides`) |
+| `maxSteps` | Hermes's `max_iterations`. At the limit the loop stops. Hermes's extra summary call is turned off, so the step budget is hard, as in the baseline |
+| `maxTokens` | Per-call `max_tokens`. The trial's total (prompt plus completion, across all calls) is checked before each call. Past the budget the trial stops with `max_tokens` |
+| `timeoutMs` | A timer calls Hermes's `interrupt()`. The trial stops with `timeout` |
+| Tool calls | Hermes calls our handler, with the trial found by `task_id`. Each call runs in the trial's sandbox. Memory calls use the trial's memory |
+| `skill_invoke`, `memory_read`, `memory_write` | Emitted after a successful call of that tool, as the baseline does |
+
+Hermes's events are rebuilt from its conversation, in the baseline's order: a `step_boundary` before each model call, then the `message` and `tool_call` / `tool_result` pairs. Timestamps come from Hermes's callbacks.
+
+### 12.5 Checkpoint 12: the same task under both harnesses
+
+The plan's checkpoint is that the same task runs under `baseline` and `hermes`, without changing the Orchestrator. Run one task under each harness:
+
+```bash
+npx tsx scripts/run-one-trial.ts tasks/deterministic/01_add.json --model openrouter:openai/gpt-4.1-mini --harness baseline --max-tokens 8000
+npx tsx scripts/run-one-trial.ts tasks/deterministic/01_add.json --model openrouter:openai/gpt-4.1-mini --harness hermes --max-tokens 8000
+```
+
+Both print the same report: the verdict, the grader line, the stop reason, the usage, and the trace path. Results from the run recorded for this phase (one run each, `temperature` 0):
+
+| Task | Harness | Budget | Verdict | Stopped | Steps | Total tokens |
+|---|---|---|---|---|---|---|
+| `01_add` | baseline | 256 | PASS (42) | completed | 1 | 151 |
+| `01_add` | hermes | 256 | FAIL (empty answer) | max_tokens | 2 | 2,529 |
+| `01_add` | baseline | 8000 | PASS (42) | completed | 1 | 151 |
+| `01_add` | hermes | 8000 | FAIL (empty answer) | max_tokens | 5 | 10,436 |
+| `mem_recall_client_01` (`--memory`) | baseline | 8000 | PASS (HL-2044) | completed | 2 | 579 |
+| `mem_recall_client_01` (`--memory`) | hermes | 8000 | PASS (HL-2044) | completed | 2 | 5,254 |
+| `skill_csv_sum_01` (`--skill csv_summary`) | baseline | 8000 | PASS (11846) | completed | 2 | 692 |
+| `skill_csv_sum_01` (`--skill csv_summary`) | hermes | 8000 | FAIL (answered `11846.0`) | completed | 2 | 5,375 |
+
+What these show:
+
+- **The platform side works under Hermes.** Every Hermes trial went through the same runner, sandbox, graders, trace writer, and result file. The memory trial emitted a `memory_read` event. The skill trial emitted a `skill_invoke` event with `skillId: csv_summary`. The tools were limited to the trial's `toolIds`.
+- **Hermes's behavior differs from the baseline, and the difference is large.** Hermes uses its own system prompt and about 2.4k prompt tokens per call. The baseline sends no system prompt. On `01_add`, the model writes a Python file and then reads it back, over and over, when it should just answer. The trial then runs out of budget with no answer. With the default 256 budget, the first call alone uses most of the budget, so the trial stops at step 2.
+- **The skill miss is formatting, not a tool error.** Both harnesses called the same tool and got the same result. Hermes wrote `11846.0`, and the exact-match grader expects `11846`.
+
+This is the abstraction working as designed, not a bug to hide. The adapter can run any harness, and each harness brings its own behavior. Whether Hermes should be stripped to match the baseline (no system prompt, no tool-first instructions) is a choice, and it is listed in §12.9.
+
+### 12.6 Checkpoint 12: the core packages do not know about Hermes
+
+```bash
+rg -n -i "hermes" packages/domain/src packages/runner/src packages/trace/src packages/stats/src packages/sandbox/src packages/graders/src packages/adapters-model/src apps/api/src
+```
+
+Expected: no output (exit code 1). Recorded for this phase: no output. The only Hermes code is in `packages/adapters-harness` (`hermes.ts`, its spec, and the registry entry) and in `workers/python-worker`.
+
+The runner and the API still typecheck:
+
+```bash
+npx tsc -p packages/runner/tsconfig.json --noEmit && npx tsc -p apps/api/tsconfig.json --noEmit && echo "core typecheck ok"
+```
+
+Expected: `core typecheck ok`. Recorded for this phase: passes.
+
+### 12.7 Checks
+
+Python suite (no key, no network):
+
+```bash
+cd workers/python-worker
+UV_SYSTEM_CERTS=1 uv run pytest
+uv run ruff check . && uv run ruff format --check .
+cd ../..
+```
+
+Expected: `35 passed`, ruff clean. The tests are `test_sandbox.py` (path rules), `test_tools.py` (tool names, schemas, error strings), `test_events.py` (event order), `test_run_trial.py` (the real Hermes loop against a scripted endpoint: the tool loop, refused tools, memory seeding and isolation, `max_steps` (exactly two chat requests), `max_tokens`, timeout, a model error, a missing key), and `test_ssl_guard.py` (see 12.9 item 6).
+
+Node suite:
+
+```bash
+npm test
+```
+
+Expected: ten workspaces pass. `adapters-harness` is now 52 tests (was 43). The `hermes.spec.ts` tests use a fake worker and check the request body, event order, the `topP` handling, invalid events, a 500 response, a malformed reply, a non-JSON reply, an unreachable worker, the environment variable, and the trailing slash.
+
+### 12.8 Troubleshooting
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `hermes worker unreachable at http://127.0.0.1:8001: fetch failed` | The worker is not running | Start it (§12.2) and check the health endpoint |
+| `hermes worker returned 500: … OPENROUTER_API_KEY is not set` | The key is missing from the repo-root `.env` | Add `OPENROUTER_API_KEY=…` to `.env` and restart the worker. Settings are read at startup |
+| `hermes worker returned 500: … Failed to initialize OpenAI client` | Hermes's CA-bundle check cannot run on truststore's SSL context (§12.9 item 6) | The worker sets `HERMES_SKIP_SSL_GUARD=1` for this. If you see it, the worker was started from code that lacks that line |
+| A certificate error from `uv` or Node | A corporate proxy re-signs TLS | `UV_SYSTEM_CERTS=1` for `uv`, and `NODE_OPTIONS=--use-system-ca` for Node |
+| `Failed to spawn: pytest` after the repo moved | The `.venv` shebangs point at the old path | `cd workers/python-worker && rm -rf .venv && UV_SYSTEM_CERTS=1 uv sync --all-groups` |
+| `stopped: max_tokens` with an empty answer | The 256-token default is too small for Hermes's prompt | Use `--max-tokens 8000` on both harnesses for a fair comparison |
+| Port 8001 already in use | Another worker is still running | `lsof -tiTCP:8001 -sTCP:LISTEN` and stop it, then start again |
+
+### 12.9 Deviations from the baseline, and why
+
+These are the differences a reader needs to know before comparing results:
+
+1. **Hermes's system prompt and tool instructions.** Hermes sends its own system prompt, and it steers the model toward acting with tools. The baseline sends none. This is the largest difference (see 12.5). It is not removed, because Hermes's behavior is what this harness is for. Removing it would make Hermes a different harness.
+2. **Hermes's other tools are not exposed.** Its terminal, web, and other built-in tools stay off. Each trial gets only its `toolIds`. Hermes's `read_file` and `write_file` are replaced by our sandboxed versions, which keep the baseline's names and rules.
+3. **Hermes's own memory and context files are off** (`skip_memory`, `skip_context_files`). The trial's memory is the only memory.
+4. **The token budget counts Hermes's prompt.** `maxTokens` is prompt plus completion, across all calls. Hermes's prompt is about 2.4k tokens per call, so a small budget is used up by the prompt alone.
+5. **`seed` is not used.** Hermes does not take a seed.
+6. **`truststore` and `HERMES_SKIP_SSL_GUARD`.** The worker injects `truststore` so the model calls use the system certificate store. That is needed behind a corporate proxy. Hermes then checks the CA bundle by calling `SSLContext.get_ca_certs()`, and truststore's context does not implement that call. So Hermes fails to build its client with "Failed to initialize OpenAI client". The worker sets `HERMES_SKIP_SSL_GUARD=1` to skip that preflight check only. The real TLS path still uses the system roots. `test_ssl_guard.py` covers this.
+7. **Pydantic pin.** `pydantic==2.13.4`, to match Hermes's exact pin (see 12.1).
+8. **Events are emitted after the run.** They are rebuilt from Hermes's conversation, with timestamps from its callbacks. They are not streamed while the trial runs.
+9. **Timeouts are enforced in two places.** Python interrupts Hermes at `timeoutMs`. The Node runner also wraps the call in its own timeout. The Node `fetch` has no abort, so a worker call that outlives the runner's timeout finishes in the background and its result is discarded.
+10. **Hermes keeps state on disk.** Each worker process keeps its state in `workers/python-worker/.hermes-home/`, which is gitignored. It is never `~/.hermes`. Each trial's conversation is stored in that directory's `state.db`. Trials are isolated by their own toolset and by `task_id`, not by separate processes.
+11. **One worker process, many trials.** Trials can run concurrently in one worker. The tool handlers find the trial by `task_id`, and the state is kept under a lock.
+12. **`--max-tokens` on the CLI.** This phase adds the flag, with the old 256 as the default, so the baseline's CLI behavior is unchanged.
+
+### 12.10 What this phase does not do
+
+- **The web UI only creates `baseline` configs.** `apps/web/src/lib/forms.ts` hard-codes `harness.id: 'baseline'`. A Hermes config can be created through the API (`POST /configs` with `"harness": {"id": "hermes", …}`) but not from the Configs page. That is a follow-up.
+- **The live checkpoint is one run per cell.** The table in 12.5 is a record of one run each. It is not a benchmark, and the results vary between runs.
+- **No cost.** The runner does not compute cost yet (§10.7).
+- **Only `csv_summary` is wired as a skill.** Hermes's built-in tools are not exposed (§12.9 item 2).

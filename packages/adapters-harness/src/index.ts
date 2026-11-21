@@ -7,6 +7,8 @@ export type {
 } from './types.js';
 export { noopMemory } from './types.js';
 export { BaselineHarness } from './baseline.js';
+export { DEFAULT_HERMES_WORKER_URL, HermesHarness } from './hermes.js';
+export type { HermesHarnessOptions } from './hermes.js';
 export {
   MEMORY_TOOL_NAMES,
   TOOL_NAMES,

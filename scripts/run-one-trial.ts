@@ -12,6 +12,7 @@
  * Config flags (the API reads the same settings from the config document):
  *   --memory                     enable memory_read / memory_write (trial memory starts from task.setup.memory)
  *   --skill <id>                 enable a skill, e.g. csv_summary (repeatable)
+ *   --max-tokens <n>             trial token budget, prompt + completion (default 256)
  *
  * Model selection (pick one):
  *   --model <provider:modelId>   e.g. openrouter:openai/gpt-4.1-mini (live), mock:any (offline "42")
@@ -44,10 +45,11 @@ interface Args {
   harnessId: string;
   memoryEnabled: boolean;
   skillsEnabled: string[];
+  maxTokens: number;
 }
 
 function parseArgs(argv: string[]): Args {
-  const out: Args = { harnessId: 'baseline', memoryEnabled: false, skillsEnabled: [] };
+  const out: Args = { harnessId: 'baseline', memoryEnabled: false, skillsEnabled: [], maxTokens: 256 };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--model') out.modelSpec = argv[++i];
@@ -55,6 +57,7 @@ function parseArgs(argv: string[]): Args {
     else if (a === '--harness') out.harnessId = argv[++i];
     else if (a === '--memory') out.memoryEnabled = true;
     else if (a === '--skill') out.skillsEnabled.push(argv[++i]);
+    else if (a === '--max-tokens') out.maxTokens = Number(argv[++i]);
     else if (!a.startsWith('--') && out.taskPath === undefined) out.taskPath = a;
   }
   return out;
@@ -103,7 +106,7 @@ async function main() {
     modelId,
     modelParams: { temperature: 0 },
     seed: 0,
-    budgets: { maxSteps: 10, maxTokens: 256, timeoutMs: 60_000 },
+    budgets: { maxSteps: 10, maxTokens: args.maxTokens, timeoutMs: 60_000 },
     toolIds: resolveToolIds(
       { tools: [...TOOL_NAMES], memoryEnabled: args.memoryEnabled, skillsEnabled: args.skillsEnabled },
       task.toolsAllowed,

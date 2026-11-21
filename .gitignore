@@ -8,3 +8,6 @@ dist
 *.egg-info/
 pgdata/
 data/
+
+# Hermes Agent state for the Python worker (sessions, logs, skill sync)
+workers/python-worker/.hermes-home/

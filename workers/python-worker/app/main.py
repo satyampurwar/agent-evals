@@ -1,7 +1,4 @@
-from fastapi import FastAPI
+from agent_evals_python_worker.server import app
 
-app = FastAPI(title="agent-evals-python-worker")
-
-@app.get("/health")
-def health():
-    return {"ok": True, "worker": "python"}
+# uvicorn target: `uv run uvicorn app.main:app --port 8001` (see `npm run dev:worker:python`).
+__all__ = ["app"]
