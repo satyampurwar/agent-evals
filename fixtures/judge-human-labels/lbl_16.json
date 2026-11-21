@@ -1,0 +1,7 @@
+{
+  "id": "lbl_16",
+  "taskId": "judge_bugreport_01",
+  "answer": "Title: CSV export does nothing when a filter is applied. Steps: 1. Apply any filter. 2. Click Export CSV. Expected: a CSV file downloads. Actual: nothing downloads and no error appears. Environment: Chrome 124. Note: it works after clearing the filter.",
+  "humanPassed": true,
+  "notes": "All four required parts, numbered steps, no invented details."
+}

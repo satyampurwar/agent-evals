@@ -1,0 +1,7 @@
+{
+  "id": "lbl_05",
+  "taskId": "judge_summary_01",
+  "answer": "Payments went down on Tuesday for about 40 minutes. The rollback is done and a fix is coming soon.",
+  "humanPassed": false,
+  "notes": "Clear fail: no cause, no region, and the fix date is vague."
+}

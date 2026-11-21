@@ -75,15 +75,63 @@ describe('runTrial', () => {
     expect(r.error).toMatchObject({ code: 'timeout', retryable: false });
   });
 
-  it('marks an unsupported grader as failed (infra), not as a scored failure', async () => {
-    const task: Task = {
+  describe('llm_judge grader', () => {
+    const judgeTask = (rubricId: string): Task => ({
       ...addTask,
-      graders: [{ type: 'llm_judge', rubricId: 'summary_v1', judgeModel: 'openai/gpt-4.1-mini', passThreshold: 0.7 }],
-    };
-    const r = await runTrial(input({ task }));
-    expect(r.status).toBe('failed');
-    expect(r.error).toMatchObject({ code: 'grader_not_implemented', retryable: false });
-    expect(r.passed).toBe(false);
+      graders: [{ type: 'llm_judge', rubricId, judgeModel: 'google/gemini-2.5-flash', passThreshold: 0.7 }],
+    });
+    const judgeReply = (content: string) => ({ message: { role: 'assistant' as const, content }, usage: { promptTokens: 7, completionTokens: 3 } });
+    const allMet = JSON.stringify({
+      criteria: { outage_cause: 1, affected_region: 1, fix_date: 1, two_sentences: 1 },
+      reasoning: 'Covers all four required points.',
+    });
+
+    it('passes a trial when the judge scores every required criterion as met', async () => {
+      const judge = new ScriptedModelAdapter([judgeReply(allMet)]);
+      const r = await runTrial(input({ task: judgeTask('summary_v1'), judge }));
+      expect(r.status).toBe('succeeded');
+      expect(r.passed).toBe(true);
+      expect(r.grade?.graderResults[0]).toMatchObject({
+        graderType: 'llm_judge',
+        passed: true,
+        reasoning: 'Covers all four required points.',
+        details: { rubricId: 'summary_v1', judgeModel: 'google/gemini-2.5-flash', attempts: 1 },
+      });
+      expect(judge.requests[0].responseFormat).toBe('json');
+    });
+
+    it('fails a trial whose judge marks a required criterion unmet, and keeps the reasoning', async () => {
+      const oneMissing = JSON.stringify({
+        criteria: { outage_cause: 1, affected_region: 1, fix_date: 0, two_sentences: 1 },
+        reasoning: 'The fix date is missing.',
+      });
+      const r = await runTrial(input({ task: judgeTask('summary_v1'), judge: new ScriptedModelAdapter([judgeReply(oneMissing)]) }));
+      expect(r.status).toBe('succeeded');
+      expect(r.passed).toBe(false);
+      expect(r.grade?.graderResults[0]).toMatchObject({ passed: false, reasoning: 'The fix date is missing.' });
+      expect(r.grade?.graderResults[0].details).toMatchObject({ failedRequired: ['fix_date'] });
+    });
+
+    it('retries a malformed judge reply once and uses the second reply', async () => {
+      const judge = new ScriptedModelAdapter([judgeReply('not json'), judgeReply(allMet)]);
+      const r = await runTrial(input({ task: judgeTask('summary_v1'), judge }));
+      expect(r.passed).toBe(true);
+      expect(r.grade?.graderResults[0].details).toMatchObject({ attempts: 2 });
+    });
+
+    it('marks the trial failed (not a scored failure) when the judge is malformed twice', async () => {
+      const judge = new ScriptedModelAdapter([judgeReply('nope'), judgeReply('still nope')]);
+      const r = await runTrial(input({ task: judgeTask('summary_v1'), judge }));
+      expect(r.status).toBe('failed');
+      expect(r.passed).toBe(false);
+      expect(r.error).toMatchObject({ code: 'judge_invalid_output', retryable: false });
+    });
+
+    it('marks the trial failed when the task names a rubric that does not exist', async () => {
+      const r = await runTrial(input({ task: judgeTask('no_such_rubric_v9'), judge: new ScriptedModelAdapter([]) }));
+      expect(r.status).toBe('failed');
+      expect(r.error).toMatchObject({ code: 'rubric_not_found', retryable: false });
+    });
   });
 
   it('runs a unit_test grader against the sandbox the agent wrote to', async () => {

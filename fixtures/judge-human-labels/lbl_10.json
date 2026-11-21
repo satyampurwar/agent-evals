@@ -1,0 +1,7 @@
+{
+  "id": "lbl_10",
+  "taskId": "judge_explain_01",
+  "answer": "Sunlight is made of every color mixed together, and that mix is what makes it look white. When sunlight enters the air, it bumps into tiny specks of gas that are much smaller than the light waves. Those specks push the short blue waves in every direction, so blue light reaches your eyes from all over the sky. The longer red and orange waves mostly keep going straight through the air toward the ground. Because the blue is spread across the whole sky, the sky looks blue to us during the day, even though the sun itself looks white or yellow.",
+  "humanPassed": false,
+  "notes": "Borderline fail: correct and child-friendly, but well over 80 words."
+}

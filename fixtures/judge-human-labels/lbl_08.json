@@ -1,0 +1,7 @@
+{
+  "id": "lbl_08",
+  "taskId": "judge_explain_01",
+  "answer": "Light undergoes Rayleigh scattering off nitrogen and oxygen molecules, which preferentially redirects shorter wavelengths across the atmosphere, producing the observed chromatic distribution.",
+  "humanPassed": false,
+  "notes": "Borderline fail: the physics is roughly right, but it is not child-friendly. The jargon is not explained."
+}

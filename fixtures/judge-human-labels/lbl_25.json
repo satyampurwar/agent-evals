@@ -1,0 +1,7 @@
+{
+  "id": "lbl_25",
+  "taskId": "judge_tradeoff_01",
+  "answer": "- SQL: ACID transactions keep order totals consistent, but scaling writes past one primary node is hard.\n- NoSQL: document stores scale writes across nodes, but you lose joins and usually get weaker transaction guarantees.\n- Recommendation: use SQL for orders unless you expect very high write volume.",
+  "humanPassed": true,
+  "notes": "Three bullets, benefit and cost in each, a recommendation. Accurate."
+}

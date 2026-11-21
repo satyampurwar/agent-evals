@@ -4,3 +4,7 @@ export { stateCheck } from './state-check.js';
 export type { StateCheckDetail, StateCheckOutcome } from './state-check.js';
 export { unitTest } from './unit-test.js';
 export type { UnitTestOutcome } from './unit-test.js';
+export { getRubric, listRubricIds } from './rubrics.js';
+export type { Rubric, RubricCriterion } from './rubrics.js';
+export { JudgeOutputError, MET_AT, buildJudgePrompt, llmJudge, parseJudgeOutput, scoreRubric } from './llm-judge.js';
+export type { LlmJudgeOptions, LlmJudgeOutcome, RubricScore } from './llm-judge.js';

@@ -1,6 +1,6 @@
 {
   "id": "judge_email_01",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "name": "Polite meeting decline with an alternative",
   "description": "Email must decline politely, give a reason, and propose a concrete alternative time",
   "prompt": "Write a short email to Priya declining her Thursday 3pm design review, because you are at a customer site that day. Be polite, give a reason in one sentence, and propose a specific alternative time next week. Sign it as Sam.",
@@ -8,7 +8,7 @@
     {
       "type": "llm_judge",
       "rubricId": "email_v1",
-      "judgeModel": "openai/gpt-4.1-mini",
+      "judgeModel": "google/gemini-2.5-flash",
       "passThreshold": 0.7
     }
   ],

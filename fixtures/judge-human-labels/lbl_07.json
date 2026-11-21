@@ -1,0 +1,7 @@
+{
+  "id": "lbl_07",
+  "taskId": "judge_explain_01",
+  "answer": "The sky is blue because it reflects the color of the oceans, which are blue. Water vapor high up in the air also makes the blue shine down on us.",
+  "humanPassed": false,
+  "notes": "Wrong physics: the sky does not reflect the ocean."
+}

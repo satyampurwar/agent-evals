@@ -1,0 +1,7 @@
+{
+  "id": "lbl_01",
+  "taskId": "judge_summary_01",
+  "answer": "Payments went down for 40 minutes on Tuesday after a config change broke the database pool, and only EU customers were affected. The permanent fix ships Friday after a staged rollout.",
+  "humanPassed": true,
+  "notes": "Two sentences, all three required points."
+}

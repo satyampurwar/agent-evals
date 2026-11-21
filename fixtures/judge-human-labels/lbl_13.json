@@ -1,0 +1,7 @@
+{
+  "id": "lbl_13",
+  "taskId": "judge_email_01",
+  "answer": "Hi Priya, your 3pm Thursday slot clashes with the customer visit I was never told about. Maybe you could move it? Sam",
+  "humanPassed": false,
+  "notes": "Fail: blames Priya and gives no alternative time."
+}

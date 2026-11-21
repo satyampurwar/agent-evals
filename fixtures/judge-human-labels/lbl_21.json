@@ -1,0 +1,7 @@
+{
+  "id": "lbl_21",
+  "taskId": "judge_tradeoff_01",
+  "answer": "- SQL: strong consistency and joins make order-status queries reliable, but schema changes need migrations.\n- NoSQL: flexible schemas and easy horizontal scaling suit high event volume, but joins and multi-document transactions are weaker.\n- Recommendation: start with PostgreSQL for orders, since reliable state changes matter more than schema flexibility here.",
+  "humanPassed": true,
+  "notes": "Three bullets. Each names a benefit and a cost. Recommendation given."
+}

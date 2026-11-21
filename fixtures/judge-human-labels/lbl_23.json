@@ -1,0 +1,7 @@
+{
+  "id": "lbl_23",
+  "taskId": "judge_tradeoff_01",
+  "answer": "- SQL is great for orders.\n- NoSQL scales well.\n- Pick SQL.",
+  "humanPassed": false,
+  "notes": "Fail: no bullet names both a benefit and a cost."
+}

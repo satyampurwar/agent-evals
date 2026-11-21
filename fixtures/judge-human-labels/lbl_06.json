@@ -1,0 +1,7 @@
+{
+  "id": "lbl_06",
+  "taskId": "judge_explain_01",
+  "answer": "Sunlight has all the colors mixed together. When it hits the air, the tiny bits of air bounce the short blue waves around much more than the long red waves. So blue light spreads all over the sky, and the sky looks blue to us.",
+  "humanPassed": true,
+  "notes": "Correct physics, plain words, short, no equations."
+}

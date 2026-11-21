@@ -19,6 +19,7 @@ import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { TaskSchema, type GraderSpec, type Task } from '@agent-evals/domain';
 import { TOOL_SPECS } from '@agent-evals/adapters-harness';
+import { getRubric } from '@agent-evals/graders';
 
 const MIN_TASKS = 20;
 const GRADER_TYPES: GraderSpec['type'][] = ['exact_match', 'state_check', 'unit_test', 'llm_judge'];
@@ -98,6 +99,9 @@ function main(): void {
     for (const g of t.graders) {
       if (g.type === 'state_check' && g.checks.length === 0) problems.push(`${t.id}: state_check has no checks`);
       if (g.type === 'unit_test' && g.command.trim() === '') problems.push(`${t.id}: unit_test has an empty command`);
+      if (g.type === 'llm_judge' && !getRubric(g.rubricId)) {
+        problems.push(`${t.id}: llm_judge names rubric "${g.rubricId}", which does not exist`);
+      }
     }
   }
 

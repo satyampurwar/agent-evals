@@ -1,0 +1,7 @@
+{
+  "id": "lbl_18",
+  "taskId": "judge_bugreport_01",
+  "answer": "1. Apply a filter. 2. Click Export. 3. Check the browser console, which shows a 500 error from /api/export. Expected: download. Actual: nothing. Environment: Chrome 124.",
+  "humanPassed": false,
+  "notes": "Borderline fail: the 500 error and endpoint are invented. The message never mentions them."
+}

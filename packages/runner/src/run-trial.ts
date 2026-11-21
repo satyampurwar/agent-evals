@@ -1,8 +1,9 @@
 import type { GradeResult, Task, Trace } from '@agent-evals/domain';
 import { createTrialMemory } from '@agent-evals/adapters-harness';
 import type { HarnessAdapter, HarnessRunOutput } from '@agent-evals/adapters-harness';
+import { createModelAdapter } from '@agent-evals/adapters-model';
 import type { ModelAdapter } from '@agent-evals/adapters-model';
-import { exactMatch, stateCheck, unitTest } from '@agent-evals/graders';
+import { JudgeOutputError, exactMatch, getRubric, llmJudge, stateCheck, unitTest } from '@agent-evals/graders';
 import { createSandbox, materializeFiles } from '@agent-evals/sandbox';
 import type { Sandbox } from '@agent-evals/sandbox';
 import { createTraceBuffer } from '@agent-evals/trace';
@@ -25,6 +26,8 @@ export interface RunTrialInput {
   budgets: TrialBudgets;
   /** Already resolved by the caller (e.g. config tools intersected with task.toolsAllowed). */
   toolIds: string[];
+  /** Model used by llm_judge graders. Defaults to OpenRouter (needs OPENROUTER_API_KEY). Tests inject a scripted one. */
+  judge?: ModelAdapter;
   /** Facts the trial's memory starts with (`task.setup.memory`). Unreachable unless a memory tool is in `toolIds`. */
   memorySeed?: Record<string, string>;
 }
@@ -118,7 +121,7 @@ export async function runTrial(input: RunTrialInput): Promise<RunTrialResult> {
     } else {
       output = ran;
       // Graders run before cleanup: state checks read the sandbox.
-      grade = await gradeTask(input.task, output.finalAnswer, sandbox.dir);
+      grade = await gradeTask(input.task, output.finalAnswer, sandbox.dir, input.judge);
 
       if (output.stoppedReason === 'error') {
         status = 'failed';
@@ -169,7 +172,12 @@ export async function runTrial(input: RunTrialInput): Promise<RunTrialResult> {
   };
 }
 
-async function gradeTask(task: Task, finalAnswer: string, sandboxDir: string): Promise<GradeResult> {
+async function gradeTask(
+  task: Task,
+  finalAnswer: string,
+  sandboxDir: string,
+  judge: ModelAdapter | undefined,
+): Promise<GradeResult> {
   const graderResults: GradeResult['graderResults'] = [];
   for (const g of task.graders) {
     if (g.type === 'exact_match') {
@@ -193,8 +201,40 @@ async function gradeTask(task: Task, finalAnswer: string, sandboxDir: string): P
         reasoning: r.reasoning,
         details: { exitCode: r.exitCode, timedOut: r.timedOut, output: r.output },
       });
+    } else if (g.type === 'llm_judge') {
+      const rubric = getRubric(g.rubricId);
+      if (!rubric) throw new RunnerError('rubric_not_found', `no rubric "${g.rubricId}"`);
+      try {
+        const r = await llmJudge({
+          rubric,
+          passThreshold: g.passThreshold,
+          taskPrompt: task.prompt,
+          answer: finalAnswer,
+          model: judge ?? createModelAdapter('openrouter'),
+          modelId: g.judgeModel,
+        });
+        graderResults.push({
+          graderType: g.type,
+          passed: r.passed,
+          score: r.score,
+          reasoning: r.reasoning,
+          details: {
+            rubricId: r.rubricId,
+            judgeModel: r.judgeModel,
+            scores: r.scores,
+            failedRequired: r.failedRequired,
+            attempts: r.attempts,
+            usage: r.usage,
+          },
+        });
+      } catch (err) {
+        // Still malformed after the retry: not the agent's fault, and re-running the trial would not change the judge.
+        if (err instanceof JudgeOutputError) throw new RunnerError('judge_invalid_output', err.message, false);
+        throw err;
+      }
     } else {
-      throw new RunnerError('grader_not_implemented', `grader "${g.type}" is not implemented yet`);
+      const unknownGrader: never = g;
+      throw new RunnerError('grader_not_implemented', `unknown grader ${JSON.stringify(unknownGrader)}`);
     }
   }
   const passed = graderResults.every((r) => r.passed);

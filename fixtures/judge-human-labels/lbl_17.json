@@ -1,0 +1,7 @@
+{
+  "id": "lbl_17",
+  "taskId": "judge_bugreport_01",
+  "answer": "CSV export button does nothing with a filter applied, but works without the filter. Chrome 124. Expected a download, got nothing.",
+  "humanPassed": false,
+  "notes": "Borderline fail: no numbered steps to reproduce."
+}

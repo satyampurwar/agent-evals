@@ -1,0 +1,7 @@
+{
+  "id": "lbl_22",
+  "taskId": "judge_tradeoff_01",
+  "answer": "- SQL gives strong consistency for orders.\n- NoSQL scales out easily, which helps with event volume.",
+  "humanPassed": false,
+  "notes": "Clear fail: two bullets, not three, and no cost named."
+}

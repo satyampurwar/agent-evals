@@ -26,6 +26,8 @@ export interface ModelRequest {
   temperature: number;
   maxTokens: number;
   stop?: string[];
+  /** 'json' asks the provider for a JSON object reply (used by the LLM judge). */
+  responseFormat?: 'json';
 }
 
 export interface ModelResponse {

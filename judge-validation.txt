@@ -1,0 +1,29 @@
+Judge validation against human labels
+labels: 25, judged: 25, judge errors: 0
+
+agreement rate: 92.0% (23/25)
+Cohen's kappa:  0.826
+
+confusion matrix (rows = human, columns = judge; positive = passed)
+                 judge pass  judge fail
+  human pass              8           1
+  human fail              1          15
+
+per task
+  judge_bugreport_01   n= 5 agreement=100% kappa=1.00
+  judge_email_01       n= 5 agreement=80% kappa=0.55
+  judge_explain_01     n= 5 agreement=100% kappa=1.00
+  judge_summary_01     n= 5 agreement=100% kappa=1.00
+  judge_tradeoff_01    n= 5 agreement=80% kappa=0.62
+
+disagreements: 2
+- lbl_14 judge_email_01: human=pass, judge=fail (overall 0.71, unmet required: one_sentence_reason)
+    label note: Borderline pass: terse, with no greeting warmth, but polite, with a reason and an alternative.
+    judge: The email declines the meeting and provides a specific alternative time, 'Wednesday next week at 2pm', and is signed 'Sam'. However, the decline 'I won't make Thursday 3pm' is not particularly polite, and the reason 'I'm at a customer site' is a separate sentence, not integrated into the decline.
+- lbl_24 judge_tradeoff_01: human=fail, judge=pass (overall 1.00)
+    label note: Borderline fail: the recommendation bullet names a benefit and no cost, so it fails the per-bullet rule.
+    judge: The answer provides exactly three bullet points. Each bullet clearly states a benefit and a cost for the respective database type. The third bullet explicitly recommends SQL for order tracking, fulfilling the recommendation requirement. All statements regarding SQL and NoSQL characteristics are accurate.
+
+judge tokens: prompt=8977 completion=3367
+
+verdict: kappa >= 0.6, the judge is acceptable on this set

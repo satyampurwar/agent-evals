@@ -1,0 +1,7 @@
+{
+  "id": "lbl_02",
+  "taskId": "judge_summary_01",
+  "answer": "A config change broke the database pool on Tuesday, causing a 40-minute payments outage. The permanent fix ships Friday after a staged rollout.",
+  "humanPassed": false,
+  "notes": "Borderline fail: the affected region (EU only) is missing, and region is required."
+}

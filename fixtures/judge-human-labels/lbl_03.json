@@ -1,0 +1,7 @@
+{
+  "id": "lbl_03",
+  "taskId": "judge_summary_01",
+  "answer": "The payments service went down for 40 minutes on Tuesday. A config change broke the database pool, and only EU customers were hit. The fix ships Friday after a staged rollout.",
+  "humanPassed": false,
+  "notes": "Borderline fail: all three points are present, but it is three sentences."
+}

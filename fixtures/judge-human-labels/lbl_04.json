@@ -1,0 +1,7 @@
+{
+  "id": "lbl_04",
+  "taskId": "judge_summary_01",
+  "answer": "A config change broke the payments database pool, causing a 40-minute outage on Tuesday for EU customers only; the permanent fix ships Friday after a staged rollout.",
+  "humanPassed": true,
+  "notes": "One long sentence joined with a semicolon. Still at most two sentences, all points present."
+}

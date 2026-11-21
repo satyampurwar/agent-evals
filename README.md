@@ -1419,7 +1419,7 @@ npm run build:packages
 npm test
 ```
 
-Expected: eight workspaces pass. The totals are `api` 30, `adapters-harness` 43, `adapters-model` 17, `domain` 8, `graders` 17, `runner` 7, `sandbox` 9, `trace` 4 (these counts are current as of Phase 8). The runner tests cover pass, scored fail, model error (retryable), wall-clock timeout, unsupported grader, and a `unit_test` grader running against the agent's file.
+Expected: eight workspaces pass. The totals are `api` 30, `adapters-harness` 43, `adapters-model` 19, `domain` 8, `graders` 36, `runner` 11, `sandbox` 9, `trace` 4 (these counts are current as of Phase 9). The runner tests cover pass, scored fail, model error (retryable), wall-clock timeout, unsupported grader, and a `unit_test` grader running against the agent's file.
 
 The API e2e test needs Postgres and Redis running:
 
@@ -1638,7 +1638,7 @@ Behavior change: the baseline loop now refuses any tool the trial was not offere
 | A | `deterministic/` | `det_add_01` (Phase 3), `det_extract_order_01`, `det_letter_count_01`, `det_unit_convert_01`, `det_weekday_01` | `exact_match` (5) |
 | B | `deterministic/` | `det_write_answer_01` (Phase 4), `det_state_json_01`, `det_state_nested_01`, `det_state_multi_01` | `state_check` (4) |
 | C | `deterministic/` | `det_unit_fizzbuzz_01`, `det_unit_slugify_01`, `det_unit_roman_01` | `unit_test` (3) |
-| D | `judge/` | `judge_summary_01`, `judge_explain_01`, `judge_email_01`, `judge_bugreport_01`, `judge_tradeoff_01` | `llm_judge` (5). Gradeable from Phase 9 |
+| D | `judge/` | `judge_summary_01`, `judge_explain_01`, `judge_email_01`, `judge_bugreport_01`, `judge_tradeoff_01` | `llm_judge` (5). Graded by the judge from Phase 9 (version 1.1.0, see §9.0) |
 | E | `discriminating/` | `mem_recall_client_01`, `mem_deploy_file_01` | memory-discriminating (`exact_match`, `state_check`) |
 | E | `discriminating/` | `skill_csv_sum_01`, `skill_csv_mean_01` | skill-discriminating (`exact_match`) |
 
@@ -1741,15 +1741,15 @@ until [ "$(curl -s $A/experiments/$E/status | jq -r .status)" != "running" ]; do
 curl -s $A/experiments/$E/status | jq -c '{status, trials}'
 ```
 
-Result: experiment `partial`, with 16 succeeded and 5 failed.
+Result at Phase 8 (before the judge existed): experiment `partial`, with 16 succeeded and 5 failed. Phase 9 grades the 5 judge tasks; see §9.4.
 
 | Group | Result |
 |---|---|
 | 12 deterministic tasks (exact, state, unit test) | all pass, including the 3 unit-test tasks run through the worker |
-| 5 judge tasks | all `failed` with `grader_not_implemented`. Not retried. Phase 9 adds the judge |
+| 5 judge tasks | at Phase 8, all `failed` with `grader_not_implemented`. Not retried. Phase 9 adds the `llm_judge` grader |
 | 4 discriminating tasks (`mem_*`, `skill_*`) | all fail without their tool, as intended |
 
-`partial` here is the correct reading. Five trials had an infrastructure failure (an unimplemented grader), so the experiment is partial, not completed. Scored failures alone would not do that.
+`partial` was the correct reading at Phase 8. Five trials had an infrastructure failure (an unimplemented grader), so the experiment is partial, not completed. Scored failures alone would not do that.
 
 **Discrimination probe, two trials per cell, temperature 0:**
 
@@ -1773,15 +1773,185 @@ This is a direction check, not a measurement. Two trials per cell at temperature
 | `POST /tasks/import` returns 409 and the batch is rejected | A task's content changed under the same `version` | Bump `version` for the changed task. Trials pin versions, so edits under one version are refused |
 | Trial fails with `setup_error` and an `unknown skill` message | A config lists a skill id that does not exist, e.g. `csv_sumary` | Fix the config's `skillsEnabled`. Configs are immutable, so create a new one |
 | Trace shows `tool not available in this trial: memory_read` | The config has memory off but the task needs memory | Expected for the base config. Use a config with `memory.enabled: true` |
-| `judge_*` trials fail with `grader_not_implemented` | The `llm_judge` grader arrives in Phase 9 | Expected until Phase 9 |
+| `judge_*` trials fail with `grader_not_implemented` | The API is running code built before Phase 9 | Run `npm run build:packages`, then restart the API. Phase 9 implements `llm_judge` |
 | `unit_test` grade reasoning says `timed out` | The agent's code loops, or the test is slow. This is a scored failure (`status: succeeded`, `passed: false`) | Read the trace. Raise `timeoutMs` only if the test is genuinely slow |
 
 ### 8.6 What this phase does not do
 
 - **Memory is a seeded fact, not a turn-1 write.** The plan allowed this proxy when history cannot be stripped. The baseline harness takes one prompt per trial, so a fact that the agent saves with `memory_write` on turn 1 and must read back later has no place to run yet. The discrimination still holds (the fact is unreachable without memory), but it does not test writes across turns.
 - **`persistAcrossTrials` is not implemented.** Every trial starts with an empty memory.
-- **No `llm_judge` yet.** The 5 judge tasks are authored and validated, but they fail until Phase 9.
 - **The CSV reader handles plain values only.** Quoted fields and embedded commas are not supported. The fixtures do not need them.
 - **`skill_invoke` uses the tool name as the skill id** (`csv_summary` for both). That holds until a skill has more than one tool.
 - **Unit-test commands run through `sh -c` with the sandbox as cwd.** Task authors are trusted. The child gets only `PATH`, so API keys are not visible to it, but nothing stops network access from the command.
 - **The probe is small.** Two trials per cell at temperature 0. Treat the table as a direction check.
+
+## Phase 9 — LLM judge + human agreement
+
+**Goal:** Model-based grading you can defend. A judge score counts only after its agreement with human labels is measured.
+
+Run every command from the repo root:
+
+```bash
+cd /Users/turing-satyam/work/beyond/task/agent-evals
+```
+
+### 9.0 What changed in this phase
+
+| Area | Change |
+|---|---|
+| `packages/adapters-model` | `ModelRequest.responseFormat: 'json'` sends `response_format: { type: "json_object" }` to OpenRouter. Tests in `openrouter-json.spec.ts` |
+| `packages/graders/src/rubrics.ts` | Five rubrics (`summary_v1`, `explanation_v1`, `email_v1`, `bugreport_v1`, `tradeoff_v1`). Each criterion has a weight and a `required` flag |
+| `packages/graders/src/llm-judge.ts` | `buildJudgePrompt`, `parseJudgeOutput` (strips ```` ```json ```` fences), `scoreRubric`, and `llmJudge()`. The judge is called at temperature 0 with JSON output. A malformed reply gets one retry, which shows the judge its bad reply. A second malformed reply throws `JudgeOutputError` |
+| `packages/runner` | The `llm_judge` branch. An unknown rubric id is a non-retryable `rubric_not_found`. Malformed judge output is a non-retryable `judge_invalid_output`. A judge model error is an infrastructure error, as for the agent |
+| `tasks/judge/*.json` | Version `1.1.0`, `judgeModel: "google/gemini-2.5-flash"`, `passThreshold: 0.7`. Version 1.0.0 named a judge model that OpenRouter no longer served (404), and content cannot change under the same version, so the tasks were bumped |
+| `fixtures/judge-human-labels/` | 25 labels, `lbl_01.json` to `lbl_25.json`, five per judge task. Format: `{id, taskId, answer, humanPassed, notes}`. 9 pass, 16 fail. Borderline fails are included on purpose |
+| `scripts/validate-judge.ts` | Runs the judge on every label and prints agreement, Cohen's κ, the confusion matrix, per-task numbers and disagreements. Exits 0 only when κ ≥ 0.6 and no label failed to judge |
+| `scripts/validate-task-set.ts` | Checks that each `llm_judge` rubric id exists |
+
+### 9.1 Install and build
+
+```bash
+npm run build:packages
+npm test
+```
+
+Expected totals: `api` 30, `adapters-harness` 43, `adapters-model` 19, `domain` 8, `graders` 36, `runner` 11, `sandbox` 9, `trace` 4. The new `graders` tests cover the scoring rule, the prompt, the parsing (fenced JSON, missing criteria, out-of-range scores), the retry after a malformed reply, and the error when both replies are malformed. The `runner` tests cover the rubric-not-found and invalid-output paths.
+
+### 9.2 How the judge scores
+
+Each rubric criterion is scored by the judge from 0.0 to 1.0. A criterion is **met** at score ≥ 0.5. The verdict is:
+
+- `overall` = the weighted mean of the scores
+- `passed` = every `required` criterion is met **and** `overall` ≥ the task's `passThreshold` (0.7)
+
+The `required` flag exists because a plain weighted mean would let a missing must-have pass when the other criteria carry enough weight. For example, a summary that omits the outage cause would still score about 0.75 on four equal criteria.
+
+| Rubric | Criteria (weight, `required`) |
+|---|---|
+| `summary_v1` | `outage_cause`, `affected_region`, `fix_date`, `two_sentences` (all 1, required) |
+| `explanation_v1` | `scientific_correctness` (2, required), `child_friendly_language`, `under_80_words`, `no_equations` (all 1, required) |
+| `email_v1` | `polite_decline` (2, required), `one_sentence_reason` (1, required), `specific_alternative` (2, required), `signed_sam` (1, required), `tone_clarity` (1, optional) |
+| `bugreport_v1` | `numbered_steps` (2, required), `expected_behavior`, `actual_behavior`, `environment`, `no_invented_details` (all 1, required) |
+| `tradeoff_v1` | `three_bullets` (1, required), `benefit_and_cost` (2, required), `service_recommendation` (1, required), `accuracy` (2, optional) |
+
+Bias controls: the judge (`google/gemini-2.5-flash`) is a different model family from the agent (`openai/gpt-4.1-mini`). It runs at temperature 0 with JSON output, and it sees the rubric and the criteria, not a preferred answer. This reduces bias. It does not remove it, and the agreement numbers in 9.5 are the evidence.
+
+### 9.3 Checkpoint 9a: judge reasoning visible in a trial (expect 5 succeeded)
+
+The API must be running, with the Phase 7 stack up (`docker compose up -d db redis`, then `npm run start:dev -w @agent-evals/api`):
+
+```bash
+A=http://localhost:3000
+npm run seed:tasks
+```
+
+The first seed after this phase on a database that has the Phase 8 tasks reports `created: 5, unchanged: 16`. Those five rows are the judge tasks at 1.1.0. Re-running reports `unchanged: 21`. Experiments pin the latest version when they are created, so new runs use 1.1.0.
+
+Create a config for the judge run. It is the base config with no memory and no skills. Configs are keyed by content hash, so posting the same body again is safe:
+
+```bash
+JUDGE_CFG=$(curl -s -X POST $A/configs -H 'content-type: application/json' -d '{
+  "name": "p9-judge-base",
+  "harness": { "id": "baseline", "settings": {
+    "skillsEnabled": [], "memory": { "enabled": false, "persistAcrossTrials": false },
+    "tools": ["read_file", "write_file", "list_dir"], "maxSteps": 8, "maxTokens": 4096, "timeoutMs": 60000 } },
+  "model": { "provider": "openrouter", "modelId": "openai/gpt-4.1-mini", "temperature": 0 }
+}' | jq -r .id)
+echo "config: $JUDGE_CFG"
+```
+
+Create the experiment, start it, and wait for it to finish:
+
+```bash
+EXP=$(curl -s -X POST $A/experiments -H 'content-type: application/json' \
+  -d "{\"name\":\"p9-judge-checkpoint\",\"hypothesis\":\"judge returns reasoning in a trial\",\"taskIds\":[\"judge_summary_01\",\"judge_explain_01\",\"judge_email_01\",\"judge_bugreport_01\",\"judge_tradeoff_01\"],\"configIds\":[\"$JUDGE_CFG\"],\"nTrials\":1}")
+EID=$(echo "$EXP" | jq -r .id)
+curl -s -o /dev/null -w "start: HTTP %{http_code}\n" -X POST $A/experiments/$EID/start
+until [ "$(curl -s $A/experiments/$EID/status | jq -r .status)" != "running" ]; do sleep 3; done
+curl -s $A/experiments/$EID/status | jq -c '{status, trials}'
+```
+
+Expected: `status` is `completed` and `trials` shows `succeeded: 5`. In our run all five judge trials passed (the agent's answers met the rubrics). Passing is not guaranteed for every config.
+
+Read the judge's reasoning from one trial:
+
+```bash
+TID=$(curl -s "$A/trials?experimentId=$EID" | jq -r '[.[] | select(.taskId=="judge_email_01")][0].id')
+curl -s $A/trials/$TID | jq '.grade.graderResults[] | {graderType, passed, score, reasoning, details: (.details | {rubricId, judgeModel, scores, failedRequired, attempts})}'
+```
+
+Expected: `graderType` is `llm_judge`, `reasoning` is a paragraph that quotes the answer, `scores` has one value per criterion, `rubricId` is `email_v1`, `judgeModel` is `google/gemini-2.5-flash`, and `attempts` is `1` when the first reply was valid JSON.
+
+Stop the API when you are done.
+
+### 9.4 What the judge changes in the earlier results
+
+Before Phase 9, the 5 judge tasks failed with `grader_not_implemented`, which made the Phase 8 smoke run `partial`. With the judge, those tasks are graded instead of failing at the grader. Re-running the §8.4 smoke gives new totals; this README does not record a re-run of that smoke, so the 16/5 result above stays as the Phase 8 record.
+
+### 9.5 Checkpoint 9b: the validation script prints κ
+
+This step does not need the API. It calls the judge model directly for each of the 25 labels. Expect a few minutes and small API charges.
+
+```bash
+npx tsx scripts/validate-judge.ts | tee judge-validation.txt
+echo "exit=$?"
+```
+
+The saved output is in `judge-validation.txt`. The numbers in this section come from three runs of the same rubric. Each run printed the same aggregates (below). Individual judge scores moved slightly between runs, for example `lbl_14` had an overall score of 0.71 in one run and 0.69 in another.
+
+```
+labels: 25, judged: 25, judge errors: 0
+
+agreement rate: 92.0% (23/25)
+Cohen's kappa:  0.826
+
+confusion matrix (rows = human, columns = judge; positive = passed)
+                 judge pass  judge fail
+  human pass              8           1
+  human fail              1          15
+
+per task
+  judge_bugreport_01   n= 5 agreement=100% kappa=1.00
+  judge_email_01       n= 5 agreement=80% kappa=0.55
+  judge_explain_01     n= 5 agreement=100% kappa=1.00
+  judge_summary_01     n= 5 agreement=100% kappa=1.00
+  judge_tradeoff_01    n= 5 agreement=80% kappa=0.62
+```
+
+κ = 0.826 is above the 0.6 threshold, so the verdict is acceptable on this set. The script exits 0.
+
+### 9.6 The two disagreements
+
+| Label | Task | Human | Judge | Why they differ |
+|---|---|---|---|---|
+| `lbl_14` | `judge_email_01` | pass (note: "Borderline pass: terse, but polite, with a reason and an alternative") | fail, overall 0.71. Unmet required: `one_sentence_reason` | The judge said the reason ("I'm at a customer site") is a separate clause, not part of the decline. The human counted it as one reason in one sentence. The same disagreement appeared in every run |
+| `lbl_24` | `judge_tradeoff_01` | fail (note: "the recommendation bullet names a benefit and no cost, so it fails the per-bullet rule") | pass, overall 1.00 | The judge said every bullet names a cost. That is wrong for the recommendation bullet. This is a judge error on a rule the rubric states |
+
+Both disagreements are kept as they are. The rubric was not edited to make them agree. Editing it to fit these two labels would tune the rubric on the validation set, and the κ would then say nothing about new answers. If you want to act on them, the next step is a rubric change plus a new set of labels that the change was not made against.
+
+### 9.7 Results summary
+
+- Agreement 92.0% (23/25). Cohen's κ 0.826, above the 0.6 threshold.
+- Errors are split: one false negative (`lbl_14`, the judge is stricter than the human) and one false positive (`lbl_24`, the judge is more lenient than the human).
+- Per task, `summary`, `explain` and `bugreport` agree on all 5 labels. `email` and `tradeoff` each have one disagreement, and their κ is 0.55 and 0.62. Those numbers are close to the threshold, and 5 labels per task is too few to rely on them.
+
+### 9.8 Troubleshooting
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `judge_invalid_output` in a trial error | The judge returned non-JSON twice. The message names the first problem | Read the message. A persistent failure on one rubric means the prompt or the model needs work. Do not raise the retry count to hide it |
+| `rubric_not_found` | A task's `rubricId` does not match any rubric in `rubrics.ts` | Fix the id. `validate-task-set.ts` lists the rubric ids it knows |
+| Judge calls return 404 | The judge model is no longer served on OpenRouter | Change `judgeModel` in a new task version (bump `version`). Content cannot change under the same version |
+| `validate-judge.ts` prints `judge errors: N` | Some labels could not be judged, so the metrics would be partial | Re-run. The script exits 1 when any label errors, so a partial run is never shown as passing |
+| `validate-judge.ts` exits 1 with κ below 0.6 | The judge and the labels disagree too much | Tighten the rubric, or change the judge model, then re-run. Do not ship the judge as it is |
+
+### 9.9 What this phase does not do
+
+- **Judge tokens are not in the trial's metrics.** They are in `grade.graderResults[0].details.usage`. The trial's own token totals count only the agent.
+- **No separate judge timeout.** The judge uses the adapter's 60 s timeout with 2 retries. A slow judge call shows up as a retryable infrastructure error.
+- **Judge reasoning is not a trace event.** It is stored in the grade result, not in the trace file.
+- **Validation runs are not stored in the database.** The design doc suggests storing them. `judge-validation.txt` is the record for now. Paste the numbers into `DESIGN.md` when that file exists (the plan puts it in a later phase).
+- **The judge's replies can vary between runs.** Temperature 0 does not guarantee identical output. The aggregates were identical across three runs, but single scores moved by about 0.02.
+- **κ is measured on 25 labels, from one author.** I wrote the labels, and the rubric and labels were written in the same session. That is a circularity risk. Relabel a sample blind before you trust the number. One label changes the agreement by 4 points.
+- **Judge and agent are different families**, so the judge does not grade its own family's output. That reduces one bias. It does not remove position, length, or wording bias, and the rubrics here do not test for those.
+- **Commit:** the work is uncommitted, as in earlier phases.

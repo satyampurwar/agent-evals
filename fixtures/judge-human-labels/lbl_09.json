@@ -1,0 +1,7 @@
+{
+  "id": "lbl_09",
+  "taskId": "judge_explain_01",
+  "answer": "Blue light has a wavelength near 450 nm, and scattering goes as 1 over the wavelength to the fourth power, so shorter waves scatter much more. That is why the sky is blue.",
+  "humanPassed": false,
+  "notes": "Fail: uses a formula and technical terms a 10-year-old will not follow."
+}

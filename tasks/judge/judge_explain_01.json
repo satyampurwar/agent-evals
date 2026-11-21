@@ -1,6 +1,6 @@
 {
   "id": "judge_explain_01",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "name": "Explain a concept to a child",
   "description": "Explanation must be correct, use plain words, and stay under 80 words",
   "prompt": "Explain why the sky is blue to a 10-year-old. Use plain words, keep it under 80 words, and do not use any equations.",
@@ -8,7 +8,7 @@
     {
       "type": "llm_judge",
       "rubricId": "explanation_v1",
-      "judgeModel": "openai/gpt-4.1-mini",
+      "judgeModel": "google/gemini-2.5-flash",
       "passThreshold": 0.7
     }
   ],

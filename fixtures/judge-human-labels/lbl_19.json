@@ -1,0 +1,7 @@
+{
+  "id": "lbl_19",
+  "taskId": "judge_bugreport_01",
+  "answer": "Steps to reproduce: 1) Open the orders page. 2) Apply a filter. 3) Click Export CSV. Expected: a CSV downloads. Actual: no download and no error. Environment: Chrome 124.",
+  "humanPassed": true,
+  "notes": "Borderline pass: \"orders page\" is a reasonable reading of \"export\" and is not a fabricated error."
+}

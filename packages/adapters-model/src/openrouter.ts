@@ -104,6 +104,7 @@ export class OpenRouterAdapter implements ModelAdapter {
       temperature: req.temperature,
       max_tokens: req.maxTokens,
       ...(req.stop && req.stop.length > 0 ? { stop: req.stop } : {}),
+      ...(req.responseFormat === 'json' ? { response_format: { type: 'json_object' as const } } : {}),
     });
 
     const choice = res.choices[0];

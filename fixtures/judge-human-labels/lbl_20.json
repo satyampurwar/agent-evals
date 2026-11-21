@@ -1,0 +1,7 @@
+{
+  "id": "lbl_20",
+  "taskId": "judge_bugreport_01",
+  "answer": "Steps: 1. Apply a filter. 2. Click Export CSV. Expected: download. Actual: nothing happens, no error shown. Works when the filter is cleared.",
+  "humanPassed": false,
+  "notes": "Borderline fail: the environment (Chrome 124) is missing."
+}

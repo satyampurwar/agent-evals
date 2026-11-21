@@ -1,0 +1,7 @@
+{
+  "id": "lbl_12",
+  "taskId": "judge_email_01",
+  "answer": "Hi Priya, I can't make Thursday's 3pm design review because I'm at a customer site that day. Sorry about that. Best, Sam",
+  "humanPassed": false,
+  "notes": "Clear fail: no alternative time proposed."
+}

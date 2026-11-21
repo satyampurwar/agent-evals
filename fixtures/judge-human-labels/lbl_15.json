@@ -1,0 +1,7 @@
+{
+  "id": "lbl_15",
+  "taskId": "judge_email_01",
+  "answer": "Hi Priya, Thursday 3pm does not work because I am at a customer site. Could we meet Monday next week at 10am? Regards, Samuel",
+  "humanPassed": false,
+  "notes": "Borderline fail: the signature is \"Samuel\", not \"Sam\". Otherwise good."
+}
