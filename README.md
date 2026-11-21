@@ -692,3 +692,131 @@ Define Task, Config, Experiment, Trial, GradeResult, TraceEvent, and Trace schem
 EOF
 )"
 ```
+
+---
+
+## Phase 3 — Run the first real task (no API key)
+
+**Goal:** One trial end-to-end: task file → baseline harness → mock model → `exact_match` grader → `trace.json` and `result.json`.
+
+Run every command from the repo root:
+
+```bash
+cd /Users/turing-satyam/work/beyond/task/agent-evals
+```
+
+### 3.0 Packages added in this phase
+
+| Package / file | Purpose |
+|---|---|
+| `packages/trace` | `createTraceBuffer()`, `serializeTrace`, `deserializeTrace` |
+| `packages/graders` | `exactMatch(finalAnswer, expected, normalize)` |
+| `packages/adapters-model` | `ModelAdapter` types (§6.1) and `MockModelAdapter` (always replies `"42"` by default) |
+| `packages/adapters-harness` | `HarnessAdapter` types (§6.2) and `BaselineHarness` (one user message, one model call, one assistant message) |
+| `tasks/deterministic/01_add.json` | First real task: `What is 17 + 25?`, expected `42` |
+| `scripts/run-one-trial.ts` | Runs one trial and grades it. Exit 0 on PASS, 1 on FAIL |
+
+Each package has its own `package.json` with `"main": "src/index.ts"` and a `test` script (`vitest run`).
+
+### 3.1 Install workspace links
+
+New packages must be linked into `node_modules` before anything imports them:
+
+```bash
+npm install
+```
+
+Expect `node_modules/@agent-evals/` to contain `domain`, `trace`, `graders`, `adapters-model`, and `adapters-harness` as symlinks.
+
+No API keys are needed. The mock model makes no network calls.
+
+### 3.2 Run the unit tests
+
+```bash
+npm test -w @agent-evals/domain -w @agent-evals/trace -w @agent-evals/graders -w @agent-evals/adapters-model -w @agent-evals/adapters-harness
+```
+
+Expected: every package reports `Test Files 1 passed` (or more) and no failures.
+
+Optional typecheck per package:
+
+```bash
+for p in domain trace graders adapters-model adapters-harness; do
+  npx tsc -p packages/$p --noEmit && echo "tsc ok: $p"
+done
+```
+
+### 3.3 Run the first real task (expect PASS)
+
+```bash
+npx tsx scripts/run-one-trial.ts tasks/deterministic/01_add.json
+echo "exit=$?"
+```
+
+Expected output (IDs and timestamps will differ):
+
+```
+PASS
+  exact_match: expected=42 got=42
+trace:  /var/folders/.../T/agent-evals/trial-<uuid>/trace.json
+result: /var/folders/.../T/agent-evals/trial-<uuid>/result.json
+exit=0
+```
+
+The paths are under `os.tmpdir()`. On macOS that is `$TMPDIR` (`/var/folders/...`). Each run gets a fresh sandbox directory and a fresh `trial-<uuid>` output directory, so runs do not overwrite each other.
+
+### 3.4 Inspect the trace
+
+Open the most recent trial's trace:
+
+```bash
+TMPD="$(node -p 'require("os").tmpdir()')"
+RUN_DIR="$(ls -td "$TMPD"/agent-evals/trial-*/ | head -1)"
+cat "${RUN_DIR}trace.json"
+cat "${RUN_DIR}result.json"
+```
+
+The trace should contain, in order:
+
+1. `step_boundary` with `step: 1`
+2. `message` with `role: "user"` and the task prompt
+3. `message` with `role: "assistant"` and `content: "42"`
+
+and `finalAnswer: "42"`.
+
+### 3.5 Checkpoint: FAIL on a wrong expected answer
+
+Make a copy of the task with expected `"43"` (this does not edit the committed task file):
+
+```bash
+sed 's/"expected": "42"/"expected": "43"/' tasks/deterministic/01_add.json > /tmp/add_43.json
+npx tsx scripts/run-one-trial.ts /tmp/add_43.json
+echo "exit=$?"
+```
+
+Expected output:
+
+```
+FAIL
+  exact_match: expected=43 got=42
+trace:  ...
+result: ...
+exit=1
+```
+
+**Checkpoint 3 passes when:** 3.3 prints `PASS` with exit 0, the trace in 3.4 has the three events, and 3.5 prints `FAIL` with exit 1.
+
+### 3.6 Troubleshooting
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `Cannot find module '@agent-evals/...'` | Workspace symlinks missing | Run `npm install` from the repo root |
+| `listen EPERM ... tsx-*.pipe` | `tsx` could not open its IPC socket (happened inside a sandboxed agent shell) | Run from a normal terminal |
+| `grader "unit_test" is not implemented yet` | `run-one-trial.ts` only grades `exact_match` so far | Use an `exact_match` task, or add the grader in a later phase |
+| Test imports fail after adding a package | `npm install` not rerun after adding `package.json` | Run `npm install` again |
+
+### 3.7 What this phase does not do
+
+- No real model call. `MockModelAdapter` always returns `"42"`, so this run checks the pipeline, not model quality.
+- No tools and no sandbox isolation beyond a fresh temp directory. Both come in Phase 4.
+- No database. Results are written to disk only. Phase 6 adds persistence.
