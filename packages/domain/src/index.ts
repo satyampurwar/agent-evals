@@ -1,33 +1,39 @@
 export {
   ConfigIdSchema,
+  ConfigInputSchema,
   ConfigSchema,
   ExperimentIdSchema,
+  ExperimentInputSchema,
   ExperimentSchema,
   GradeResultSchema,
   GraderSpecSchema,
   StateCheckSchema,
   TaskIdSchema,
+  TaskImportSchema,
   TaskSchema,
   TaskSetupSchema,
   TraceEventSchema,
   TraceSchema,
   TrialIdSchema,
   TrialSchema,
-} from './schemas';
+} from './schemas.js';
 
 export type {
   Config,
   ConfigId,
+  ConfigInput,
   Experiment,
   ExperimentId,
+  ExperimentInput,
   GradeResult,
   GraderSpec,
   StateCheck,
   Task,
   TaskId,
+  TaskImport,
   TaskSetup,
   Trace,
   TraceEvent,
   Trial,
   TrialId,
-} from './schemas';
+} from './schemas.js';

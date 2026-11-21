@@ -5,7 +5,8 @@ services:
       POSTGRES_USER: evals
       POSTGRES_PASSWORD: evals
       POSTGRES_DB: evals
-    ports: ["5432:5432"]
+    # Host port is configurable: set POSTGRES_HOST_PORT in .env if 5432 is already used by a local Postgres.
+    ports: ["${POSTGRES_HOST_PORT:-5432}:5432"]
     volumes: ["pgdata:/var/lib/postgresql/data"]
 
   redis:

@@ -1114,6 +1114,255 @@ In the example runs, the three `01_add` trials all passed with identical token c
 ### 5.11 What this phase does not do
 
 - No cost calculation. Only tokens and latency are logged, so `estimatedCostUsd` in the metrics stays unset.
-- No N-trial runner. Each `run-one-trial.ts` call is one trial. Phase 7 adds experiment expansion.
+- No N-trial runner. Each `run-one-trial.ts` call is one trial. Phase 6 stores experiments and queues their trials in the API. Phase 7 runs them.
 - Only the baseline harness exists. Hermes comes in Phase 12.
 - The SDK retries network errors, 429s, and 5xx responses up to 2 times. Other failures surface as `stoppedReason: "error"` only if they happen during the model call.
+
+---
+
+## Phase 6 — Persist with Postgres and NestJS modules
+
+**Goal:** Tasks, configs, experiments, and trials live in Postgres behind the API. Config content hashes are stable, so a changed setting means a new version.
+
+Run every command from the repo root:
+
+```bash
+cd /Users/turing-satyam/work/beyond/task/agent-evals
+```
+
+### 6.0 Packages and files added in this phase
+
+| Package / file | Purpose |
+|---|---|
+| `apps/api` deps: `@nestjs/typeorm`, `typeorm`, `pg` | Database access. Installed with `npm install @nestjs/typeorm typeorm pg -w @agent-evals/api` |
+| `apps/api/src/load-env.ts` | Loads the repo-root `.env` before `AppModule` reads `process.env`. Shell variables win |
+| `apps/api/src/app.module.ts` | TypeORM `forRootAsync` (reads `DATABASE_URL`, `synchronize` on for local dev) and the four feature modules |
+| `apps/api/src/entities/` | `tasks`, `configs`, `experiments`, `trials` tables. Each keeps queryable columns plus a `jsonb` copy of the domain object |
+| `apps/api/src/common/canonical-json.ts` | Sorted-key JSON and SHA-256 `contentHash` |
+| `apps/api/src/common/zod-validation.pipe.ts` | Validates request bodies with the domain zod schemas. Invalid input gets HTTP 400 with the zod issues |
+| `apps/api/src/tasks/` | `POST /tasks/import`, `GET /tasks`, `GET /tasks/:id` |
+| `apps/api/src/configs/` | `POST /configs` (201 for a new version, 200 for an existing hash), `GET /configs`, `GET /configs/:id` |
+| `apps/api/src/experiments/` | `POST /experiments` (pins task versions and config hashes), `POST /experiments/:id/start` (202, queues trials), `GET /experiments/:id`, `GET /experiments/:id/status` |
+| `apps/api/src/trials/` | `GET /trials?experimentId=`, `GET /trials/:id`, `GET /trials/:id/trace` (404 until a trace is recorded) |
+| `packages/domain/src/schemas.ts` | Adds `ConfigInputSchema`, `TaskImportSchema`, `ExperimentInputSchema` (request bodies without server-assigned fields) |
+| `packages/domain` build (`tsconfig.build.json`, `dist/`) | The API imports the domain package at runtime, and Node cannot load `.ts` from a workspace. `main`/`exports` now point to `dist/` |
+| `tasks/manifest.json` | Lists the task files to seed |
+| `scripts/seed-tasks.ts` | Validates each task locally, then POSTs them to `/tasks/import`. Idempotent |
+| `docker-compose.yml` | The `db` host port is `${POSTGRES_HOST_PORT:-5432}` (see 6.2) |
+
+### 6.1 Prerequisites
+
+- Docker Desktop running. Check with `docker info`.
+- `jq` for the checkpoint output. On macOS: `brew install jq`.
+- Port 5432 must be free for the default setup. Check with `lsof -nP -iTCP:5432 -sTCP:LISTEN`. If a local Postgres already owns it, see 6.2.
+
+### 6.2 Start Postgres and Redis
+
+```bash
+docker compose up -d db redis
+docker compose ps
+```
+
+Both services should show `Up`. Postgres accepts connections once it is ready:
+
+```bash
+docker compose exec -T db pg_isready -U evals -d evals
+```
+
+**If a local Postgres already listens on 5432,** `localhost:5432` resolves to that server, not to Docker. You will see `FATAL: role "evals" does not exist` from the API. Fix it by moving Docker to another host port. Add this to `.env` (untracked):
+
+```bash
+POSTGRES_HOST_PORT=5433
+```
+
+and change the port in `DATABASE_URL` to match:
+
+```bash
+DATABASE_URL=postgres://evals:evals@localhost:5433/evals
+```
+
+Then recreate the container. The data volume is kept:
+
+```bash
+docker compose up -d db
+```
+
+### 6.3 Install
+
+```bash
+npm install
+```
+
+Root `postinstall` builds `@agent-evals/domain` into `dist/`. The API's `prestart`, `prestart:dev`, and `prebuild` hooks rebuild it too.
+
+If npm fails with `SELF_SIGNED_CERT_IN_CHAIN` (common behind a corporate proxy), use the system certificate store. Verification stays on:
+
+```bash
+NODE_OPTIONS=--use-system-ca npm install
+```
+
+### 6.4 Offline tests (no database needed)
+
+```bash
+npm test
+```
+
+Expected: all seven workspaces pass, including the API unit tests for canonical JSON, matrix expansion, and the validation pipe. The domain tests now include the new input schemas.
+
+The API e2e test connects to the database, so run it with Postgres up:
+
+```bash
+npm run test:e2e -w @agent-evals/api
+```
+
+### 6.5 Start the API
+
+Keep this running in its own terminal:
+
+```bash
+npm run start:dev -w @agent-evals/api
+```
+
+Expected in the log: the route list (`Mapped {/tasks/import, POST}` and so on), then `Nest application successfully started`. The `ObserveAgentWorker` line about placeholder keys is expected, because no Observe keys are set.
+
+Tables are created on boot (`synchronize`, local dev only). Set `DB_SYNCHRONIZE=false` to turn this off once migrations exist.
+
+### 6.6 Checkpoint 6a: tasks in the database
+
+In a second terminal:
+
+```bash
+npm run seed:tasks
+npm run seed:tasks
+curl -s http://localhost:3000/tasks | jq 'length'
+```
+
+Expected:
+
+```
+created: 2, unchanged: 0
+created: 0, unchanged: 2
+2
+```
+
+The second seed run reports both tasks as unchanged, so seeding is safe to repeat.
+
+### 6.7 Checkpoint 6b: config content hash is stable, and changing temperature makes a new hash
+
+```bash
+CFG='{
+  "name": "baseline-gpt-mini",
+  "harness": {
+    "id": "baseline",
+    "settings": {
+      "skillsEnabled": [],
+      "memory": { "enabled": false, "persistAcrossTrials": false },
+      "tools": ["read_file", "write_file", "list_dir"],
+      "maxSteps": 8,
+      "maxTokens": 2048,
+      "timeoutMs": 60000
+    }
+  },
+  "model": { "provider": "openrouter", "modelId": "openai/gpt-4.1-mini", "temperature": 0.2 }
+}'
+
+# 1. First create: HTTP 201, version 1
+curl -s -o /dev/null -w "HTTP %{http_code}\n" -X POST http://localhost:3000/configs \
+  -H 'content-type: application/json' -d "$CFG"
+
+# 2. Same content again: HTTP 200, same id and hash (no new row)
+curl -s -o /tmp/cfg-same.json -w "HTTP %{http_code}\n" -X POST http://localhost:3000/configs \
+  -H 'content-type: application/json' -d "$CFG"
+jq -c '{id, version, contentHash}' /tmp/cfg-same.json
+
+# 3. Only temperature changes: HTTP 201, version 2, different hash
+echo "$CFG" | jq -c '.model.temperature = 0.3' > /tmp/cfg-hot.json
+curl -s -o /tmp/cfg-hot-resp.json -w "HTTP %{http_code}\n" -X POST http://localhost:3000/configs \
+  -H 'content-type: application/json' -d @/tmp/cfg-hot.json
+jq -c '{id, version, contentHash}' /tmp/cfg-hot-resp.json
+
+curl -s http://localhost:3000/configs | jq -c '.[] | {name, version, temperature: .model.temperature, contentHash}'
+```
+
+Expected:
+
+- Step 1 prints `HTTP 201` on a fresh database. If you ran this section before, it prints `HTTP 200`, which is also correct.
+- Step 2 prints `HTTP 200` with the same `id` and `contentHash` as step 1.
+- Step 3 prints `HTTP 201` with `version: 2` and a different `contentHash`.
+- The final list shows two rows for `baseline-gpt-mini`, temperature `0.2` and `0.3`.
+
+The hash is SHA-256 over the canonical JSON of `name`, `harness`, and `model`. Key order does not change it. Server-assigned fields (`id`, `version`, `contentHash`, `createdAt`) are ignored if a client sends them.
+
+### 6.8 Create and start an experiment
+
+This uses both task seeds and both config versions from 6.7 (2 tasks x 2 configs x 2 trials = 8 trials):
+
+```bash
+CFG_IDS=$(curl -s http://localhost:3000/configs | jq -c '[.[].id]')
+
+EXP=$(curl -s -X POST http://localhost:3000/experiments \
+  -H 'content-type: application/json' \
+  -d "{\"name\":\"temp-sweep\",\"hypothesis\":\"temperature 0.2 vs 0.3\",\"taskIds\":[\"det_add_01\",\"det_write_answer_01\"],\"configIds\":$CFG_IDS,\"nTrials\":2}")
+echo "$EXP" | jq -c '{id, status}'
+EID=$(echo "$EXP" | jq -r .id)
+
+curl -s -o /tmp/start.json -w "HTTP %{http_code}\n" -X POST http://localhost:3000/experiments/$EID/start
+jq -c '{status, queued}' /tmp/start.json
+
+curl -s -o /dev/null -w "second start: HTTP %{http_code}\n" -X POST http://localhost:3000/experiments/$EID/start
+curl -s http://localhost:3000/experiments/$EID/status | jq -c .
+curl -s "http://localhost:3000/trials?experimentId=$EID" | jq -c 'length'
+```
+
+Expected:
+
+- Create returns `status: "pending"`.
+- Start returns `HTTP 202`, `queued: 8`, and experiment `status: "running"`.
+- A second start returns `HTTP 409`, so trials are never queued twice.
+- The status shows `trials.total: 8` and `queued: 8`.
+- The trials list has length 8.
+
+Each trial pins the task version and config `contentHash` it was created with, and gets a deterministic `seed`. Nothing executes the trials yet. They stay `queued` until the worker phase. That is why the trace endpoint returns 404 for now:
+
+```bash
+TID=$(curl -s "http://localhost:3000/trials?experimentId=$EID" | jq -r '.[0].id')
+curl -s -o /dev/null -w "trace: HTTP %{http_code}\n" http://localhost:3000/trials/$TID/trace
+```
+
+Expected: `trace: HTTP 404`, with a message that the trace has not been recorded yet.
+
+### 6.9 Checks for the error paths (optional)
+
+| Request | Expected |
+|---|---|
+| `POST /experiments` with `"taskIds": ["nope"]` | 400, `missingTaskIds: ["nope"]` |
+| `POST /experiments` with `"nTrials": 0` | 400 validation error |
+| `POST /tasks/import` with a changed prompt for an existing `id@version` | 409, "bump the version instead" |
+| `GET /experiments/not-a-uuid` | 400 |
+| `GET /experiments/00000000-0000-4000-8000-000000000000` | 404 |
+
+### 6.10 Checkpoint 6 passes when
+
+- `GET /tasks` returns 2 tasks, and re-seeding reports them as unchanged.
+- The config create returns 201, then 200 for identical content, then 201 with a new version and hash when temperature changes.
+- An experiment starts once (202), a second start is rejected (409), and 8 trials are queued.
+
+### 6.11 Troubleshooting
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `FATAL: role "evals" does not exist` in the API log | A local Postgres owns port 5432 | Use `POSTGRES_HOST_PORT=5433` (see 6.2) |
+| `ECONNREFUSED 127.0.0.1:5432` | The DB container is not running | `docker compose up -d db` |
+| `SELF_SIGNED_CERT_IN_CHAIN` during `npm install` | Corporate TLS interception | `NODE_OPTIONS=--use-system-ca npm install` |
+| `Cannot find module '@agent-evals/domain'` or a missing `dist` | Domain not built | `npm run build -w @agent-evals/domain` |
+| `DATABASE_URL is not set` | `.env` missing the variable | Add it to `.env` (see Phase 1.5) |
+| `seed-tasks: fetch failed` | API not running | Start it with `npm run start:dev -w @agent-evals/api` |
+| 409 on import | A task `id@version` exists with different content | Bump `version` in the task JSON |
+
+### 6.12 What this phase does not do
+
+- Trials are queued, not run. Execution is Phase 7. An experiment shows `running` while its trials are `queued`.
+- No migrations yet. `synchronize` creates the tables for local development only.
+- No authentication, pagination, or Redis use yet.
+- The seed script needs the API running. It does not write to the database directly.
+- `npm audit` reports 8 advisories from the new dependency tree. Not addressed in this phase.

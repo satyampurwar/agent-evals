@@ -1,0 +1,6 @@
+{
+  "tasks": [
+    "deterministic/01_add.json",
+    "deterministic/02_write_answer.json"
+  ]
+}

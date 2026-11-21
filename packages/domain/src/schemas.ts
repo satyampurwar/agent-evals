@@ -243,3 +243,32 @@ export const TraceSchema = z.object({
 });
 
 export type Trace = z.infer<typeof TraceSchema>;
+
+/**
+ * Request bodies for the API. Server-assigned fields (id, version, contentHash, createdAt)
+ * are not accepted from clients.
+ */
+export const ConfigInputSchema = ConfigSchema.pick({ name: true, harness: true, model: true });
+export type ConfigInput = z.infer<typeof ConfigInputSchema>;
+
+export const TaskImportSchema = z.object({
+  tasks: z.array(TaskSchema).min(1),
+});
+export type TaskImport = z.infer<typeof TaskImportSchema>;
+
+const uniqueIds = (ids: string[]) => new Set(ids).size === ids.length;
+
+export const ExperimentInputSchema = z.object({
+  name: z.string().min(1),
+  hypothesis: z.string().optional(),
+  taskIds: z
+    .array(TaskIdSchema)
+    .min(1)
+    .refine(uniqueIds, { message: 'taskIds must be unique' }),
+  configIds: z
+    .array(ConfigIdSchema)
+    .min(1)
+    .refine(uniqueIds, { message: 'configIds must be unique' }),
+  nTrials: z.number().int().min(1).max(1000),
+});
+export type ExperimentInput = z.infer<typeof ExperimentInputSchema>;

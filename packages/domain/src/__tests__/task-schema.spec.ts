@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { ZodError } from 'zod';
 import { describe, expect, it } from 'vitest';
-import { TaskSchema } from '../schemas';
+import { TaskSchema } from '../schemas.js';
 
 function readFixture(name: string): unknown {
   const url = new URL(`./fixtures/${name}`, import.meta.url);

@@ -1,3 +1,5 @@
+// Loads the repo-root .env (DATABASE_URL) first, as main.ts does. The app needs Postgres running.
+import '../src/load-env.js';
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
