@@ -1,12 +1,15 @@
 /**
- * Run one trial end-to-end: task -> sandbox -> baseline harness -> graders -> trace.json + result.json.
+ * Run one trial end-to-end: task -> sandbox -> harness -> graders -> trace.json + result.json.
  *
  * Usage:
  *   npx tsx scripts/run-one-trial.ts tasks/deterministic/01_add.json
+ *   npx tsx scripts/run-one-trial.ts tasks/deterministic/01_add.json --model openrouter:openai/gpt-4.1-mini --harness baseline
  *   npx tsx scripts/run-one-trial.ts tasks/deterministic/02_write_answer.json --script fixtures/scripted/write_answer.json
  *
- * Without --script the mock model answers "42" and makes no tool calls.
- * With --script the model replays the given ModelResponse[] JSON file.
+ * Model selection (pick one):
+ *   --model <provider:modelId>   e.g. openrouter:openai/gpt-4.1-mini (live), mock:any (offline "42")
+ *   --script <responses.json>    replay a fixed ModelResponse[] file (offline)
+ *   (neither)                    mock model answering "42"
  */
 import { randomUUID } from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -14,47 +17,69 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { TaskSchema } from '@agent-evals/domain';
 import type { GradeResult } from '@agent-evals/domain';
-import { MockModelAdapter, ScriptedModelAdapter } from '@agent-evals/adapters-model';
+import {
+  MockModelAdapter,
+  ScriptedModelAdapter,
+  createModelAdapter,
+  parseModelSpec,
+} from '@agent-evals/adapters-model';
 import type { ModelAdapter, ModelResponse } from '@agent-evals/adapters-model';
-import { BaselineHarness, noopMemory, TOOL_NAMES } from '@agent-evals/adapters-harness';
+import { createHarness, noopMemory, TOOL_NAMES } from '@agent-evals/adapters-harness';
 import { exactMatch, stateCheck } from '@agent-evals/graders';
 import { createSandbox, materializeFiles } from '@agent-evals/sandbox';
 import { createTraceBuffer, serializeTrace } from '@agent-evals/trace';
+import { loadDotEnv } from './lib/env';
 
-function parseArgs(argv: string[]): { taskPath?: string; scriptPath?: string } {
-  const out: { taskPath?: string; scriptPath?: string } = {};
+interface Args {
+  taskPath?: string;
+  modelSpec?: string;
+  scriptPath?: string;
+  harnessId: string;
+}
+
+function parseArgs(argv: string[]): Args {
+  const out: Args = { harnessId: 'baseline' };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
-    if (a === '--script') {
-      out.scriptPath = argv[++i];
-    } else if (!a.startsWith('--') && out.taskPath === undefined) {
-      out.taskPath = a;
-    }
+    if (a === '--model') out.modelSpec = argv[++i];
+    else if (a === '--script') out.scriptPath = argv[++i];
+    else if (a === '--harness') out.harnessId = argv[++i];
+    else if (!a.startsWith('--') && out.taskPath === undefined) out.taskPath = a;
   }
   return out;
 }
 
+function chooseModel(args: Args): { model: ModelAdapter; provider: string; modelId: string } {
+  if (args.modelSpec && args.scriptPath) {
+    throw new Error('use either --model or --script, not both');
+  }
+  if (args.scriptPath) {
+    const script = JSON.parse(readFileSync(resolve(args.scriptPath), 'utf8')) as ModelResponse[];
+    return { model: new ScriptedModelAdapter(script), provider: 'scripted', modelId: args.scriptPath };
+  }
+  if (args.modelSpec) {
+    const { provider, modelId } = parseModelSpec(args.modelSpec);
+    return { model: createModelAdapter(provider), provider, modelId };
+  }
+  return { model: new MockModelAdapter('42'), provider: 'mock', modelId: '42' };
+}
+
 async function main() {
-  const { taskPath, scriptPath } = parseArgs(process.argv.slice(2));
-  if (!taskPath) {
-    console.error('usage: tsx scripts/run-one-trial.ts <task.json> [--script <responses.json>]');
+  loadDotEnv();
+  const args = parseArgs(process.argv.slice(2));
+  if (!args.taskPath) {
+    console.error(
+      'usage: tsx scripts/run-one-trial.ts <task.json> [--model provider:modelId | --script responses.json] [--harness baseline]',
+    );
     process.exit(2);
   }
 
   // 1. load task
-  const task = TaskSchema.parse(JSON.parse(readFileSync(resolve(taskPath), 'utf8')));
+  const task = TaskSchema.parse(JSON.parse(readFileSync(resolve(args.taskPath), 'utf8')));
 
-  // 2. model
-  let model: ModelAdapter;
-  let modelId: string;
-  if (scriptPath) {
-    const script = JSON.parse(readFileSync(resolve(scriptPath), 'utf8')) as ModelResponse[];
-    model = new ScriptedModelAdapter(script);
-    modelId = `scripted:${scriptPath}`;
-  } else {
-    model = new MockModelAdapter('42');
-    modelId = 'mock/42';
-  }
+  // 2. model + harness
+  const { model, provider, modelId } = chooseModel(args);
+  const harness = createHarness(args.harnessId);
 
   // 3. isolated sandbox for this trial, seeded with the task's setup files
   const trialId = `trial-${randomUUID()}`;
@@ -65,10 +90,10 @@ async function main() {
   try {
     await materializeFiles(sandbox.dir, task.setup?.files);
 
-    // 4. run baseline harness
+    // 4. run harness
     const trace = createTraceBuffer();
     const startedAt = Date.now();
-    const output = await new BaselineHarness().run({
+    const output = await harness.run({
       task,
       model,
       modelId,
@@ -77,7 +102,7 @@ async function main() {
         trialId,
         seed: 0,
         sandboxDir: sandbox.dir,
-        budgets: { maxSteps: 10, maxTokens: 256, timeoutMs: 10_000 },
+        budgets: { maxSteps: 10, maxTokens: 256, timeoutMs: 60_000 },
         memory: noopMemory,
         skillIds: [],
         toolIds: task.toolsAllowed ?? [...TOOL_NAMES],
@@ -120,6 +145,7 @@ async function main() {
       serializeTrace({ trialId, events: trace.snapshot(), finalAnswer: output.finalAnswer }),
     );
     const resultPath = join(outDir, 'result.json');
+    const totalTokens = output.usage.promptTokens + output.usage.completionTokens;
     writeFileSync(
       resultPath,
       JSON.stringify(
@@ -129,12 +155,14 @@ async function main() {
           passed,
           score: grade.score,
           stoppedReason: output.stoppedReason,
+          harness: harness.id,
+          model: { provider, modelId },
           grade,
           metrics: {
             latencyMs,
             promptTokens: output.usage.promptTokens,
             completionTokens: output.usage.completionTokens,
-            totalTokens: output.usage.promptTokens + output.usage.completionTokens,
+            totalTokens,
             stepCount: output.stepCount,
           },
           traceUri: tracePath,
@@ -146,9 +174,15 @@ async function main() {
 
     console.log(passed ? 'PASS' : 'FAIL');
     for (const r of graderResults) console.log(`  ${r.graderType}: ${r.reasoning}`);
+    console.log(`model:   ${provider}:${modelId}`);
+    console.log(`harness: ${harness.id}`);
     console.log(`stopped: ${output.stoppedReason} (steps=${output.stepCount})`);
-    console.log(`trace:  ${tracePath}`);
-    console.log(`result: ${resultPath}`);
+    console.log(
+      `usage:   prompt=${output.usage.promptTokens} completion=${output.usage.completionTokens} total=${totalTokens}`,
+    );
+    console.log(`latency: ${latencyMs} ms`);
+    console.log(`trace:   ${tracePath}`);
+    console.log(`result:  ${resultPath}`);
     process.exitCode = passed ? 0 : 1;
   } finally {
     await sandbox.cleanup();
@@ -156,6 +190,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error(err);
+  console.error(err instanceof Error ? err.message : err);
   process.exit(2);
 });

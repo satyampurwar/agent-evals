@@ -9,3 +9,4 @@ export { noopMemory } from './types';
 export { BaselineHarness } from './baseline';
 export { TOOL_NAMES, TOOL_SPECS, executeTool, specsFor } from './tools';
 export type { ToolOutcome } from './tools';
+export { createHarness, HARNESS_IDS } from './registry';
