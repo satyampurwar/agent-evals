@@ -818,5 +818,148 @@ exit=1
 ### 3.7 What this phase does not do
 
 - No real model call. `MockModelAdapter` always returns `"42"`, so this run checks the pipeline, not model quality.
-- No tools and no sandbox isolation beyond a fresh temp directory. Both come in Phase 4.
+- No tools and no sandbox isolation. Phase 4 adds both (see below).
 - No database. Results are written to disk only. Phase 6 adds persistence.
+
+---
+
+## Phase 4 — Tools and sandbox isolation (no API key)
+
+**Goal:** The agent can write and read files in its own sandbox. Trial A cannot see trial B's files. A `state_check` grader passes when the agent writes the right file.
+
+Run every command from the repo root:
+
+```bash
+cd /Users/turing-satyam/work/beyond/task/agent-evals
+```
+
+### 4.0 Packages and files added in this phase
+
+| Package / file | Purpose |
+|---|---|
+| `packages/sandbox` | `createSandbox(trialId)` (fresh temp dir per trial), `materializeFiles`, `resolveInSandbox` (blocks absolute paths, `..` escapes, and symlinks), `SandboxPathError` |
+| `packages/adapters-harness/src/tools.ts` | Tools `write_file`, `read_file`, `list_dir`. Failures return `{ ok: false, result: { error } }` and never throw |
+| `packages/adapters-harness/src/baseline.ts` | Now a tool loop: model call, run tool calls, feed results back, repeat until the model answers or a budget is hit (`max_steps`, `max_tokens`, `timeout`, `error`) |
+| `packages/graders/src/state-check.ts` | `stateCheck(sandboxDir, checks)`: `exists`, `equals` (whitespace-trimmed), `jsonPathEquals` |
+| `packages/adapters-model/src/scripted.ts` | `ScriptedModelAdapter`: replays a fixed list of responses, including tool calls. Used by tests and demos |
+| `tasks/deterministic/02_write_answer.json` | Task: write `answer.txt` containing `ok`. Graded by `state_check` |
+| `fixtures/scripted/write_answer.json` | Scripted model replies for that task: one `write_file` call, then `done` |
+| `scripts/demo-isolation.ts` | Isolation demo (Checkpoint 4) |
+| `scripts/run-one-trial.ts` | Now creates a sandbox per trial, seeds setup files, grades `state_check`, cleans up the sandbox, and accepts `--script <responses.json>` |
+
+### 4.1 Install and run the unit tests
+
+```bash
+npm install
+npm test -w @agent-evals/domain -w @agent-evals/sandbox -w @agent-evals/trace -w @agent-evals/graders -w @agent-evals/adapters-model -w @agent-evals/adapters-harness
+```
+
+Expected: all six packages report `Test Files ... passed` with no failures. Per package the test counts are 2, 9, 4, 12, 4 and 16.
+
+Optional typecheck:
+
+```bash
+for p in domain sandbox trace graders adapters-model adapters-harness; do
+  npx tsc -p packages/$p --noEmit && echo "tsc ok: $p"
+done
+```
+
+### 4.2 Checkpoint 4a: isolation demo (expect ISOLATION OK)
+
+```bash
+npx tsx scripts/demo-isolation.ts
+echo "exit=$?"
+```
+
+Trial A writes `secret.txt`. Trial B then tries two reads: `secret.txt` by name, and a `../` path into A's sandbox. Both must fail. B's sandbox must not contain the file.
+
+Expected output (paths will differ):
+
+```
+trial A sandbox: /var/folders/.../T/agent-evals-trial-a-XXXXXX
+trial B sandbox: /var/folders/.../T/agent-evals-trial-b-XXXXXX
+
+PASS  trial A wrote secret.txt (sanity)
+PASS  trial B read_file("secret.txt") fails  ({"error":"not found: secret.txt"})
+PASS  trial B read_file via ../ into trial A fails  ({"error":"path escapes sandbox: ../agent-evals-trial-a-XXXXXX/secret.txt"})
+PASS  trial A secret does not appear in trial B output or trace
+PASS  trial B's sandbox has no secret.txt
+
+ISOLATION OK: trial B could not see trial A data.
+exit=0
+```
+
+### 4.3 Checkpoint 4b: state check passes (expect PASS)
+
+```bash
+npx tsx scripts/run-one-trial.ts tasks/deterministic/02_write_answer.json --script fixtures/scripted/write_answer.json
+echo "exit=$?"
+```
+
+Expected output:
+
+```
+PASS
+  state_check: all 1 state check(s) passed
+stopped: completed (steps=2)
+trace:  .../trace.json
+result: .../result.json
+exit=0
+```
+
+### 4.4 Negative check: without the script the state check fails (expect FAIL)
+
+The default mock model answers `42` and never writes a file.
+
+```bash
+npx tsx scripts/run-one-trial.ts tasks/deterministic/02_write_answer.json
+echo "exit=$?"
+```
+
+Expected output:
+
+```
+FAIL
+  state_check: answer.txt: expected exists=true, got false; answer.txt: file missing
+stopped: completed (steps=1)
+...
+exit=1
+```
+
+### 4.5 Inspect the tool trace
+
+Run 4.3 first, so it is the most recent trial. Then open its trace:
+
+```bash
+TMPD="$(node -p 'require("os").tmpdir()')"
+RUN_DIR="$(ls -td "$TMPD"/agent-evals/trial-*/ | head -1)"
+cat "${RUN_DIR}trace.json"
+```
+
+The events should appear in this order:
+
+1. `step_boundary` with `step: 1`
+2. `message` with `role: "user"` and the task prompt
+3. `message` with `role: "assistant"` and empty content (this is the tool-call turn)
+4. `tool_call` with `name: "write_file"`, `callId: "call_1"`
+5. `tool_result` with `callId: "call_1"` and `ok: true`
+6. `step_boundary` with `step: 2`
+7. `message` with `role: "assistant"` and `content: "done"`
+
+Sandbox directories are deleted after each trial. The trace and result files are kept.
+
+### 4.6 Troubleshooting
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `Cannot find module '@agent-evals/sandbox'` | Workspace link missing | Run `npm install` from the repo root |
+| `listen EPERM ... tsx-*.pipe` | `tsx` could not open its IPC socket (happens in some sandboxed shells) | Run from a normal terminal |
+| `scripted model exhausted after N response(s)` | The harness made more model calls than the script has responses | Add responses to the script file, or check that the model is not looping |
+| `state_check` reports `symlinks are not allowed` | A symlink exists in the sandbox | Expected. Tools never create symlinks, so this means something outside the harness made one |
+
+### 4.7 What this phase does not do
+
+- No real model. Tool calls come only from the scripted responses. Phase 5 adds OpenRouter.
+- `list_dir` is covered by unit tests only. No task uses it yet.
+- The sandbox is a temp directory on the host, not a container. It keeps trials from seeing each other's files, but it does not contain a malicious tool or a shell. Phase 4 has no shell tool.
+- No `--model` or `--harness` flags yet. Phase 5 adds them.
