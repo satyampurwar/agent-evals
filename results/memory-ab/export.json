@@ -1,0 +1,4346 @@
+{
+  "experiment": {
+    "id": "16da4716-6bd6-4a57-9adf-57f896874495",
+    "name": "memory-ab",
+    "hypothesis": "Memory on (Hermes, gpt-4.1-mini) raises the pass rate on memory tasks and leaves control tasks unchanged. See EXPERIMENT.md.",
+    "taskIds": [
+      "mem_recall_client_01",
+      "mem_deploy_file_01",
+      "det_add_01",
+      "det_letter_count_01",
+      "det_weekday_01"
+    ],
+    "configIds": [
+      "9217eb8c-d65e-4f10-bb76-a424de91daf7",
+      "5993b6ea-77b6-4caf-9ada-d403b26e8aa8"
+    ],
+    "nTrials": 10,
+    "status": "completed",
+    "createdAt": "2026-11-21T18:15:06.840Z",
+    "completedAt": "2026-11-21T18:23:10.330Z"
+  },
+  "configs": [
+    {
+      "id": "9217eb8c-d65e-4f10-bb76-a424de91daf7",
+      "name": "mem-off",
+      "version": 1,
+      "contentHash": "0ae1da1e2a95d3393e3c78b8a7d624f7bb03e04a4429c4934921c834ad79a01e",
+      "harnessId": "hermes",
+      "provider": "openrouter",
+      "modelId": "openai/gpt-4.1-mini",
+      "temperature": 0
+    },
+    {
+      "id": "5993b6ea-77b6-4caf-9ada-d403b26e8aa8",
+      "name": "mem-on",
+      "version": 1,
+      "contentHash": "47783618092e4d0a33ac686fb8ab28a2922c14c84142aa0fa9fb3b380aed35a3",
+      "harnessId": "hermes",
+      "provider": "openrouter",
+      "modelId": "openai/gpt-4.1-mini",
+      "temperature": 0
+    }
+  ],
+  "trials": [
+    {
+      "id": "29250587-d9c0-4ff9-bcf8-d32fd05c1422",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_add_01",
+      "taskVersion": "1.0.0",
+      "configId": "5993b6ea-77b6-4caf-9ada-d403b26e8aa8",
+      "configContentHash": "47783618092e4d0a33ac686fb8ab28a2922c14c84142aa0fa9fb3b380aed35a3",
+      "trialIndex": 0,
+      "status": "succeeded",
+      "seed": 745775220,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 7502,
+        "stepCount": 2,
+        "totalTokens": 4725,
+        "promptTokens": 4700,
+        "completionTokens": 25
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=42 got=42",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/29250587-d9c0-4ff9-bcf8-d32fd05c1422.json",
+      "startedAt": "2026-11-21T18:20:37.735Z",
+      "finishedAt": "2026-11-21T18:20:45.242Z",
+      "hasTrace": true
+    },
+    {
+      "id": "c49f73ee-ae64-4bab-b3c3-d229d893bd12",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_add_01",
+      "taskVersion": "1.0.0",
+      "configId": "5993b6ea-77b6-4caf-9ada-d403b26e8aa8",
+      "configContentHash": "47783618092e4d0a33ac686fb8ab28a2922c14c84142aa0fa9fb3b380aed35a3",
+      "trialIndex": 1,
+      "status": "succeeded",
+      "seed": 2088743887,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 5211,
+        "stepCount": 2,
+        "totalTokens": 4725,
+        "promptTokens": 4700,
+        "completionTokens": 25
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=42 got=42",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/c49f73ee-ae64-4bab-b3c3-d229d893bd12.json",
+      "startedAt": "2026-11-21T18:20:45.250Z",
+      "finishedAt": "2026-11-21T18:20:50.470Z",
+      "hasTrace": true
+    },
+    {
+      "id": "2c16f083-401d-4be3-a852-fac42246f812",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_add_01",
+      "taskVersion": "1.0.0",
+      "configId": "5993b6ea-77b6-4caf-9ada-d403b26e8aa8",
+      "configContentHash": "47783618092e4d0a33ac686fb8ab28a2922c14c84142aa0fa9fb3b380aed35a3",
+      "trialIndex": 2,
+      "status": "succeeded",
+      "seed": 1882278323,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 5824,
+        "stepCount": 2,
+        "totalTokens": 4725,
+        "promptTokens": 4700,
+        "completionTokens": 25
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=42 got=42",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/2c16f083-401d-4be3-a852-fac42246f812.json",
+      "startedAt": "2026-11-21T18:20:50.480Z",
+      "finishedAt": "2026-11-21T18:20:56.311Z",
+      "hasTrace": true
+    },
+    {
+      "id": "3d63de7f-b0d1-47cb-b637-cd95051fcec5",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_add_01",
+      "taskVersion": "1.0.0",
+      "configId": "5993b6ea-77b6-4caf-9ada-d403b26e8aa8",
+      "configContentHash": "47783618092e4d0a33ac686fb8ab28a2922c14c84142aa0fa9fb3b380aed35a3",
+      "trialIndex": 3,
+      "status": "succeeded",
+      "seed": 1084823493,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 4682,
+        "stepCount": 2,
+        "totalTokens": 4722,
+        "promptTokens": 4698,
+        "completionTokens": 24
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=42 got=42",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/3d63de7f-b0d1-47cb-b637-cd95051fcec5.json",
+      "startedAt": "2026-11-21T18:20:56.316Z",
+      "finishedAt": "2026-11-21T18:21:01.001Z",
+      "hasTrace": true
+    },
+    {
+      "id": "58a9ce53-1012-429a-bf97-91693d7bb5e6",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_add_01",
+      "taskVersion": "1.0.0",
+      "configId": "5993b6ea-77b6-4caf-9ada-d403b26e8aa8",
+      "configContentHash": "47783618092e4d0a33ac686fb8ab28a2922c14c84142aa0fa9fb3b380aed35a3",
+      "trialIndex": 4,
+      "status": "succeeded",
+      "seed": 1366518612,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 2758,
+        "stepCount": 2,
+        "totalTokens": 4725,
+        "promptTokens": 4700,
+        "completionTokens": 25
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=42 got=42",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/58a9ce53-1012-429a-bf97-91693d7bb5e6.json",
+      "startedAt": "2026-11-21T18:21:01.009Z",
+      "finishedAt": "2026-11-21T18:21:03.771Z",
+      "hasTrace": true
+    },
+    {
+      "id": "26ad5d0b-95f2-4379-b93e-0347498ab1d8",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_add_01",
+      "taskVersion": "1.0.0",
+      "configId": "5993b6ea-77b6-4caf-9ada-d403b26e8aa8",
+      "configContentHash": "47783618092e4d0a33ac686fb8ab28a2922c14c84142aa0fa9fb3b380aed35a3",
+      "trialIndex": 5,
+      "status": "succeeded",
+      "seed": 1690379717,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 2496,
+        "stepCount": 2,
+        "totalTokens": 4722,
+        "promptTokens": 4698,
+        "completionTokens": 24
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=42 got=42",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/26ad5d0b-95f2-4379-b93e-0347498ab1d8.json",
+      "startedAt": "2026-11-21T18:21:03.776Z",
+      "finishedAt": "2026-11-21T18:21:06.275Z",
+      "hasTrace": true
+    },
+    {
+      "id": "00a7c2e9-be72-4b96-9817-4aaacb9dde06",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_add_01",
+      "taskVersion": "1.0.0",
+      "configId": "5993b6ea-77b6-4caf-9ada-d403b26e8aa8",
+      "configContentHash": "47783618092e4d0a33ac686fb8ab28a2922c14c84142aa0fa9fb3b380aed35a3",
+      "trialIndex": 6,
+      "status": "succeeded",
+      "seed": 1992333643,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 6233,
+        "stepCount": 2,
+        "totalTokens": 4725,
+        "promptTokens": 4700,
+        "completionTokens": 25
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=42 got=42",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/00a7c2e9-be72-4b96-9817-4aaacb9dde06.json",
+      "startedAt": "2026-11-21T18:21:06.283Z",
+      "finishedAt": "2026-11-21T18:21:12.521Z",
+      "hasTrace": true
+    },
+    {
+      "id": "c0db6afc-3db6-402c-89d8-150513e5cbc4",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_add_01",
+      "taskVersion": "1.0.0",
+      "configId": "5993b6ea-77b6-4caf-9ada-d403b26e8aa8",
+      "configContentHash": "47783618092e4d0a33ac686fb8ab28a2922c14c84142aa0fa9fb3b380aed35a3",
+      "trialIndex": 7,
+      "status": "succeeded",
+      "seed": 1793248652,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 3711,
+        "stepCount": 2,
+        "totalTokens": 4725,
+        "promptTokens": 4700,
+        "completionTokens": 25
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=42 got=42",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/c0db6afc-3db6-402c-89d8-150513e5cbc4.json",
+      "startedAt": "2026-11-21T18:21:12.529Z",
+      "finishedAt": "2026-11-21T18:21:16.245Z",
+      "hasTrace": true
+    },
+    {
+      "id": "813a4994-d8c8-4d9a-9350-1a6f523417d8",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_add_01",
+      "taskVersion": "1.0.0",
+      "configId": "5993b6ea-77b6-4caf-9ada-d403b26e8aa8",
+      "configContentHash": "47783618092e4d0a33ac686fb8ab28a2922c14c84142aa0fa9fb3b380aed35a3",
+      "trialIndex": 8,
+      "status": "succeeded",
+      "seed": 1520025459,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 5798,
+        "stepCount": 2,
+        "totalTokens": 4725,
+        "promptTokens": 4700,
+        "completionTokens": 25
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=42 got=42",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/813a4994-d8c8-4d9a-9350-1a6f523417d8.json",
+      "startedAt": "2026-11-21T18:21:16.251Z",
+      "finishedAt": "2026-11-21T18:21:22.056Z",
+      "hasTrace": true
+    },
+    {
+      "id": "f458acaa-e7cf-499d-9752-5ba366dfeeae",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_add_01",
+      "taskVersion": "1.0.0",
+      "configId": "5993b6ea-77b6-4caf-9ada-d403b26e8aa8",
+      "configContentHash": "47783618092e4d0a33ac686fb8ab28a2922c14c84142aa0fa9fb3b380aed35a3",
+      "trialIndex": 9,
+      "status": "succeeded",
+      "seed": 2142138432,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 2414,
+        "stepCount": 2,
+        "totalTokens": 4725,
+        "promptTokens": 4700,
+        "completionTokens": 25
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=42 got=42",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/f458acaa-e7cf-499d-9752-5ba366dfeeae.json",
+      "startedAt": "2026-11-21T18:21:22.065Z",
+      "finishedAt": "2026-11-21T18:21:24.485Z",
+      "hasTrace": true
+    },
+    {
+      "id": "75086d07-2288-4d9b-903a-453f5d3e53eb",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_add_01",
+      "taskVersion": "1.0.0",
+      "configId": "9217eb8c-d65e-4f10-bb76-a424de91daf7",
+      "configContentHash": "0ae1da1e2a95d3393e3c78b8a7d624f7bb03e04a4429c4934921c834ad79a01e",
+      "trialIndex": 0,
+      "status": "succeeded",
+      "seed": 1628111770,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 3513,
+        "stepCount": 1,
+        "totalTokens": 380,
+        "promptTokens": 378,
+        "completionTokens": 2
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=42 got=42",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/75086d07-2288-4d9b-903a-453f5d3e53eb.json",
+      "startedAt": "2026-11-21T18:20:06.130Z",
+      "finishedAt": "2026-11-21T18:20:09.651Z",
+      "hasTrace": true
+    },
+    {
+      "id": "1c15be83-a661-4dc4-9207-15f1f2ec7be1",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_add_01",
+      "taskVersion": "1.0.0",
+      "configId": "9217eb8c-d65e-4f10-bb76-a424de91daf7",
+      "configContentHash": "0ae1da1e2a95d3393e3c78b8a7d624f7bb03e04a4429c4934921c834ad79a01e",
+      "trialIndex": 1,
+      "status": "succeeded",
+      "seed": 2010673204,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 3908,
+        "stepCount": 1,
+        "totalTokens": 380,
+        "promptTokens": 378,
+        "completionTokens": 2
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=42 got=42",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/1c15be83-a661-4dc4-9207-15f1f2ec7be1.json",
+      "startedAt": "2026-11-21T18:20:09.658Z",
+      "finishedAt": "2026-11-21T18:20:13.572Z",
+      "hasTrace": true
+    },
+    {
+      "id": "94015391-2f27-4a32-aab8-7fd28895ab9b",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_add_01",
+      "taskVersion": "1.0.0",
+      "configId": "9217eb8c-d65e-4f10-bb76-a424de91daf7",
+      "configContentHash": "0ae1da1e2a95d3393e3c78b8a7d624f7bb03e04a4429c4934921c834ad79a01e",
+      "trialIndex": 2,
+      "status": "succeeded",
+      "seed": 1950500056,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 3265,
+        "stepCount": 1,
+        "totalTokens": 380,
+        "promptTokens": 378,
+        "completionTokens": 2
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=42 got=42",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/94015391-2f27-4a32-aab8-7fd28895ab9b.json",
+      "startedAt": "2026-11-21T18:20:13.578Z",
+      "finishedAt": "2026-11-21T18:20:16.848Z",
+      "hasTrace": true
+    },
+    {
+      "id": "76e08657-029b-4cf8-bd81-6b5db794cc16",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_add_01",
+      "taskVersion": "1.0.0",
+      "configId": "9217eb8c-d65e-4f10-bb76-a424de91daf7",
+      "configContentHash": "0ae1da1e2a95d3393e3c78b8a7d624f7bb03e04a4429c4934921c834ad79a01e",
+      "trialIndex": 3,
+      "status": "succeeded",
+      "seed": 1153041767,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 5715,
+        "stepCount": 1,
+        "totalTokens": 380,
+        "promptTokens": 378,
+        "completionTokens": 2
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=42 got=42",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/76e08657-029b-4cf8-bd81-6b5db794cc16.json",
+      "startedAt": "2026-11-21T18:20:16.855Z",
+      "finishedAt": "2026-11-21T18:20:22.576Z",
+      "hasTrace": true
+    },
+    {
+      "id": "700d0f58-ae4f-4dc8-a64c-d5e08071dcaa",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_add_01",
+      "taskVersion": "1.0.0",
+      "configId": "9217eb8c-d65e-4f10-bb76-a424de91daf7",
+      "configContentHash": "0ae1da1e2a95d3393e3c78b8a7d624f7bb03e04a4429c4934921c834ad79a01e",
+      "trialIndex": 4,
+      "status": "succeeded",
+      "seed": 1117416937,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 3260,
+        "stepCount": 1,
+        "totalTokens": 380,
+        "promptTokens": 378,
+        "completionTokens": 2
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=42 got=42",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/700d0f58-ae4f-4dc8-a64c-d5e08071dcaa.json",
+      "startedAt": "2026-11-21T18:20:22.585Z",
+      "finishedAt": "2026-11-21T18:20:25.850Z",
+      "hasTrace": true
+    },
+    {
+      "id": "8c8f65e4-5453-48c6-9534-56928900527a",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_add_01",
+      "taskVersion": "1.0.0",
+      "configId": "9217eb8c-d65e-4f10-bb76-a424de91daf7",
+      "configContentHash": "0ae1da1e2a95d3393e3c78b8a7d624f7bb03e04a4429c4934921c834ad79a01e",
+      "trialIndex": 5,
+      "status": "succeeded",
+      "seed": 1686586303,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 3449,
+        "stepCount": 1,
+        "totalTokens": 380,
+        "promptTokens": 378,
+        "completionTokens": 2
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=42 got=42",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/8c8f65e4-5453-48c6-9534-56928900527a.json",
+      "startedAt": "2026-11-21T18:20:25.855Z",
+      "finishedAt": "2026-11-21T18:20:29.310Z",
+      "hasTrace": true
+    },
+    {
+      "id": "c4ebbadf-6136-4de0-a460-286dac972578",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_add_01",
+      "taskVersion": "1.0.0",
+      "configId": "9217eb8c-d65e-4f10-bb76-a424de91daf7",
+      "configContentHash": "0ae1da1e2a95d3393e3c78b8a7d624f7bb03e04a4429c4934921c834ad79a01e",
+      "trialIndex": 6,
+      "status": "succeeded",
+      "seed": 1719483127,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 3958,
+        "stepCount": 1,
+        "totalTokens": 380,
+        "promptTokens": 378,
+        "completionTokens": 2
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=42 got=42",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/c4ebbadf-6136-4de0-a460-286dac972578.json",
+      "startedAt": "2026-11-21T18:20:29.318Z",
+      "finishedAt": "2026-11-21T18:20:33.282Z",
+      "hasTrace": true
+    },
+    {
+      "id": "0d27e4f6-3030-46b7-acf0-47d82cc21350",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_add_01",
+      "taskVersion": "1.0.0",
+      "configId": "9217eb8c-d65e-4f10-bb76-a424de91daf7",
+      "configContentHash": "0ae1da1e2a95d3393e3c78b8a7d624f7bb03e04a4429c4934921c834ad79a01e",
+      "trialIndex": 7,
+      "status": "succeeded",
+      "seed": 1111340672,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 1894,
+        "stepCount": 1,
+        "totalTokens": 380,
+        "promptTokens": 378,
+        "completionTokens": 2
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=42 got=42",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/0d27e4f6-3030-46b7-acf0-47d82cc21350.json",
+      "startedAt": "2026-11-21T18:20:33.287Z",
+      "finishedAt": "2026-11-21T18:20:35.188Z",
+      "hasTrace": true
+    },
+    {
+      "id": "7c136cac-363d-433a-8cda-c8717147af13",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_add_01",
+      "taskVersion": "1.0.0",
+      "configId": "9217eb8c-d65e-4f10-bb76-a424de91daf7",
+      "configContentHash": "0ae1da1e2a95d3393e3c78b8a7d624f7bb03e04a4429c4934921c834ad79a01e",
+      "trialIndex": 8,
+      "status": "succeeded",
+      "seed": 976711850,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 1252,
+        "stepCount": 1,
+        "totalTokens": 380,
+        "promptTokens": 378,
+        "completionTokens": 2
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=42 got=42",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/7c136cac-363d-433a-8cda-c8717147af13.json",
+      "startedAt": "2026-11-21T18:20:35.197Z",
+      "finishedAt": "2026-11-21T18:20:36.453Z",
+      "hasTrace": true
+    },
+    {
+      "id": "fea5329e-4919-4772-953c-39e16dc3a15e",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_add_01",
+      "taskVersion": "1.0.0",
+      "configId": "9217eb8c-d65e-4f10-bb76-a424de91daf7",
+      "configContentHash": "0ae1da1e2a95d3393e3c78b8a7d624f7bb03e04a4429c4934921c834ad79a01e",
+      "trialIndex": 9,
+      "status": "succeeded",
+      "seed": 395686145,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 1262,
+        "stepCount": 1,
+        "totalTokens": 380,
+        "promptTokens": 378,
+        "completionTokens": 2
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=42 got=42",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/fea5329e-4919-4772-953c-39e16dc3a15e.json",
+      "startedAt": "2026-11-21T18:20:36.460Z",
+      "finishedAt": "2026-11-21T18:20:37.728Z",
+      "hasTrace": true
+    },
+    {
+      "id": "1c4003d3-79a0-4d8c-a2a1-a2240d91b8e4",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_letter_count_01",
+      "taskVersion": "1.0.0",
+      "configId": "5993b6ea-77b6-4caf-9ada-d403b26e8aa8",
+      "configContentHash": "47783618092e4d0a33ac686fb8ab28a2922c14c84142aa0fa9fb3b380aed35a3",
+      "trialIndex": 0,
+      "status": "succeeded",
+      "seed": 110542352,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 1244,
+        "stepCount": 1,
+        "totalTokens": 2340,
+        "promptTokens": 2337,
+        "completionTokens": 3
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=4 got=4",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/1c4003d3-79a0-4d8c-a2a1-a2240d91b8e4.json",
+      "startedAt": "2026-11-21T18:21:35.562Z",
+      "finishedAt": "2026-11-21T18:21:36.811Z",
+      "hasTrace": true
+    },
+    {
+      "id": "dc3a7a4c-5164-4ae4-9972-1a5a3cb11c5a",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_letter_count_01",
+      "taskVersion": "1.0.0",
+      "configId": "5993b6ea-77b6-4caf-9ada-d403b26e8aa8",
+      "configContentHash": "47783618092e4d0a33ac686fb8ab28a2922c14c84142aa0fa9fb3b380aed35a3",
+      "trialIndex": 1,
+      "status": "succeeded",
+      "seed": 1923141796,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 2230,
+        "stepCount": 2,
+        "totalTokens": 4734,
+        "promptTokens": 4709,
+        "completionTokens": 25
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=4 got=4",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/dc3a7a4c-5164-4ae4-9972-1a5a3cb11c5a.json",
+      "startedAt": "2026-11-21T18:21:36.818Z",
+      "finishedAt": "2026-11-21T18:21:39.054Z",
+      "hasTrace": true
+    },
+    {
+      "id": "56645dc6-b48c-4687-8256-dd95bacd3df8",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_letter_count_01",
+      "taskVersion": "1.0.0",
+      "configId": "5993b6ea-77b6-4caf-9ada-d403b26e8aa8",
+      "configContentHash": "47783618092e4d0a33ac686fb8ab28a2922c14c84142aa0fa9fb3b380aed35a3",
+      "trialIndex": 2,
+      "status": "succeeded",
+      "seed": 657430843,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 2550,
+        "stepCount": 2,
+        "totalTokens": 4726,
+        "promptTokens": 4707,
+        "completionTokens": 19
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=4 got=4",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/56645dc6-b48c-4687-8256-dd95bacd3df8.json",
+      "startedAt": "2026-11-21T18:21:39.061Z",
+      "finishedAt": "2026-11-21T18:21:41.615Z",
+      "hasTrace": true
+    },
+    {
+      "id": "920d0be8-27c3-45ee-9fa8-5e58d579f8b3",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_letter_count_01",
+      "taskVersion": "1.0.0",
+      "configId": "5993b6ea-77b6-4caf-9ada-d403b26e8aa8",
+      "configContentHash": "47783618092e4d0a33ac686fb8ab28a2922c14c84142aa0fa9fb3b380aed35a3",
+      "trialIndex": 3,
+      "status": "succeeded",
+      "seed": 1516040801,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 1113,
+        "stepCount": 1,
+        "totalTokens": 2340,
+        "promptTokens": 2337,
+        "completionTokens": 3
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=4 got=4",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/920d0be8-27c3-45ee-9fa8-5e58d579f8b3.json",
+      "startedAt": "2026-11-21T18:21:41.619Z",
+      "finishedAt": "2026-11-21T18:21:42.737Z",
+      "hasTrace": true
+    },
+    {
+      "id": "35edf4a6-e134-4ba4-a912-b68964cb8165",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_letter_count_01",
+      "taskVersion": "1.0.0",
+      "configId": "5993b6ea-77b6-4caf-9ada-d403b26e8aa8",
+      "configContentHash": "47783618092e4d0a33ac686fb8ab28a2922c14c84142aa0fa9fb3b380aed35a3",
+      "trialIndex": 4,
+      "status": "succeeded",
+      "seed": 872970182,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 3810,
+        "stepCount": 2,
+        "totalTokens": 4726,
+        "promptTokens": 4707,
+        "completionTokens": 19
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=4 got=4",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/35edf4a6-e134-4ba4-a912-b68964cb8165.json",
+      "startedAt": "2026-11-21T18:21:42.744Z",
+      "finishedAt": "2026-11-21T18:21:46.559Z",
+      "hasTrace": true
+    },
+    {
+      "id": "a1414c0a-b049-4c7a-b7b6-5dbe63114cfb",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_letter_count_01",
+      "taskVersion": "1.0.0",
+      "configId": "5993b6ea-77b6-4caf-9ada-d403b26e8aa8",
+      "configContentHash": "47783618092e4d0a33ac686fb8ab28a2922c14c84142aa0fa9fb3b380aed35a3",
+      "trialIndex": 5,
+      "status": "succeeded",
+      "seed": 190163024,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 1892,
+        "stepCount": 1,
+        "totalTokens": 2340,
+        "promptTokens": 2337,
+        "completionTokens": 3
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=4 got=4",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/a1414c0a-b049-4c7a-b7b6-5dbe63114cfb.json",
+      "startedAt": "2026-11-21T18:21:46.566Z",
+      "finishedAt": "2026-11-21T18:21:48.463Z",
+      "hasTrace": true
+    },
+    {
+      "id": "c12cd894-e539-4eae-bb60-0ed797bf48a0",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_letter_count_01",
+      "taskVersion": "1.0.0",
+      "configId": "5993b6ea-77b6-4caf-9ada-d403b26e8aa8",
+      "configContentHash": "47783618092e4d0a33ac686fb8ab28a2922c14c84142aa0fa9fb3b380aed35a3",
+      "trialIndex": 6,
+      "status": "succeeded",
+      "seed": 1340808628,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 4408,
+        "stepCount": 1,
+        "totalTokens": 2340,
+        "promptTokens": 2337,
+        "completionTokens": 3
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=4 got=4",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/c12cd894-e539-4eae-bb60-0ed797bf48a0.json",
+      "startedAt": "2026-11-21T18:21:48.467Z",
+      "finishedAt": "2026-11-21T18:21:52.879Z",
+      "hasTrace": true
+    },
+    {
+      "id": "4ea8a53b-ad97-4f23-8af2-d96ee1549b8a",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_letter_count_01",
+      "taskVersion": "1.0.0",
+      "configId": "5993b6ea-77b6-4caf-9ada-d403b26e8aa8",
+      "configContentHash": "47783618092e4d0a33ac686fb8ab28a2922c14c84142aa0fa9fb3b380aed35a3",
+      "trialIndex": 7,
+      "status": "succeeded",
+      "seed": 213917267,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 3018,
+        "stepCount": 2,
+        "totalTokens": 4726,
+        "promptTokens": 4707,
+        "completionTokens": 19
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=4 got=4",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/4ea8a53b-ad97-4f23-8af2-d96ee1549b8a.json",
+      "startedAt": "2026-11-21T18:21:52.884Z",
+      "finishedAt": "2026-11-21T18:21:55.908Z",
+      "hasTrace": true
+    },
+    {
+      "id": "ca324556-8a98-46a5-883b-2d07a3b25a99",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_letter_count_01",
+      "taskVersion": "1.0.0",
+      "configId": "5993b6ea-77b6-4caf-9ada-d403b26e8aa8",
+      "configContentHash": "47783618092e4d0a33ac686fb8ab28a2922c14c84142aa0fa9fb3b380aed35a3",
+      "trialIndex": 8,
+      "status": "succeeded",
+      "seed": 666944123,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 4404,
+        "stepCount": 2,
+        "totalTokens": 4726,
+        "promptTokens": 4707,
+        "completionTokens": 19
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=4 got=4",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/ca324556-8a98-46a5-883b-2d07a3b25a99.json",
+      "startedAt": "2026-11-21T18:21:55.916Z",
+      "finishedAt": "2026-11-21T18:22:00.327Z",
+      "hasTrace": true
+    },
+    {
+      "id": "b91db70e-200a-4409-adc9-c836130dd852",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_letter_count_01",
+      "taskVersion": "1.0.0",
+      "configId": "5993b6ea-77b6-4caf-9ada-d403b26e8aa8",
+      "configContentHash": "47783618092e4d0a33ac686fb8ab28a2922c14c84142aa0fa9fb3b380aed35a3",
+      "trialIndex": 9,
+      "status": "succeeded",
+      "seed": 850121818,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 2034,
+        "stepCount": 1,
+        "totalTokens": 2340,
+        "promptTokens": 2337,
+        "completionTokens": 3
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=4 got=4",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/b91db70e-200a-4409-adc9-c836130dd852.json",
+      "startedAt": "2026-11-21T18:22:00.334Z",
+      "finishedAt": "2026-11-21T18:22:02.373Z",
+      "hasTrace": true
+    },
+    {
+      "id": "3082b083-2356-400a-aec7-f117e47b5d41",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_letter_count_01",
+      "taskVersion": "1.0.0",
+      "configId": "9217eb8c-d65e-4f10-bb76-a424de91daf7",
+      "configContentHash": "0ae1da1e2a95d3393e3c78b8a7d624f7bb03e04a4429c4934921c834ad79a01e",
+      "trialIndex": 0,
+      "status": "succeeded",
+      "seed": 634297309,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 972,
+        "stepCount": 1,
+        "totalTokens": 385,
+        "promptTokens": 383,
+        "completionTokens": 2
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=4 got=4",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/3082b083-2356-400a-aec7-f117e47b5d41.json",
+      "startedAt": "2026-11-21T18:21:24.492Z",
+      "finishedAt": "2026-11-21T18:21:25.468Z",
+      "hasTrace": true
+    },
+    {
+      "id": "9785826d-abd9-4904-a5fc-be437de0031d",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_letter_count_01",
+      "taskVersion": "1.0.0",
+      "configId": "9217eb8c-d65e-4f10-bb76-a424de91daf7",
+      "configContentHash": "0ae1da1e2a95d3393e3c78b8a7d624f7bb03e04a4429c4934921c834ad79a01e",
+      "trialIndex": 1,
+      "status": "succeeded",
+      "seed": 1028191944,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 1144,
+        "stepCount": 1,
+        "totalTokens": 385,
+        "promptTokens": 383,
+        "completionTokens": 2
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=4 got=4",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/9785826d-abd9-4904-a5fc-be437de0031d.json",
+      "startedAt": "2026-11-21T18:21:25.472Z",
+      "finishedAt": "2026-11-21T18:21:26.621Z",
+      "hasTrace": true
+    },
+    {
+      "id": "fc3859e3-478d-4a4c-ae14-0705cecb65f9",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_letter_count_01",
+      "taskVersion": "1.0.0",
+      "configId": "9217eb8c-d65e-4f10-bb76-a424de91daf7",
+      "configContentHash": "0ae1da1e2a95d3393e3c78b8a7d624f7bb03e04a4429c4934921c834ad79a01e",
+      "trialIndex": 2,
+      "status": "succeeded",
+      "seed": 1047570155,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 1032,
+        "stepCount": 1,
+        "totalTokens": 385,
+        "promptTokens": 383,
+        "completionTokens": 2
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=4 got=4",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/fc3859e3-478d-4a4c-ae14-0705cecb65f9.json",
+      "startedAt": "2026-11-21T18:21:26.627Z",
+      "finishedAt": "2026-11-21T18:21:27.662Z",
+      "hasTrace": true
+    },
+    {
+      "id": "c31af387-09de-41ba-9ff8-4f5791991f9e",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_letter_count_01",
+      "taskVersion": "1.0.0",
+      "configId": "9217eb8c-d65e-4f10-bb76-a424de91daf7",
+      "configContentHash": "0ae1da1e2a95d3393e3c78b8a7d624f7bb03e04a4429c4934921c834ad79a01e",
+      "trialIndex": 3,
+      "status": "succeeded",
+      "seed": 481136564,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 1566,
+        "stepCount": 1,
+        "totalTokens": 385,
+        "promptTokens": 383,
+        "completionTokens": 2
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=4 got=4",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/c31af387-09de-41ba-9ff8-4f5791991f9e.json",
+      "startedAt": "2026-11-21T18:21:27.667Z",
+      "finishedAt": "2026-11-21T18:21:29.237Z",
+      "hasTrace": true
+    },
+    {
+      "id": "d38a5e02-a1f3-4315-a460-50f18973861f",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_letter_count_01",
+      "taskVersion": "1.0.0",
+      "configId": "9217eb8c-d65e-4f10-bb76-a424de91daf7",
+      "configContentHash": "0ae1da1e2a95d3393e3c78b8a7d624f7bb03e04a4429c4934921c834ad79a01e",
+      "trialIndex": 4,
+      "status": "succeeded",
+      "seed": 1388807534,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 1132,
+        "stepCount": 1,
+        "totalTokens": 385,
+        "promptTokens": 383,
+        "completionTokens": 2
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=4 got=4",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/d38a5e02-a1f3-4315-a460-50f18973861f.json",
+      "startedAt": "2026-11-21T18:21:29.244Z",
+      "finishedAt": "2026-11-21T18:21:30.383Z",
+      "hasTrace": true
+    },
+    {
+      "id": "ef678708-4f4d-4f1b-b269-5d40a75fd48b",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_letter_count_01",
+      "taskVersion": "1.0.0",
+      "configId": "9217eb8c-d65e-4f10-bb76-a424de91daf7",
+      "configContentHash": "0ae1da1e2a95d3393e3c78b8a7d624f7bb03e04a4429c4934921c834ad79a01e",
+      "trialIndex": 5,
+      "status": "succeeded",
+      "seed": 543374056,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 1130,
+        "stepCount": 1,
+        "totalTokens": 385,
+        "promptTokens": 383,
+        "completionTokens": 2
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=4 got=4",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/ef678708-4f4d-4f1b-b269-5d40a75fd48b.json",
+      "startedAt": "2026-11-21T18:21:30.391Z",
+      "finishedAt": "2026-11-21T18:21:31.525Z",
+      "hasTrace": true
+    },
+    {
+      "id": "c83e922d-aaf4-416b-ba27-e39fe3954a39",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_letter_count_01",
+      "taskVersion": "1.0.0",
+      "configId": "9217eb8c-d65e-4f10-bb76-a424de91daf7",
+      "configContentHash": "0ae1da1e2a95d3393e3c78b8a7d624f7bb03e04a4429c4934921c834ad79a01e",
+      "trialIndex": 6,
+      "status": "succeeded",
+      "seed": 658493377,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 1044,
+        "stepCount": 1,
+        "totalTokens": 385,
+        "promptTokens": 383,
+        "completionTokens": 2
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=4 got=4",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/c83e922d-aaf4-416b-ba27-e39fe3954a39.json",
+      "startedAt": "2026-11-21T18:21:31.532Z",
+      "finishedAt": "2026-11-21T18:21:32.581Z",
+      "hasTrace": true
+    },
+    {
+      "id": "42ec9736-a8b7-4295-85b2-45c66e9d3b06",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_letter_count_01",
+      "taskVersion": "1.0.0",
+      "configId": "9217eb8c-d65e-4f10-bb76-a424de91daf7",
+      "configContentHash": "0ae1da1e2a95d3393e3c78b8a7d624f7bb03e04a4429c4934921c834ad79a01e",
+      "trialIndex": 7,
+      "status": "succeeded",
+      "seed": 408361305,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 959,
+        "stepCount": 1,
+        "totalTokens": 385,
+        "promptTokens": 383,
+        "completionTokens": 2
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=4 got=4",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/42ec9736-a8b7-4295-85b2-45c66e9d3b06.json",
+      "startedAt": "2026-11-21T18:21:32.587Z",
+      "finishedAt": "2026-11-21T18:21:33.551Z",
+      "hasTrace": true
+    },
+    {
+      "id": "055e678b-2e84-40b4-903b-beb903703420",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_letter_count_01",
+      "taskVersion": "1.0.0",
+      "configId": "9217eb8c-d65e-4f10-bb76-a424de91daf7",
+      "configContentHash": "0ae1da1e2a95d3393e3c78b8a7d624f7bb03e04a4429c4934921c834ad79a01e",
+      "trialIndex": 8,
+      "status": "succeeded",
+      "seed": 1794491308,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 1001,
+        "stepCount": 1,
+        "totalTokens": 385,
+        "promptTokens": 383,
+        "completionTokens": 2
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=4 got=4",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/055e678b-2e84-40b4-903b-beb903703420.json",
+      "startedAt": "2026-11-21T18:21:33.557Z",
+      "finishedAt": "2026-11-21T18:21:34.564Z",
+      "hasTrace": true
+    },
+    {
+      "id": "531820c4-0cea-4400-a394-6b2ecfa3aa53",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_letter_count_01",
+      "taskVersion": "1.0.0",
+      "configId": "9217eb8c-d65e-4f10-bb76-a424de91daf7",
+      "configContentHash": "0ae1da1e2a95d3393e3c78b8a7d624f7bb03e04a4429c4934921c834ad79a01e",
+      "trialIndex": 9,
+      "status": "succeeded",
+      "seed": 1681412754,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 984,
+        "stepCount": 1,
+        "totalTokens": 385,
+        "promptTokens": 383,
+        "completionTokens": 2
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=4 got=4",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/531820c4-0cea-4400-a394-6b2ecfa3aa53.json",
+      "startedAt": "2026-11-21T18:21:34.570Z",
+      "finishedAt": "2026-11-21T18:21:35.558Z",
+      "hasTrace": true
+    },
+    {
+      "id": "48bfc132-a2d7-450f-a693-6ea2d50b5a79",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_weekday_01",
+      "taskVersion": "1.0.0",
+      "configId": "5993b6ea-77b6-4caf-9ada-d403b26e8aa8",
+      "configContentHash": "47783618092e4d0a33ac686fb8ab28a2922c14c84142aa0fa9fb3b380aed35a3",
+      "trialIndex": 0,
+      "status": "succeeded",
+      "seed": 1059650441,
+      "score": 0,
+      "passed": false,
+      "metrics": {
+        "latencyMs": 4626,
+        "stepCount": 5,
+        "totalTokens": 9770,
+        "promptTokens": 9674,
+        "completionTokens": 96
+      },
+      "grade": {
+        "score": 0,
+        "passed": false,
+        "graderResults": [
+          {
+            "score": 0,
+            "passed": false,
+            "reasoning": "expected=thursday got=",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/48bfc132-a2d7-450f-a693-6ea2d50b5a79.json",
+      "startedAt": "2026-11-21T18:22:16.889Z",
+      "finishedAt": "2026-11-21T18:22:21.519Z",
+      "hasTrace": true
+    },
+    {
+      "id": "dd128283-63b0-4a75-a87f-02d1fe239081",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_weekday_01",
+      "taskVersion": "1.0.0",
+      "configId": "5993b6ea-77b6-4caf-9ada-d403b26e8aa8",
+      "configContentHash": "47783618092e4d0a33ac686fb8ab28a2922c14c84142aa0fa9fb3b380aed35a3",
+      "trialIndex": 1,
+      "status": "succeeded",
+      "seed": 716717134,
+      "score": 0,
+      "passed": false,
+      "metrics": {
+        "latencyMs": 6061,
+        "stepCount": 5,
+        "totalTokens": 9752,
+        "promptTokens": 9658,
+        "completionTokens": 94
+      },
+      "grade": {
+        "score": 0,
+        "passed": false,
+        "graderResults": [
+          {
+            "score": 0,
+            "passed": false,
+            "reasoning": "expected=thursday got=",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/dd128283-63b0-4a75-a87f-02d1fe239081.json",
+      "startedAt": "2026-11-21T18:22:21.525Z",
+      "finishedAt": "2026-11-21T18:22:27.591Z",
+      "hasTrace": true
+    },
+    {
+      "id": "4c64789a-dc73-4dd1-af65-82db33fc2126",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_weekday_01",
+      "taskVersion": "1.0.0",
+      "configId": "5993b6ea-77b6-4caf-9ada-d403b26e8aa8",
+      "configContentHash": "47783618092e4d0a33ac686fb8ab28a2922c14c84142aa0fa9fb3b380aed35a3",
+      "trialIndex": 2,
+      "status": "succeeded",
+      "seed": 517947034,
+      "score": 0,
+      "passed": false,
+      "metrics": {
+        "latencyMs": 5024,
+        "stepCount": 5,
+        "totalTokens": 9755,
+        "promptTokens": 9662,
+        "completionTokens": 93
+      },
+      "grade": {
+        "score": 0,
+        "passed": false,
+        "graderResults": [
+          {
+            "score": 0,
+            "passed": false,
+            "reasoning": "expected=thursday got=",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/4c64789a-dc73-4dd1-af65-82db33fc2126.json",
+      "startedAt": "2026-11-21T18:22:27.597Z",
+      "finishedAt": "2026-11-21T18:22:32.625Z",
+      "hasTrace": true
+    },
+    {
+      "id": "853031db-0382-450e-9d3d-b347f90d5fbc",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_weekday_01",
+      "taskVersion": "1.0.0",
+      "configId": "5993b6ea-77b6-4caf-9ada-d403b26e8aa8",
+      "configContentHash": "47783618092e4d0a33ac686fb8ab28a2922c14c84142aa0fa9fb3b380aed35a3",
+      "trialIndex": 3,
+      "status": "succeeded",
+      "seed": 1125842930,
+      "score": 0,
+      "passed": false,
+      "metrics": {
+        "latencyMs": 5982,
+        "stepCount": 5,
+        "totalTokens": 9770,
+        "promptTokens": 9674,
+        "completionTokens": 96
+      },
+      "grade": {
+        "score": 0,
+        "passed": false,
+        "graderResults": [
+          {
+            "score": 0,
+            "passed": false,
+            "reasoning": "expected=thursday got=",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/853031db-0382-450e-9d3d-b347f90d5fbc.json",
+      "startedAt": "2026-11-21T18:22:32.631Z",
+      "finishedAt": "2026-11-21T18:22:38.622Z",
+      "hasTrace": true
+    },
+    {
+      "id": "7daea6a2-60a6-404a-b336-f339b43f1dfc",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_weekday_01",
+      "taskVersion": "1.0.0",
+      "configId": "5993b6ea-77b6-4caf-9ada-d403b26e8aa8",
+      "configContentHash": "47783618092e4d0a33ac686fb8ab28a2922c14c84142aa0fa9fb3b380aed35a3",
+      "trialIndex": 4,
+      "status": "succeeded",
+      "seed": 1200733025,
+      "score": 0,
+      "passed": false,
+      "metrics": {
+        "latencyMs": 5547,
+        "stepCount": 5,
+        "totalTokens": 9775,
+        "promptTokens": 9674,
+        "completionTokens": 101
+      },
+      "grade": {
+        "score": 0,
+        "passed": false,
+        "graderResults": [
+          {
+            "score": 0,
+            "passed": false,
+            "reasoning": "expected=thursday got=",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/7daea6a2-60a6-404a-b336-f339b43f1dfc.json",
+      "startedAt": "2026-11-21T18:22:38.629Z",
+      "finishedAt": "2026-11-21T18:22:44.185Z",
+      "hasTrace": true
+    },
+    {
+      "id": "318ebac5-6084-4253-b401-e64c94b7fb21",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_weekday_01",
+      "taskVersion": "1.0.0",
+      "configId": "5993b6ea-77b6-4caf-9ada-d403b26e8aa8",
+      "configContentHash": "47783618092e4d0a33ac686fb8ab28a2922c14c84142aa0fa9fb3b380aed35a3",
+      "trialIndex": 5,
+      "status": "succeeded",
+      "seed": 1343658798,
+      "score": 0,
+      "passed": false,
+      "metrics": {
+        "latencyMs": 5953,
+        "stepCount": 5,
+        "totalTokens": 9775,
+        "promptTokens": 9674,
+        "completionTokens": 101
+      },
+      "grade": {
+        "score": 0,
+        "passed": false,
+        "graderResults": [
+          {
+            "score": 0,
+            "passed": false,
+            "reasoning": "expected=thursday got=",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/318ebac5-6084-4253-b401-e64c94b7fb21.json",
+      "startedAt": "2026-11-21T18:22:44.193Z",
+      "finishedAt": "2026-11-21T18:22:50.151Z",
+      "hasTrace": true
+    },
+    {
+      "id": "9479075d-f95b-4f21-9f72-971bedc54b42",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_weekday_01",
+      "taskVersion": "1.0.0",
+      "configId": "5993b6ea-77b6-4caf-9ada-d403b26e8aa8",
+      "configContentHash": "47783618092e4d0a33ac686fb8ab28a2922c14c84142aa0fa9fb3b380aed35a3",
+      "trialIndex": 6,
+      "status": "succeeded",
+      "seed": 729727837,
+      "score": 0,
+      "passed": false,
+      "metrics": {
+        "latencyMs": 4918,
+        "stepCount": 5,
+        "totalTokens": 9774,
+        "promptTokens": 9674,
+        "completionTokens": 100
+      },
+      "grade": {
+        "score": 0,
+        "passed": false,
+        "graderResults": [
+          {
+            "score": 0,
+            "passed": false,
+            "reasoning": "expected=thursday got=",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/9479075d-f95b-4f21-9f72-971bedc54b42.json",
+      "startedAt": "2026-11-21T18:22:50.157Z",
+      "finishedAt": "2026-11-21T18:22:55.080Z",
+      "hasTrace": true
+    },
+    {
+      "id": "732f34d8-90cb-4642-967e-ab76bbd386ce",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_weekday_01",
+      "taskVersion": "1.0.0",
+      "configId": "5993b6ea-77b6-4caf-9ada-d403b26e8aa8",
+      "configContentHash": "47783618092e4d0a33ac686fb8ab28a2922c14c84142aa0fa9fb3b380aed35a3",
+      "trialIndex": 7,
+      "status": "succeeded",
+      "seed": 1854300586,
+      "score": 0,
+      "passed": false,
+      "metrics": {
+        "latencyMs": 4554,
+        "stepCount": 5,
+        "totalTokens": 9774,
+        "promptTokens": 9674,
+        "completionTokens": 100
+      },
+      "grade": {
+        "score": 0,
+        "passed": false,
+        "graderResults": [
+          {
+            "score": 0,
+            "passed": false,
+            "reasoning": "expected=thursday got=",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/732f34d8-90cb-4642-967e-ab76bbd386ce.json",
+      "startedAt": "2026-11-21T18:22:55.086Z",
+      "finishedAt": "2026-11-21T18:22:59.643Z",
+      "hasTrace": true
+    },
+    {
+      "id": "e4ef0ce6-ef0f-4f8e-b388-70c9d10415e1",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_weekday_01",
+      "taskVersion": "1.0.0",
+      "configId": "5993b6ea-77b6-4caf-9ada-d403b26e8aa8",
+      "configContentHash": "47783618092e4d0a33ac686fb8ab28a2922c14c84142aa0fa9fb3b380aed35a3",
+      "trialIndex": 8,
+      "status": "succeeded",
+      "seed": 2130288584,
+      "score": 0,
+      "passed": false,
+      "metrics": {
+        "latencyMs": 5588,
+        "stepCount": 5,
+        "totalTokens": 9744,
+        "promptTokens": 9652,
+        "completionTokens": 92
+      },
+      "grade": {
+        "score": 0,
+        "passed": false,
+        "graderResults": [
+          {
+            "score": 0,
+            "passed": false,
+            "reasoning": "expected=thursday got=",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/e4ef0ce6-ef0f-4f8e-b388-70c9d10415e1.json",
+      "startedAt": "2026-11-21T18:22:59.647Z",
+      "finishedAt": "2026-11-21T18:23:05.239Z",
+      "hasTrace": true
+    },
+    {
+      "id": "53066a46-51ea-4728-b22c-52f0ea614f15",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_weekday_01",
+      "taskVersion": "1.0.0",
+      "configId": "5993b6ea-77b6-4caf-9ada-d403b26e8aa8",
+      "configContentHash": "47783618092e4d0a33ac686fb8ab28a2922c14c84142aa0fa9fb3b380aed35a3",
+      "trialIndex": 9,
+      "status": "succeeded",
+      "seed": 656894030,
+      "score": 0,
+      "passed": false,
+      "metrics": {
+        "latencyMs": 5078,
+        "stepCount": 5,
+        "totalTokens": 9776,
+        "promptTokens": 9666,
+        "completionTokens": 110
+      },
+      "grade": {
+        "score": 0,
+        "passed": false,
+        "graderResults": [
+          {
+            "score": 0,
+            "passed": false,
+            "reasoning": "expected=thursday got=",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/53066a46-51ea-4728-b22c-52f0ea614f15.json",
+      "startedAt": "2026-11-21T18:23:05.244Z",
+      "finishedAt": "2026-11-21T18:23:10.326Z",
+      "hasTrace": true
+    },
+    {
+      "id": "130863ef-d570-4fed-8851-7a0bd5996576",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_weekday_01",
+      "taskVersion": "1.0.0",
+      "configId": "9217eb8c-d65e-4f10-bb76-a424de91daf7",
+      "configContentHash": "0ae1da1e2a95d3393e3c78b8a7d624f7bb03e04a4429c4934921c834ad79a01e",
+      "trialIndex": 0,
+      "status": "succeeded",
+      "seed": 709317050,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 1289,
+        "stepCount": 1,
+        "totalTokens": 390,
+        "promptTokens": 388,
+        "completionTokens": 2
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=thursday got=Thursday",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/130863ef-d570-4fed-8851-7a0bd5996576.json",
+      "startedAt": "2026-11-21T18:22:02.380Z",
+      "finishedAt": "2026-11-21T18:22:03.674Z",
+      "hasTrace": true
+    },
+    {
+      "id": "2b55795d-9f7f-41ab-a972-f75c775763da",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_weekday_01",
+      "taskVersion": "1.0.0",
+      "configId": "9217eb8c-d65e-4f10-bb76-a424de91daf7",
+      "configContentHash": "0ae1da1e2a95d3393e3c78b8a7d624f7bb03e04a4429c4934921c834ad79a01e",
+      "trialIndex": 1,
+      "status": "succeeded",
+      "seed": 589662293,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 1383,
+        "stepCount": 1,
+        "totalTokens": 390,
+        "promptTokens": 388,
+        "completionTokens": 2
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=thursday got=Thursday",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/2b55795d-9f7f-41ab-a972-f75c775763da.json",
+      "startedAt": "2026-11-21T18:22:03.679Z",
+      "finishedAt": "2026-11-21T18:22:05.066Z",
+      "hasTrace": true
+    },
+    {
+      "id": "bd3f97d0-49fa-4f90-8933-7f557f0886bb",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_weekday_01",
+      "taskVersion": "1.0.0",
+      "configId": "9217eb8c-d65e-4f10-bb76-a424de91daf7",
+      "configContentHash": "0ae1da1e2a95d3393e3c78b8a7d624f7bb03e04a4429c4934921c834ad79a01e",
+      "trialIndex": 2,
+      "status": "succeeded",
+      "seed": 141064078,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 1091,
+        "stepCount": 1,
+        "totalTokens": 390,
+        "promptTokens": 388,
+        "completionTokens": 2
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=thursday got=Thursday",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/bd3f97d0-49fa-4f90-8933-7f557f0886bb.json",
+      "startedAt": "2026-11-21T18:22:05.070Z",
+      "finishedAt": "2026-11-21T18:22:06.165Z",
+      "hasTrace": true
+    },
+    {
+      "id": "a16baac3-a84c-4f18-8428-e954f075b4d2",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_weekday_01",
+      "taskVersion": "1.0.0",
+      "configId": "9217eb8c-d65e-4f10-bb76-a424de91daf7",
+      "configContentHash": "0ae1da1e2a95d3393e3c78b8a7d624f7bb03e04a4429c4934921c834ad79a01e",
+      "trialIndex": 3,
+      "status": "succeeded",
+      "seed": 1898750118,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 3907,
+        "stepCount": 1,
+        "totalTokens": 390,
+        "promptTokens": 388,
+        "completionTokens": 2
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=thursday got=Thursday",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/a16baac3-a84c-4f18-8428-e954f075b4d2.json",
+      "startedAt": "2026-11-21T18:22:06.169Z",
+      "finishedAt": "2026-11-21T18:22:10.084Z",
+      "hasTrace": true
+    },
+    {
+      "id": "28190a38-0eb0-4ef9-a04f-38b1eb7242b1",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_weekday_01",
+      "taskVersion": "1.0.0",
+      "configId": "9217eb8c-d65e-4f10-bb76-a424de91daf7",
+      "configContentHash": "0ae1da1e2a95d3393e3c78b8a7d624f7bb03e04a4429c4934921c834ad79a01e",
+      "trialIndex": 4,
+      "status": "succeeded",
+      "seed": 1222595380,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 1292,
+        "stepCount": 1,
+        "totalTokens": 390,
+        "promptTokens": 388,
+        "completionTokens": 2
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=thursday got=Thursday",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/28190a38-0eb0-4ef9-a04f-38b1eb7242b1.json",
+      "startedAt": "2026-11-21T18:22:10.093Z",
+      "finishedAt": "2026-11-21T18:22:11.391Z",
+      "hasTrace": true
+    },
+    {
+      "id": "e68bfe14-bd97-46da-a844-019c677d8054",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_weekday_01",
+      "taskVersion": "1.0.0",
+      "configId": "9217eb8c-d65e-4f10-bb76-a424de91daf7",
+      "configContentHash": "0ae1da1e2a95d3393e3c78b8a7d624f7bb03e04a4429c4934921c834ad79a01e",
+      "trialIndex": 5,
+      "status": "succeeded",
+      "seed": 6539203,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 1135,
+        "stepCount": 1,
+        "totalTokens": 390,
+        "promptTokens": 388,
+        "completionTokens": 2
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=thursday got=Thursday",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/e68bfe14-bd97-46da-a844-019c677d8054.json",
+      "startedAt": "2026-11-21T18:22:11.397Z",
+      "finishedAt": "2026-11-21T18:22:12.539Z",
+      "hasTrace": true
+    },
+    {
+      "id": "6831870e-6c48-4089-9eb2-d0bf268bb7b3",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_weekday_01",
+      "taskVersion": "1.0.0",
+      "configId": "9217eb8c-d65e-4f10-bb76-a424de91daf7",
+      "configContentHash": "0ae1da1e2a95d3393e3c78b8a7d624f7bb03e04a4429c4934921c834ad79a01e",
+      "trialIndex": 6,
+      "status": "succeeded",
+      "seed": 1334968571,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 1068,
+        "stepCount": 1,
+        "totalTokens": 390,
+        "promptTokens": 388,
+        "completionTokens": 2
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=thursday got=Thursday",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/6831870e-6c48-4089-9eb2-d0bf268bb7b3.json",
+      "startedAt": "2026-11-21T18:22:12.543Z",
+      "finishedAt": "2026-11-21T18:22:13.615Z",
+      "hasTrace": true
+    },
+    {
+      "id": "6dab092c-50d7-4f08-9a8d-75f2161cf0ca",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_weekday_01",
+      "taskVersion": "1.0.0",
+      "configId": "9217eb8c-d65e-4f10-bb76-a424de91daf7",
+      "configContentHash": "0ae1da1e2a95d3393e3c78b8a7d624f7bb03e04a4429c4934921c834ad79a01e",
+      "trialIndex": 7,
+      "status": "succeeded",
+      "seed": 873921098,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 1139,
+        "stepCount": 1,
+        "totalTokens": 390,
+        "promptTokens": 388,
+        "completionTokens": 2
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=thursday got=Thursday",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/6dab092c-50d7-4f08-9a8d-75f2161cf0ca.json",
+      "startedAt": "2026-11-21T18:22:13.619Z",
+      "finishedAt": "2026-11-21T18:22:14.764Z",
+      "hasTrace": true
+    },
+    {
+      "id": "1c1f2624-38ab-4aed-949d-df73d193eb7b",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_weekday_01",
+      "taskVersion": "1.0.0",
+      "configId": "9217eb8c-d65e-4f10-bb76-a424de91daf7",
+      "configContentHash": "0ae1da1e2a95d3393e3c78b8a7d624f7bb03e04a4429c4934921c834ad79a01e",
+      "trialIndex": 8,
+      "status": "succeeded",
+      "seed": 155255217,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 1027,
+        "stepCount": 1,
+        "totalTokens": 390,
+        "promptTokens": 388,
+        "completionTokens": 2
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=thursday got=Thursday",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/1c1f2624-38ab-4aed-949d-df73d193eb7b.json",
+      "startedAt": "2026-11-21T18:22:14.770Z",
+      "finishedAt": "2026-11-21T18:22:15.802Z",
+      "hasTrace": true
+    },
+    {
+      "id": "1fc97325-040b-4545-bee6-5a310a71337c",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "det_weekday_01",
+      "taskVersion": "1.0.0",
+      "configId": "9217eb8c-d65e-4f10-bb76-a424de91daf7",
+      "configContentHash": "0ae1da1e2a95d3393e3c78b8a7d624f7bb03e04a4429c4934921c834ad79a01e",
+      "trialIndex": 9,
+      "status": "succeeded",
+      "seed": 1526963069,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 1073,
+        "stepCount": 1,
+        "totalTokens": 390,
+        "promptTokens": 388,
+        "completionTokens": 2
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=thursday got=Thursday",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/1fc97325-040b-4545-bee6-5a310a71337c.json",
+      "startedAt": "2026-11-21T18:22:15.808Z",
+      "finishedAt": "2026-11-21T18:22:16.885Z",
+      "hasTrace": true
+    },
+    {
+      "id": "e55d0962-30e1-4c8b-beb1-d4adf92e5d8b",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "mem_deploy_file_01",
+      "taskVersion": "1.0.0",
+      "configId": "5993b6ea-77b6-4caf-9ada-d403b26e8aa8",
+      "configContentHash": "47783618092e4d0a33ac686fb8ab28a2922c14c84142aa0fa9fb3b380aed35a3",
+      "trialIndex": 0,
+      "status": "succeeded",
+      "seed": 1729786697,
+      "score": 0,
+      "passed": false,
+      "metrics": {
+        "latencyMs": 11319,
+        "stepCount": 3,
+        "totalTokens": 7417,
+        "promptTokens": 7335,
+        "completionTokens": 82
+      },
+      "grade": {
+        "score": 0,
+        "passed": false,
+        "graderResults": [
+          {
+            "score": 0,
+            "passed": false,
+            "details": {
+              "checks": [
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "expected exists=true, got false"
+                  ]
+                },
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "file missing"
+                  ]
+                },
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "file missing"
+                  ]
+                }
+              ]
+            },
+            "reasoning": "deploy.json: expected exists=true, got false; deploy.json: file missing; deploy.json: file missing",
+            "graderType": "state_check"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/e55d0962-30e1-4c8b-beb1-d4adf92e5d8b.json",
+      "startedAt": "2026-11-21T18:16:53.619Z",
+      "finishedAt": "2026-11-21T18:17:04.955Z",
+      "hasTrace": true
+    },
+    {
+      "id": "7d56a8a2-81d0-4ece-8a05-11686e0b3569",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "mem_deploy_file_01",
+      "taskVersion": "1.0.0",
+      "configId": "5993b6ea-77b6-4caf-9ada-d403b26e8aa8",
+      "configContentHash": "47783618092e4d0a33ac686fb8ab28a2922c14c84142aa0fa9fb3b380aed35a3",
+      "trialIndex": 1,
+      "status": "succeeded",
+      "seed": 2009475235,
+      "score": 0,
+      "passed": false,
+      "metrics": {
+        "latencyMs": 32276,
+        "stepCount": 3,
+        "totalTokens": 7417,
+        "promptTokens": 7335,
+        "completionTokens": 82
+      },
+      "grade": {
+        "score": 0,
+        "passed": false,
+        "graderResults": [
+          {
+            "score": 0,
+            "passed": false,
+            "details": {
+              "checks": [
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "expected exists=true, got false"
+                  ]
+                },
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "file missing"
+                  ]
+                },
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "file missing"
+                  ]
+                }
+              ]
+            },
+            "reasoning": "deploy.json: expected exists=true, got false; deploy.json: file missing; deploy.json: file missing",
+            "graderType": "state_check"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/7d56a8a2-81d0-4ece-8a05-11686e0b3569.json",
+      "startedAt": "2026-11-21T18:17:04.963Z",
+      "finishedAt": "2026-11-21T18:17:37.253Z",
+      "hasTrace": true
+    },
+    {
+      "id": "cef2b036-0857-4388-8c6c-a0861a7fc960",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "mem_deploy_file_01",
+      "taskVersion": "1.0.0",
+      "configId": "5993b6ea-77b6-4caf-9ada-d403b26e8aa8",
+      "configContentHash": "47783618092e4d0a33ac686fb8ab28a2922c14c84142aa0fa9fb3b380aed35a3",
+      "trialIndex": 2,
+      "status": "succeeded",
+      "seed": 1429345803,
+      "score": 0,
+      "passed": false,
+      "metrics": {
+        "latencyMs": 12043,
+        "stepCount": 3,
+        "totalTokens": 7417,
+        "promptTokens": 7335,
+        "completionTokens": 82
+      },
+      "grade": {
+        "score": 0,
+        "passed": false,
+        "graderResults": [
+          {
+            "score": 0,
+            "passed": false,
+            "details": {
+              "checks": [
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "expected exists=true, got false"
+                  ]
+                },
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "file missing"
+                  ]
+                },
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "file missing"
+                  ]
+                }
+              ]
+            },
+            "reasoning": "deploy.json: expected exists=true, got false; deploy.json: file missing; deploy.json: file missing",
+            "graderType": "state_check"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/cef2b036-0857-4388-8c6c-a0861a7fc960.json",
+      "startedAt": "2026-11-21T18:17:37.260Z",
+      "finishedAt": "2026-11-21T18:17:49.327Z",
+      "hasTrace": true
+    },
+    {
+      "id": "59a9c97a-0be3-4295-891b-edd1d6a7393e",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "mem_deploy_file_01",
+      "taskVersion": "1.0.0",
+      "configId": "5993b6ea-77b6-4caf-9ada-d403b26e8aa8",
+      "configContentHash": "47783618092e4d0a33ac686fb8ab28a2922c14c84142aa0fa9fb3b380aed35a3",
+      "trialIndex": 3,
+      "status": "succeeded",
+      "seed": 335653437,
+      "score": 0,
+      "passed": false,
+      "metrics": {
+        "latencyMs": 15305,
+        "stepCount": 3,
+        "totalTokens": 7417,
+        "promptTokens": 7335,
+        "completionTokens": 82
+      },
+      "grade": {
+        "score": 0,
+        "passed": false,
+        "graderResults": [
+          {
+            "score": 0,
+            "passed": false,
+            "details": {
+              "checks": [
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "expected exists=true, got false"
+                  ]
+                },
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "file missing"
+                  ]
+                },
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "file missing"
+                  ]
+                }
+              ]
+            },
+            "reasoning": "deploy.json: expected exists=true, got false; deploy.json: file missing; deploy.json: file missing",
+            "graderType": "state_check"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/59a9c97a-0be3-4295-891b-edd1d6a7393e.json",
+      "startedAt": "2026-11-21T18:17:49.340Z",
+      "finishedAt": "2026-11-21T18:18:04.661Z",
+      "hasTrace": true
+    },
+    {
+      "id": "7e522d93-dd6b-455a-8f3d-a78880b412d0",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "mem_deploy_file_01",
+      "taskVersion": "1.0.0",
+      "configId": "5993b6ea-77b6-4caf-9ada-d403b26e8aa8",
+      "configContentHash": "47783618092e4d0a33ac686fb8ab28a2922c14c84142aa0fa9fb3b380aed35a3",
+      "trialIndex": 4,
+      "status": "succeeded",
+      "seed": 1692567622,
+      "score": 0,
+      "passed": false,
+      "metrics": {
+        "latencyMs": 16028,
+        "stepCount": 3,
+        "totalTokens": 7417,
+        "promptTokens": 7335,
+        "completionTokens": 82
+      },
+      "grade": {
+        "score": 0,
+        "passed": false,
+        "graderResults": [
+          {
+            "score": 0,
+            "passed": false,
+            "details": {
+              "checks": [
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "expected exists=true, got false"
+                  ]
+                },
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "file missing"
+                  ]
+                },
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "file missing"
+                  ]
+                }
+              ]
+            },
+            "reasoning": "deploy.json: expected exists=true, got false; deploy.json: file missing; deploy.json: file missing",
+            "graderType": "state_check"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/7e522d93-dd6b-455a-8f3d-a78880b412d0.json",
+      "startedAt": "2026-11-21T18:18:04.669Z",
+      "finishedAt": "2026-11-21T18:18:20.711Z",
+      "hasTrace": true
+    },
+    {
+      "id": "c8f287c9-1f5f-4741-8533-97513910a945",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "mem_deploy_file_01",
+      "taskVersion": "1.0.0",
+      "configId": "5993b6ea-77b6-4caf-9ada-d403b26e8aa8",
+      "configContentHash": "47783618092e4d0a33ac686fb8ab28a2922c14c84142aa0fa9fb3b380aed35a3",
+      "trialIndex": 5,
+      "status": "succeeded",
+      "seed": 1752240215,
+      "score": 0,
+      "passed": false,
+      "metrics": {
+        "latencyMs": 11531,
+        "stepCount": 3,
+        "totalTokens": 7417,
+        "promptTokens": 7335,
+        "completionTokens": 82
+      },
+      "grade": {
+        "score": 0,
+        "passed": false,
+        "graderResults": [
+          {
+            "score": 0,
+            "passed": false,
+            "details": {
+              "checks": [
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "expected exists=true, got false"
+                  ]
+                },
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "file missing"
+                  ]
+                },
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "file missing"
+                  ]
+                }
+              ]
+            },
+            "reasoning": "deploy.json: expected exists=true, got false; deploy.json: file missing; deploy.json: file missing",
+            "graderType": "state_check"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/c8f287c9-1f5f-4741-8533-97513910a945.json",
+      "startedAt": "2026-11-21T18:18:20.718Z",
+      "finishedAt": "2026-11-21T18:18:32.262Z",
+      "hasTrace": true
+    },
+    {
+      "id": "ce3b1f9e-7e36-41cc-8aae-3fb54b5fff7e",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "mem_deploy_file_01",
+      "taskVersion": "1.0.0",
+      "configId": "5993b6ea-77b6-4caf-9ada-d403b26e8aa8",
+      "configContentHash": "47783618092e4d0a33ac686fb8ab28a2922c14c84142aa0fa9fb3b380aed35a3",
+      "trialIndex": 6,
+      "status": "succeeded",
+      "seed": 1876227988,
+      "score": 0,
+      "passed": false,
+      "metrics": {
+        "latencyMs": 9312,
+        "stepCount": 3,
+        "totalTokens": 7417,
+        "promptTokens": 7335,
+        "completionTokens": 82
+      },
+      "grade": {
+        "score": 0,
+        "passed": false,
+        "graderResults": [
+          {
+            "score": 0,
+            "passed": false,
+            "details": {
+              "checks": [
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "expected exists=true, got false"
+                  ]
+                },
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "file missing"
+                  ]
+                },
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "file missing"
+                  ]
+                }
+              ]
+            },
+            "reasoning": "deploy.json: expected exists=true, got false; deploy.json: file missing; deploy.json: file missing",
+            "graderType": "state_check"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/ce3b1f9e-7e36-41cc-8aae-3fb54b5fff7e.json",
+      "startedAt": "2026-11-21T18:18:32.271Z",
+      "finishedAt": "2026-11-21T18:18:41.591Z",
+      "hasTrace": true
+    },
+    {
+      "id": "6a98c09b-892c-4697-b506-955949e4b94f",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "mem_deploy_file_01",
+      "taskVersion": "1.0.0",
+      "configId": "5993b6ea-77b6-4caf-9ada-d403b26e8aa8",
+      "configContentHash": "47783618092e4d0a33ac686fb8ab28a2922c14c84142aa0fa9fb3b380aed35a3",
+      "trialIndex": 7,
+      "status": "succeeded",
+      "seed": 1004059073,
+      "score": 0,
+      "passed": false,
+      "metrics": {
+        "latencyMs": 17943,
+        "stepCount": 3,
+        "totalTokens": 7417,
+        "promptTokens": 7335,
+        "completionTokens": 82
+      },
+      "grade": {
+        "score": 0,
+        "passed": false,
+        "graderResults": [
+          {
+            "score": 0,
+            "passed": false,
+            "details": {
+              "checks": [
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "expected exists=true, got false"
+                  ]
+                },
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "file missing"
+                  ]
+                },
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "file missing"
+                  ]
+                }
+              ]
+            },
+            "reasoning": "deploy.json: expected exists=true, got false; deploy.json: file missing; deploy.json: file missing",
+            "graderType": "state_check"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/6a98c09b-892c-4697-b506-955949e4b94f.json",
+      "startedAt": "2026-11-21T18:18:41.597Z",
+      "finishedAt": "2026-11-21T18:18:59.559Z",
+      "hasTrace": true
+    },
+    {
+      "id": "0a41ff5d-2d98-4d2f-a2a8-10db7c57212d",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "mem_deploy_file_01",
+      "taskVersion": "1.0.0",
+      "configId": "5993b6ea-77b6-4caf-9ada-d403b26e8aa8",
+      "configContentHash": "47783618092e4d0a33ac686fb8ab28a2922c14c84142aa0fa9fb3b380aed35a3",
+      "trialIndex": 8,
+      "status": "succeeded",
+      "seed": 559511107,
+      "score": 0,
+      "passed": false,
+      "metrics": {
+        "latencyMs": 51277,
+        "stepCount": 3,
+        "totalTokens": 7417,
+        "promptTokens": 7335,
+        "completionTokens": 82
+      },
+      "grade": {
+        "score": 0,
+        "passed": false,
+        "graderResults": [
+          {
+            "score": 0,
+            "passed": false,
+            "details": {
+              "checks": [
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "expected exists=true, got false"
+                  ]
+                },
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "file missing"
+                  ]
+                },
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "file missing"
+                  ]
+                }
+              ]
+            },
+            "reasoning": "deploy.json: expected exists=true, got false; deploy.json: file missing; deploy.json: file missing",
+            "graderType": "state_check"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/0a41ff5d-2d98-4d2f-a2a8-10db7c57212d.json",
+      "startedAt": "2026-11-21T18:18:59.567Z",
+      "finishedAt": "2026-11-21T18:19:50.861Z",
+      "hasTrace": true
+    },
+    {
+      "id": "6a791090-1ad9-40f9-a170-85f671aae543",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "mem_deploy_file_01",
+      "taskVersion": "1.0.0",
+      "configId": "5993b6ea-77b6-4caf-9ada-d403b26e8aa8",
+      "configContentHash": "47783618092e4d0a33ac686fb8ab28a2922c14c84142aa0fa9fb3b380aed35a3",
+      "trialIndex": 9,
+      "status": "succeeded",
+      "seed": 1137965111,
+      "score": 0,
+      "passed": false,
+      "metrics": {
+        "latencyMs": 15239,
+        "stepCount": 3,
+        "totalTokens": 7417,
+        "promptTokens": 7335,
+        "completionTokens": 82
+      },
+      "grade": {
+        "score": 0,
+        "passed": false,
+        "graderResults": [
+          {
+            "score": 0,
+            "passed": false,
+            "details": {
+              "checks": [
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "expected exists=true, got false"
+                  ]
+                },
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "file missing"
+                  ]
+                },
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "file missing"
+                  ]
+                }
+              ]
+            },
+            "reasoning": "deploy.json: expected exists=true, got false; deploy.json: file missing; deploy.json: file missing",
+            "graderType": "state_check"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/6a791090-1ad9-40f9-a170-85f671aae543.json",
+      "startedAt": "2026-11-21T18:19:50.872Z",
+      "finishedAt": "2026-11-21T18:20:06.123Z",
+      "hasTrace": true
+    },
+    {
+      "id": "f93996ca-ddda-4c56-aabe-ae4149a8b1bc",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "mem_deploy_file_01",
+      "taskVersion": "1.0.0",
+      "configId": "9217eb8c-d65e-4f10-bb76-a424de91daf7",
+      "configContentHash": "0ae1da1e2a95d3393e3c78b8a7d624f7bb03e04a4429c4934921c834ad79a01e",
+      "trialIndex": 0,
+      "status": "succeeded",
+      "seed": 710671477,
+      "score": 0,
+      "passed": false,
+      "metrics": {
+        "latencyMs": 1431,
+        "stepCount": 1,
+        "totalTokens": 470,
+        "promptTokens": 444,
+        "completionTokens": 26
+      },
+      "grade": {
+        "score": 0,
+        "passed": false,
+        "graderResults": [
+          {
+            "score": 0,
+            "passed": false,
+            "details": {
+              "checks": [
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "expected exists=true, got false"
+                  ]
+                },
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "file missing"
+                  ]
+                },
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "file missing"
+                  ]
+                }
+              ]
+            },
+            "reasoning": "deploy.json: expected exists=true, got false; deploy.json: file missing; deploy.json: file missing",
+            "graderType": "state_check"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/f93996ca-ddda-4c56-aabe-ae4149a8b1bc.json",
+      "startedAt": "2026-11-21T18:16:11.084Z",
+      "finishedAt": "2026-11-21T18:16:12.520Z",
+      "hasTrace": true
+    },
+    {
+      "id": "bc53f121-eece-46d3-85ae-64bd1e0f5491",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "mem_deploy_file_01",
+      "taskVersion": "1.0.0",
+      "configId": "9217eb8c-d65e-4f10-bb76-a424de91daf7",
+      "configContentHash": "0ae1da1e2a95d3393e3c78b8a7d624f7bb03e04a4429c4934921c834ad79a01e",
+      "trialIndex": 1,
+      "status": "succeeded",
+      "seed": 682238960,
+      "score": 0,
+      "passed": false,
+      "metrics": {
+        "latencyMs": 1825,
+        "stepCount": 1,
+        "totalTokens": 464,
+        "promptTokens": 444,
+        "completionTokens": 20
+      },
+      "grade": {
+        "score": 0,
+        "passed": false,
+        "graderResults": [
+          {
+            "score": 0,
+            "passed": false,
+            "details": {
+              "checks": [
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "expected exists=true, got false"
+                  ]
+                },
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "file missing"
+                  ]
+                },
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "file missing"
+                  ]
+                }
+              ]
+            },
+            "reasoning": "deploy.json: expected exists=true, got false; deploy.json: file missing; deploy.json: file missing",
+            "graderType": "state_check"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/bc53f121-eece-46d3-85ae-64bd1e0f5491.json",
+      "startedAt": "2026-11-21T18:16:12.527Z",
+      "finishedAt": "2026-11-21T18:16:14.359Z",
+      "hasTrace": true
+    },
+    {
+      "id": "610bc98f-2d1a-4afc-8043-0509ad94d0ce",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "mem_deploy_file_01",
+      "taskVersion": "1.0.0",
+      "configId": "9217eb8c-d65e-4f10-bb76-a424de91daf7",
+      "configContentHash": "0ae1da1e2a95d3393e3c78b8a7d624f7bb03e04a4429c4934921c834ad79a01e",
+      "trialIndex": 2,
+      "status": "succeeded",
+      "seed": 1006080564,
+      "score": 0,
+      "passed": false,
+      "metrics": {
+        "latencyMs": 2342,
+        "stepCount": 1,
+        "totalTokens": 470,
+        "promptTokens": 444,
+        "completionTokens": 26
+      },
+      "grade": {
+        "score": 0,
+        "passed": false,
+        "graderResults": [
+          {
+            "score": 0,
+            "passed": false,
+            "details": {
+              "checks": [
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "expected exists=true, got false"
+                  ]
+                },
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "file missing"
+                  ]
+                },
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "file missing"
+                  ]
+                }
+              ]
+            },
+            "reasoning": "deploy.json: expected exists=true, got false; deploy.json: file missing; deploy.json: file missing",
+            "graderType": "state_check"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/610bc98f-2d1a-4afc-8043-0509ad94d0ce.json",
+      "startedAt": "2026-11-21T18:16:14.365Z",
+      "finishedAt": "2026-11-21T18:16:16.714Z",
+      "hasTrace": true
+    },
+    {
+      "id": "6eb195c1-ef5b-4b7a-b3ed-138d1f50dc33",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "mem_deploy_file_01",
+      "taskVersion": "1.0.0",
+      "configId": "9217eb8c-d65e-4f10-bb76-a424de91daf7",
+      "configContentHash": "0ae1da1e2a95d3393e3c78b8a7d624f7bb03e04a4429c4934921c834ad79a01e",
+      "trialIndex": 3,
+      "status": "succeeded",
+      "seed": 1676946662,
+      "score": 0,
+      "passed": false,
+      "metrics": {
+        "latencyMs": 1406,
+        "stepCount": 1,
+        "totalTokens": 470,
+        "promptTokens": 444,
+        "completionTokens": 26
+      },
+      "grade": {
+        "score": 0,
+        "passed": false,
+        "graderResults": [
+          {
+            "score": 0,
+            "passed": false,
+            "details": {
+              "checks": [
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "expected exists=true, got false"
+                  ]
+                },
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "file missing"
+                  ]
+                },
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "file missing"
+                  ]
+                }
+              ]
+            },
+            "reasoning": "deploy.json: expected exists=true, got false; deploy.json: file missing; deploy.json: file missing",
+            "graderType": "state_check"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/6eb195c1-ef5b-4b7a-b3ed-138d1f50dc33.json",
+      "startedAt": "2026-11-21T18:16:16.720Z",
+      "finishedAt": "2026-11-21T18:16:18.132Z",
+      "hasTrace": true
+    },
+    {
+      "id": "2c38d1f7-ca14-475b-9b1c-1306d9f37747",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "mem_deploy_file_01",
+      "taskVersion": "1.0.0",
+      "configId": "9217eb8c-d65e-4f10-bb76-a424de91daf7",
+      "configContentHash": "0ae1da1e2a95d3393e3c78b8a7d624f7bb03e04a4429c4934921c834ad79a01e",
+      "trialIndex": 4,
+      "status": "succeeded",
+      "seed": 1468456918,
+      "score": 0,
+      "passed": false,
+      "metrics": {
+        "latencyMs": 7261,
+        "stepCount": 1,
+        "totalTokens": 469,
+        "promptTokens": 444,
+        "completionTokens": 25
+      },
+      "grade": {
+        "score": 0,
+        "passed": false,
+        "graderResults": [
+          {
+            "score": 0,
+            "passed": false,
+            "details": {
+              "checks": [
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "expected exists=true, got false"
+                  ]
+                },
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "file missing"
+                  ]
+                },
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "file missing"
+                  ]
+                }
+              ]
+            },
+            "reasoning": "deploy.json: expected exists=true, got false; deploy.json: file missing; deploy.json: file missing",
+            "graderType": "state_check"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/2c38d1f7-ca14-475b-9b1c-1306d9f37747.json",
+      "startedAt": "2026-11-21T18:16:18.140Z",
+      "finishedAt": "2026-11-21T18:16:25.410Z",
+      "hasTrace": true
+    },
+    {
+      "id": "b0e01764-9403-40a6-aeb6-0b415f776eac",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "mem_deploy_file_01",
+      "taskVersion": "1.0.0",
+      "configId": "9217eb8c-d65e-4f10-bb76-a424de91daf7",
+      "configContentHash": "0ae1da1e2a95d3393e3c78b8a7d624f7bb03e04a4429c4934921c834ad79a01e",
+      "trialIndex": 5,
+      "status": "succeeded",
+      "seed": 264986615,
+      "score": 0,
+      "passed": false,
+      "metrics": {
+        "latencyMs": 2741,
+        "stepCount": 1,
+        "totalTokens": 470,
+        "promptTokens": 444,
+        "completionTokens": 26
+      },
+      "grade": {
+        "score": 0,
+        "passed": false,
+        "graderResults": [
+          {
+            "score": 0,
+            "passed": false,
+            "details": {
+              "checks": [
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "expected exists=true, got false"
+                  ]
+                },
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "file missing"
+                  ]
+                },
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "file missing"
+                  ]
+                }
+              ]
+            },
+            "reasoning": "deploy.json: expected exists=true, got false; deploy.json: file missing; deploy.json: file missing",
+            "graderType": "state_check"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/b0e01764-9403-40a6-aeb6-0b415f776eac.json",
+      "startedAt": "2026-11-21T18:16:25.417Z",
+      "finishedAt": "2026-11-21T18:16:28.165Z",
+      "hasTrace": true
+    },
+    {
+      "id": "f8d224e8-f8cc-4154-9216-9b4d6725feeb",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "mem_deploy_file_01",
+      "taskVersion": "1.0.0",
+      "configId": "9217eb8c-d65e-4f10-bb76-a424de91daf7",
+      "configContentHash": "0ae1da1e2a95d3393e3c78b8a7d624f7bb03e04a4429c4934921c834ad79a01e",
+      "trialIndex": 6,
+      "status": "succeeded",
+      "seed": 1541517604,
+      "score": 0,
+      "passed": false,
+      "metrics": {
+        "latencyMs": 1704,
+        "stepCount": 1,
+        "totalTokens": 470,
+        "promptTokens": 444,
+        "completionTokens": 26
+      },
+      "grade": {
+        "score": 0,
+        "passed": false,
+        "graderResults": [
+          {
+            "score": 0,
+            "passed": false,
+            "details": {
+              "checks": [
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "expected exists=true, got false"
+                  ]
+                },
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "file missing"
+                  ]
+                },
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "file missing"
+                  ]
+                }
+              ]
+            },
+            "reasoning": "deploy.json: expected exists=true, got false; deploy.json: file missing; deploy.json: file missing",
+            "graderType": "state_check"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/f8d224e8-f8cc-4154-9216-9b4d6725feeb.json",
+      "startedAt": "2026-11-21T18:16:28.173Z",
+      "finishedAt": "2026-11-21T18:16:29.884Z",
+      "hasTrace": true
+    },
+    {
+      "id": "2c28f655-ced4-4fd5-919d-8853fc20717c",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "mem_deploy_file_01",
+      "taskVersion": "1.0.0",
+      "configId": "9217eb8c-d65e-4f10-bb76-a424de91daf7",
+      "configContentHash": "0ae1da1e2a95d3393e3c78b8a7d624f7bb03e04a4429c4934921c834ad79a01e",
+      "trialIndex": 7,
+      "status": "succeeded",
+      "seed": 555932886,
+      "score": 0,
+      "passed": false,
+      "metrics": {
+        "latencyMs": 10648,
+        "stepCount": 1,
+        "totalTokens": 470,
+        "promptTokens": 444,
+        "completionTokens": 26
+      },
+      "grade": {
+        "score": 0,
+        "passed": false,
+        "graderResults": [
+          {
+            "score": 0,
+            "passed": false,
+            "details": {
+              "checks": [
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "expected exists=true, got false"
+                  ]
+                },
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "file missing"
+                  ]
+                },
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "file missing"
+                  ]
+                }
+              ]
+            },
+            "reasoning": "deploy.json: expected exists=true, got false; deploy.json: file missing; deploy.json: file missing",
+            "graderType": "state_check"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/2c28f655-ced4-4fd5-919d-8853fc20717c.json",
+      "startedAt": "2026-11-21T18:16:29.893Z",
+      "finishedAt": "2026-11-21T18:16:40.560Z",
+      "hasTrace": true
+    },
+    {
+      "id": "d8e93ad5-e02d-47aa-ac9a-e8d3a9108cc5",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "mem_deploy_file_01",
+      "taskVersion": "1.0.0",
+      "configId": "9217eb8c-d65e-4f10-bb76-a424de91daf7",
+      "configContentHash": "0ae1da1e2a95d3393e3c78b8a7d624f7bb03e04a4429c4934921c834ad79a01e",
+      "trialIndex": 8,
+      "status": "succeeded",
+      "seed": 263883704,
+      "score": 0,
+      "passed": false,
+      "metrics": {
+        "latencyMs": 6523,
+        "stepCount": 1,
+        "totalTokens": 470,
+        "promptTokens": 444,
+        "completionTokens": 26
+      },
+      "grade": {
+        "score": 0,
+        "passed": false,
+        "graderResults": [
+          {
+            "score": 0,
+            "passed": false,
+            "details": {
+              "checks": [
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "expected exists=true, got false"
+                  ]
+                },
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "file missing"
+                  ]
+                },
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "file missing"
+                  ]
+                }
+              ]
+            },
+            "reasoning": "deploy.json: expected exists=true, got false; deploy.json: file missing; deploy.json: file missing",
+            "graderType": "state_check"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/d8e93ad5-e02d-47aa-ac9a-e8d3a9108cc5.json",
+      "startedAt": "2026-11-21T18:16:40.567Z",
+      "finishedAt": "2026-11-21T18:16:47.097Z",
+      "hasTrace": true
+    },
+    {
+      "id": "92ef46d1-a098-4631-bf96-cc8efae46f73",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "mem_deploy_file_01",
+      "taskVersion": "1.0.0",
+      "configId": "9217eb8c-d65e-4f10-bb76-a424de91daf7",
+      "configContentHash": "0ae1da1e2a95d3393e3c78b8a7d624f7bb03e04a4429c4934921c834ad79a01e",
+      "trialIndex": 9,
+      "status": "succeeded",
+      "seed": 1047047690,
+      "score": 0,
+      "passed": false,
+      "metrics": {
+        "latencyMs": 6494,
+        "stepCount": 1,
+        "totalTokens": 460,
+        "promptTokens": 447,
+        "completionTokens": 13
+      },
+      "grade": {
+        "score": 0,
+        "passed": false,
+        "graderResults": [
+          {
+            "score": 0,
+            "passed": false,
+            "details": {
+              "checks": [
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "expected exists=true, got false"
+                  ]
+                },
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "file missing"
+                  ]
+                },
+                {
+                  "path": "deploy.json",
+                  "passed": false,
+                  "problems": [
+                    "file missing"
+                  ]
+                }
+              ]
+            },
+            "reasoning": "deploy.json: expected exists=true, got false; deploy.json: file missing; deploy.json: file missing",
+            "graderType": "state_check"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/92ef46d1-a098-4631-bf96-cc8efae46f73.json",
+      "startedAt": "2026-11-21T18:16:47.102Z",
+      "finishedAt": "2026-11-21T18:16:53.607Z",
+      "hasTrace": true
+    },
+    {
+      "id": "34370d0c-31d7-483f-abfd-9ec30b423b10",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "mem_recall_client_01",
+      "taskVersion": "1.0.0",
+      "configId": "5993b6ea-77b6-4caf-9ada-d403b26e8aa8",
+      "configContentHash": "47783618092e4d0a33ac686fb8ab28a2922c14c84142aa0fa9fb3b380aed35a3",
+      "trialIndex": 0,
+      "status": "succeeded",
+      "seed": 1132287937,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 2645,
+        "stepCount": 2,
+        "totalTokens": 4744,
+        "promptTokens": 4722,
+        "completionTokens": 22
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=HL-2044 got=HL-2044",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/34370d0c-31d7-483f-abfd-9ec30b423b10.json",
+      "startedAt": "2026-11-21T18:15:20.581Z",
+      "finishedAt": "2026-11-21T18:15:23.232Z",
+      "hasTrace": true
+    },
+    {
+      "id": "b360da66-3d92-493d-97cc-4bfd40890268",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "mem_recall_client_01",
+      "taskVersion": "1.0.0",
+      "configId": "5993b6ea-77b6-4caf-9ada-d403b26e8aa8",
+      "configContentHash": "47783618092e4d0a33ac686fb8ab28a2922c14c84142aa0fa9fb3b380aed35a3",
+      "trialIndex": 1,
+      "status": "succeeded",
+      "seed": 1016210720,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 2617,
+        "stepCount": 2,
+        "totalTokens": 4744,
+        "promptTokens": 4722,
+        "completionTokens": 22
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=HL-2044 got=HL-2044",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/b360da66-3d92-493d-97cc-4bfd40890268.json",
+      "startedAt": "2026-11-21T18:15:23.238Z",
+      "finishedAt": "2026-11-21T18:15:25.861Z",
+      "hasTrace": true
+    },
+    {
+      "id": "c467a5d6-61b2-4449-8174-a84a9f0cc838",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "mem_recall_client_01",
+      "taskVersion": "1.0.0",
+      "configId": "5993b6ea-77b6-4caf-9ada-d403b26e8aa8",
+      "configContentHash": "47783618092e4d0a33ac686fb8ab28a2922c14c84142aa0fa9fb3b380aed35a3",
+      "trialIndex": 2,
+      "status": "succeeded",
+      "seed": 173643540,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 3785,
+        "stepCount": 2,
+        "totalTokens": 4744,
+        "promptTokens": 4722,
+        "completionTokens": 22
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=HL-2044 got=HL-2044",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/c467a5d6-61b2-4449-8174-a84a9f0cc838.json",
+      "startedAt": "2026-11-21T18:15:25.868Z",
+      "finishedAt": "2026-11-21T18:15:29.660Z",
+      "hasTrace": true
+    },
+    {
+      "id": "ca020da9-5af3-4ddd-ae93-4a1acc244f62",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "mem_recall_client_01",
+      "taskVersion": "1.0.0",
+      "configId": "5993b6ea-77b6-4caf-9ada-d403b26e8aa8",
+      "configContentHash": "47783618092e4d0a33ac686fb8ab28a2922c14c84142aa0fa9fb3b380aed35a3",
+      "trialIndex": 3,
+      "status": "succeeded",
+      "seed": 1341097338,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 3333,
+        "stepCount": 2,
+        "totalTokens": 4744,
+        "promptTokens": 4722,
+        "completionTokens": 22
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=HL-2044 got=HL-2044",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/ca020da9-5af3-4ddd-ae93-4a1acc244f62.json",
+      "startedAt": "2026-11-21T18:15:29.668Z",
+      "finishedAt": "2026-11-21T18:15:33.007Z",
+      "hasTrace": true
+    },
+    {
+      "id": "94142038-f0a5-4223-8e80-ed64e0523ad8",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "mem_recall_client_01",
+      "taskVersion": "1.0.0",
+      "configId": "5993b6ea-77b6-4caf-9ada-d403b26e8aa8",
+      "configContentHash": "47783618092e4d0a33ac686fb8ab28a2922c14c84142aa0fa9fb3b380aed35a3",
+      "trialIndex": 4,
+      "status": "succeeded",
+      "seed": 1169073595,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 7136,
+        "stepCount": 2,
+        "totalTokens": 4744,
+        "promptTokens": 4722,
+        "completionTokens": 22
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=HL-2044 got=HL-2044",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/94142038-f0a5-4223-8e80-ed64e0523ad8.json",
+      "startedAt": "2026-11-21T18:15:33.016Z",
+      "finishedAt": "2026-11-21T18:15:40.159Z",
+      "hasTrace": true
+    },
+    {
+      "id": "395c88bb-16dc-43de-9ef5-f0cef98bcc92",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "mem_recall_client_01",
+      "taskVersion": "1.0.0",
+      "configId": "5993b6ea-77b6-4caf-9ada-d403b26e8aa8",
+      "configContentHash": "47783618092e4d0a33ac686fb8ab28a2922c14c84142aa0fa9fb3b380aed35a3",
+      "trialIndex": 5,
+      "status": "succeeded",
+      "seed": 1950033019,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 8291,
+        "stepCount": 2,
+        "totalTokens": 4744,
+        "promptTokens": 4722,
+        "completionTokens": 22
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=HL-2044 got=HL-2044",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/395c88bb-16dc-43de-9ef5-f0cef98bcc92.json",
+      "startedAt": "2026-11-21T18:15:40.169Z",
+      "finishedAt": "2026-11-21T18:15:48.472Z",
+      "hasTrace": true
+    },
+    {
+      "id": "18dd7404-fe93-465d-8eb5-d91d96fa48b2",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "mem_recall_client_01",
+      "taskVersion": "1.0.0",
+      "configId": "5993b6ea-77b6-4caf-9ada-d403b26e8aa8",
+      "configContentHash": "47783618092e4d0a33ac686fb8ab28a2922c14c84142aa0fa9fb3b380aed35a3",
+      "trialIndex": 6,
+      "status": "succeeded",
+      "seed": 470810384,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 8355,
+        "stepCount": 2,
+        "totalTokens": 4744,
+        "promptTokens": 4722,
+        "completionTokens": 22
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=HL-2044 got=HL-2044",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/18dd7404-fe93-465d-8eb5-d91d96fa48b2.json",
+      "startedAt": "2026-11-21T18:15:48.483Z",
+      "finishedAt": "2026-11-21T18:15:56.847Z",
+      "hasTrace": true
+    },
+    {
+      "id": "097976a3-1baa-41c5-95e6-521ff8ef8741",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "mem_recall_client_01",
+      "taskVersion": "1.0.0",
+      "configId": "5993b6ea-77b6-4caf-9ada-d403b26e8aa8",
+      "configContentHash": "47783618092e4d0a33ac686fb8ab28a2922c14c84142aa0fa9fb3b380aed35a3",
+      "trialIndex": 7,
+      "status": "succeeded",
+      "seed": 437634090,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 6726,
+        "stepCount": 2,
+        "totalTokens": 4744,
+        "promptTokens": 4722,
+        "completionTokens": 22
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=HL-2044 got=HL-2044",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/097976a3-1baa-41c5-95e6-521ff8ef8741.json",
+      "startedAt": "2026-11-21T18:15:56.867Z",
+      "finishedAt": "2026-11-21T18:16:03.600Z",
+      "hasTrace": true
+    },
+    {
+      "id": "f885e1c0-d656-4c8b-beeb-7a7bf7f45c81",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "mem_recall_client_01",
+      "taskVersion": "1.0.0",
+      "configId": "5993b6ea-77b6-4caf-9ada-d403b26e8aa8",
+      "configContentHash": "47783618092e4d0a33ac686fb8ab28a2922c14c84142aa0fa9fb3b380aed35a3",
+      "trialIndex": 8,
+      "status": "succeeded",
+      "seed": 2146049781,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 4631,
+        "stepCount": 2,
+        "totalTokens": 4744,
+        "promptTokens": 4722,
+        "completionTokens": 22
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=HL-2044 got=HL-2044",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/f885e1c0-d656-4c8b-beeb-7a7bf7f45c81.json",
+      "startedAt": "2026-11-21T18:16:03.605Z",
+      "finishedAt": "2026-11-21T18:16:08.243Z",
+      "hasTrace": true
+    },
+    {
+      "id": "24b9de37-0aba-446a-bc50-4f07e2d53dcc",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "mem_recall_client_01",
+      "taskVersion": "1.0.0",
+      "configId": "5993b6ea-77b6-4caf-9ada-d403b26e8aa8",
+      "configContentHash": "47783618092e4d0a33ac686fb8ab28a2922c14c84142aa0fa9fb3b380aed35a3",
+      "trialIndex": 9,
+      "status": "succeeded",
+      "seed": 1649278458,
+      "score": 1,
+      "passed": true,
+      "metrics": {
+        "latencyMs": 2812,
+        "stepCount": 2,
+        "totalTokens": 4744,
+        "promptTokens": 4722,
+        "completionTokens": 22
+      },
+      "grade": {
+        "score": 1,
+        "passed": true,
+        "graderResults": [
+          {
+            "score": 1,
+            "passed": true,
+            "reasoning": "expected=HL-2044 got=HL-2044",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/24b9de37-0aba-446a-bc50-4f07e2d53dcc.json",
+      "startedAt": "2026-11-21T18:16:08.251Z",
+      "finishedAt": "2026-11-21T18:16:11.071Z",
+      "hasTrace": true
+    },
+    {
+      "id": "96057f98-a746-47f2-8749-0285abca65d1",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "mem_recall_client_01",
+      "taskVersion": "1.0.0",
+      "configId": "9217eb8c-d65e-4f10-bb76-a424de91daf7",
+      "configContentHash": "0ae1da1e2a95d3393e3c78b8a7d624f7bb03e04a4429c4934921c834ad79a01e",
+      "trialIndex": 0,
+      "status": "succeeded",
+      "seed": 1886632248,
+      "score": 0,
+      "passed": false,
+      "metrics": {
+        "latencyMs": 2183,
+        "stepCount": 1,
+        "totalTokens": 391,
+        "promptTokens": 383,
+        "completionTokens": 8
+      },
+      "grade": {
+        "score": 0,
+        "passed": false,
+        "graderResults": [
+          {
+            "score": 0,
+            "passed": false,
+            "reasoning": "expected=HL-2044 got=No client ID found in memory.",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/96057f98-a746-47f2-8749-0285abca65d1.json",
+      "startedAt": "2026-11-21T18:15:06.921Z",
+      "finishedAt": "2026-11-21T18:15:09.120Z",
+      "hasTrace": true
+    },
+    {
+      "id": "41d61ffe-d0e0-4683-ac21-b806f1ee8b97",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "mem_recall_client_01",
+      "taskVersion": "1.0.0",
+      "configId": "9217eb8c-d65e-4f10-bb76-a424de91daf7",
+      "configContentHash": "0ae1da1e2a95d3393e3c78b8a7d624f7bb03e04a4429c4934921c834ad79a01e",
+      "trialIndex": 1,
+      "status": "succeeded",
+      "seed": 659704441,
+      "score": 0,
+      "passed": false,
+      "metrics": {
+        "latencyMs": 1308,
+        "stepCount": 1,
+        "totalTokens": 391,
+        "promptTokens": 383,
+        "completionTokens": 8
+      },
+      "grade": {
+        "score": 0,
+        "passed": false,
+        "graderResults": [
+          {
+            "score": 0,
+            "passed": false,
+            "reasoning": "expected=HL-2044 got=No client ID found in memory.",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/41d61ffe-d0e0-4683-ac21-b806f1ee8b97.json",
+      "startedAt": "2026-11-21T18:15:09.135Z",
+      "finishedAt": "2026-11-21T18:15:10.449Z",
+      "hasTrace": true
+    },
+    {
+      "id": "524575a6-fcea-49b4-bfd0-466aa7261210",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "mem_recall_client_01",
+      "taskVersion": "1.0.0",
+      "configId": "9217eb8c-d65e-4f10-bb76-a424de91daf7",
+      "configContentHash": "0ae1da1e2a95d3393e3c78b8a7d624f7bb03e04a4429c4934921c834ad79a01e",
+      "trialIndex": 2,
+      "status": "succeeded",
+      "seed": 646588690,
+      "score": 0,
+      "passed": false,
+      "metrics": {
+        "latencyMs": 1144,
+        "stepCount": 1,
+        "totalTokens": 391,
+        "promptTokens": 383,
+        "completionTokens": 8
+      },
+      "grade": {
+        "score": 0,
+        "passed": false,
+        "graderResults": [
+          {
+            "score": 0,
+            "passed": false,
+            "reasoning": "expected=HL-2044 got=No client ID found in memory.",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/524575a6-fcea-49b4-bfd0-466aa7261210.json",
+      "startedAt": "2026-11-21T18:15:10.458Z",
+      "finishedAt": "2026-11-21T18:15:11.607Z",
+      "hasTrace": true
+    },
+    {
+      "id": "c70e263b-978d-481b-8bb6-d989a9d37d30",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "mem_recall_client_01",
+      "taskVersion": "1.0.0",
+      "configId": "9217eb8c-d65e-4f10-bb76-a424de91daf7",
+      "configContentHash": "0ae1da1e2a95d3393e3c78b8a7d624f7bb03e04a4429c4934921c834ad79a01e",
+      "trialIndex": 3,
+      "status": "succeeded",
+      "seed": 304029493,
+      "score": 0,
+      "passed": false,
+      "metrics": {
+        "latencyMs": 1137,
+        "stepCount": 1,
+        "totalTokens": 391,
+        "promptTokens": 383,
+        "completionTokens": 8
+      },
+      "grade": {
+        "score": 0,
+        "passed": false,
+        "graderResults": [
+          {
+            "score": 0,
+            "passed": false,
+            "reasoning": "expected=HL-2044 got=No client ID found in memory.",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/c70e263b-978d-481b-8bb6-d989a9d37d30.json",
+      "startedAt": "2026-11-21T18:15:11.612Z",
+      "finishedAt": "2026-11-21T18:15:12.755Z",
+      "hasTrace": true
+    },
+    {
+      "id": "3a4b6eba-cc72-4fcc-95e1-4a663fa2bc8c",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "mem_recall_client_01",
+      "taskVersion": "1.0.0",
+      "configId": "9217eb8c-d65e-4f10-bb76-a424de91daf7",
+      "configContentHash": "0ae1da1e2a95d3393e3c78b8a7d624f7bb03e04a4429c4934921c834ad79a01e",
+      "trialIndex": 4,
+      "status": "succeeded",
+      "seed": 1833231471,
+      "score": 0,
+      "passed": false,
+      "metrics": {
+        "latencyMs": 1570,
+        "stepCount": 1,
+        "totalTokens": 391,
+        "promptTokens": 383,
+        "completionTokens": 8
+      },
+      "grade": {
+        "score": 0,
+        "passed": false,
+        "graderResults": [
+          {
+            "score": 0,
+            "passed": false,
+            "reasoning": "expected=HL-2044 got=No client ID found in memory.",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/3a4b6eba-cc72-4fcc-95e1-4a663fa2bc8c.json",
+      "startedAt": "2026-11-21T18:15:12.762Z",
+      "finishedAt": "2026-11-21T18:15:14.338Z",
+      "hasTrace": true
+    },
+    {
+      "id": "259ad7fc-fc27-4ce5-81d0-f46abdd0b8d2",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "mem_recall_client_01",
+      "taskVersion": "1.0.0",
+      "configId": "9217eb8c-d65e-4f10-bb76-a424de91daf7",
+      "configContentHash": "0ae1da1e2a95d3393e3c78b8a7d624f7bb03e04a4429c4934921c834ad79a01e",
+      "trialIndex": 5,
+      "status": "succeeded",
+      "seed": 276181398,
+      "score": 0,
+      "passed": false,
+      "metrics": {
+        "latencyMs": 1059,
+        "stepCount": 1,
+        "totalTokens": 391,
+        "promptTokens": 383,
+        "completionTokens": 8
+      },
+      "grade": {
+        "score": 0,
+        "passed": false,
+        "graderResults": [
+          {
+            "score": 0,
+            "passed": false,
+            "reasoning": "expected=HL-2044 got=No client ID found in memory.",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/259ad7fc-fc27-4ce5-81d0-f46abdd0b8d2.json",
+      "startedAt": "2026-11-21T18:15:14.345Z",
+      "finishedAt": "2026-11-21T18:15:15.410Z",
+      "hasTrace": true
+    },
+    {
+      "id": "bfeda7a8-fbc9-48f4-bc92-0aff15df6e8c",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "mem_recall_client_01",
+      "taskVersion": "1.0.0",
+      "configId": "9217eb8c-d65e-4f10-bb76-a424de91daf7",
+      "configContentHash": "0ae1da1e2a95d3393e3c78b8a7d624f7bb03e04a4429c4934921c834ad79a01e",
+      "trialIndex": 6,
+      "status": "succeeded",
+      "seed": 1640827724,
+      "score": 0,
+      "passed": false,
+      "metrics": {
+        "latencyMs": 1268,
+        "stepCount": 1,
+        "totalTokens": 391,
+        "promptTokens": 383,
+        "completionTokens": 8
+      },
+      "grade": {
+        "score": 0,
+        "passed": false,
+        "graderResults": [
+          {
+            "score": 0,
+            "passed": false,
+            "reasoning": "expected=HL-2044 got=No client ID found in memory.",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/bfeda7a8-fbc9-48f4-bc92-0aff15df6e8c.json",
+      "startedAt": "2026-11-21T18:15:15.418Z",
+      "finishedAt": "2026-11-21T18:15:16.691Z",
+      "hasTrace": true
+    },
+    {
+      "id": "0d0d0e37-a709-4f76-adef-9a9974de562f",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "mem_recall_client_01",
+      "taskVersion": "1.0.0",
+      "configId": "9217eb8c-d65e-4f10-bb76-a424de91daf7",
+      "configContentHash": "0ae1da1e2a95d3393e3c78b8a7d624f7bb03e04a4429c4934921c834ad79a01e",
+      "trialIndex": 7,
+      "status": "succeeded",
+      "seed": 2054359812,
+      "score": 0,
+      "passed": false,
+      "metrics": {
+        "latencyMs": 1110,
+        "stepCount": 1,
+        "totalTokens": 391,
+        "promptTokens": 383,
+        "completionTokens": 8
+      },
+      "grade": {
+        "score": 0,
+        "passed": false,
+        "graderResults": [
+          {
+            "score": 0,
+            "passed": false,
+            "reasoning": "expected=HL-2044 got=No client ID found in memory.",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/0d0d0e37-a709-4f76-adef-9a9974de562f.json",
+      "startedAt": "2026-11-21T18:15:16.700Z",
+      "finishedAt": "2026-11-21T18:15:17.823Z",
+      "hasTrace": true
+    },
+    {
+      "id": "afd872f5-99d6-4715-97dd-175321803ca8",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "mem_recall_client_01",
+      "taskVersion": "1.0.0",
+      "configId": "9217eb8c-d65e-4f10-bb76-a424de91daf7",
+      "configContentHash": "0ae1da1e2a95d3393e3c78b8a7d624f7bb03e04a4429c4934921c834ad79a01e",
+      "trialIndex": 8,
+      "status": "succeeded",
+      "seed": 1179743855,
+      "score": 0,
+      "passed": false,
+      "metrics": {
+        "latencyMs": 1415,
+        "stepCount": 1,
+        "totalTokens": 391,
+        "promptTokens": 383,
+        "completionTokens": 8
+      },
+      "grade": {
+        "score": 0,
+        "passed": false,
+        "graderResults": [
+          {
+            "score": 0,
+            "passed": false,
+            "reasoning": "expected=HL-2044 got=No client ID found in memory.",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/afd872f5-99d6-4715-97dd-175321803ca8.json",
+      "startedAt": "2026-11-21T18:15:17.834Z",
+      "finishedAt": "2026-11-21T18:15:19.269Z",
+      "hasTrace": true
+    },
+    {
+      "id": "952b495e-fda0-46a9-a66c-8d5a20e73f15",
+      "experimentId": "16da4716-6bd6-4a57-9adf-57f896874495",
+      "taskId": "mem_recall_client_01",
+      "taskVersion": "1.0.0",
+      "configId": "9217eb8c-d65e-4f10-bb76-a424de91daf7",
+      "configContentHash": "0ae1da1e2a95d3393e3c78b8a7d624f7bb03e04a4429c4934921c834ad79a01e",
+      "trialIndex": 9,
+      "status": "succeeded",
+      "seed": 1060859022,
+      "score": 0,
+      "passed": false,
+      "metrics": {
+        "latencyMs": 1286,
+        "stepCount": 1,
+        "totalTokens": 391,
+        "promptTokens": 383,
+        "completionTokens": 8
+      },
+      "grade": {
+        "score": 0,
+        "passed": false,
+        "graderResults": [
+          {
+            "score": 0,
+            "passed": false,
+            "reasoning": "expected=HL-2044 got=No client ID found in memory.",
+            "graderType": "exact_match"
+          }
+        ],
+        "aggregatePolicy": "all_must_pass"
+      },
+      "error": null,
+      "traceUri": "16da4716-6bd6-4a57-9adf-57f896874495/952b495e-fda0-46a9-a66c-8d5a20e73f15.json",
+      "startedAt": "2026-11-21T18:15:19.278Z",
+      "finishedAt": "2026-11-21T18:15:20.572Z",
+      "hasTrace": true
+    }
+  ]
+}

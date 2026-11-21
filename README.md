@@ -2590,3 +2590,46 @@ The checkpoint did not run in your dev checkout. There, `docker compose up --bui
 - **No deployment.** There is no registry push, no TLS, and no secrets store.
 - **No browser checks in this phase.** The UI drill from §11.5 is still to be run by hand.
 - **The export is not paginated.** A large experiment returns everything in one response.
+
+## Phase 14 — The memory experiment
+
+### 14.0 What changed in this phase
+
+- **`EXPERIMENT.md`** is the pre-registration: hypothesis, the one axis (`memory.enabled`), the task subset, the primary metric, the inspection rules, and the limitations. It was written before any main-run trial. Its amendments are dated.
+- **`scripts/run-experiment.ts`** runs the experiment through the API. It creates the two configs and the experiment, starts it, polls until it finishes, and writes `compare.json`, `export.json` and `export.csv` under `results/<name>/`. The task groups and configs are fixed in the script, so the subset cannot drift between runs.
+
+### 14.1 Run it
+
+```bash
+# Print the plan. Sends nothing.
+npx tsx scripts/run-experiment.ts --dry-run
+
+# Main run (100 trials). Needs OpenRouter credit. Set TRIAL_CONCURRENCY=1 in .env first.
+npx tsx scripts/run-experiment.ts --name memory-ab --n 10 --configs mem-off,mem-on --tasks memory,control
+
+# Re-collect results from an existing experiment. Starts no trials.
+npx tsx scripts/run-experiment.ts --resume <experimentId>
+
+# The labelled post-hoc v2: give both arms the write_file tool (default: no tools).
+npx tsx scripts/run-experiment.ts --name memory-ab-v2-write-file --tools write_file
+```
+
+`API_URL` picks the API (default `http://localhost:3000`). The comparison is always `a = mem-on`, `b = mem-off`, so a positive delta means memory helped.
+
+### 14.2 The pilot
+
+A smoke run (`memory-ab-pilot`, 4 trials, both memory tasks, one per arm) checked the toggle and the pipeline. The memory-on trace shows the `memory_read` call returning the stored value, and the memory-off trace has no memory tool. The pilot also found an operational problem: two concurrent trials hit OpenRouter's in-flight budget check on a nearly empty balance, and one trial was rejected with a 402 before it reached the model. The compare endpoint excludes that trial, so the run now requires a sequential worker and a complete set of trials (EXPERIMENT.md, Amendments 1 and 2).
+
+### 14.3 Status
+
+Two runs, both 100 trials, all `succeeded`. Both are in `EXPERIMENT.md`.
+
+- **v1, the pre-registered run** (no file tool): macro Δ 0.0 pts, CI [−60, +60], verdict `likely_noise`. Memory helps on `mem_recall_client_01` (10/10 against 0/10). It hurts on the control `det_weekday_01` (0/10 against 10/10): the model searched memory for a computable answer and ran out of budget. `mem_deploy_file_01` cannot pass in either arm, because the pre-registered config left out `write_file`. That was a mistake in the pre-registration, not a finding about memory.
+- **v2, post-hoc** (`write_file` in both arms, labelled as post-hoc): macro Δ +60 pts, CI [+20, +100], verdict `a_better`. The memory tasks are 10/10 against 0/10 on both. But the win is mostly a control floor in the no-memory arm (`det_add_01`, 0/10): with `write_file` on, the model loops on file writes. The aggregate depends on the tool setting, so neither run settles the question alone.
+
+The full results, trajectories and limitations are in `EXPERIMENT.md`.
+
+### 14.4 What this phase does not do
+
+- **No statistical power claim.** Two memory tasks and N = 10 give a wide interval. Expect a `likely_noise` verdict, and report it as such.
+- **No retry of infrastructure failures.** A failed trial stays failed. The experiment is re-run, not patched (EXPERIMENT.md, Amendment 1).
