@@ -182,7 +182,7 @@ Open the Vite URL (usually `http://localhost:5173`). Stop with Ctrl+C.
 
 ### 1.5 Docker Compose
 
-`docker-compose.yml`:
+`docker-compose.yml` (as created in this phase; Phase 6 changed the `db` ports line to `"${POSTGRES_HOST_PORT:-5432}:5432"`, see 6.2):
 
 ```yaml
 services:
