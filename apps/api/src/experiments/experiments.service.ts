@@ -143,6 +143,11 @@ export class ExperimentsService {
     return { experiment, queued: trialIds.length };
   }
 
+  /** Newest first. The UI lists experiments from here. */
+  async findAll(): Promise<ExperimentEntity[]> {
+    return this.experiments.find({ order: { createdAt: 'DESC' } });
+  }
+
   async findOne(id: string): Promise<ExperimentEntity> {
     const experiment = await this.experiments.findOne({ where: { id } });
     if (!experiment) {

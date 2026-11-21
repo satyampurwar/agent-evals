@@ -1419,7 +1419,7 @@ npm run build:packages
 npm test
 ```
 
-Expected: nine workspaces pass (`stats` was added in Phase 10). The totals are `api` 35, `adapters-harness` 43, `adapters-model` 19, `domain` 8, `graders` 36, `runner` 11, `sandbox` 9, `stats` 31, `trace` 4 (these counts are current as of Phase 10). The runner tests cover pass, scored fail, model error (retryable), wall-clock timeout, unsupported grader, and a `unit_test` grader running against the agent's file.
+Expected: ten workspaces pass (`stats` was added in Phase 10, `web` in Phase 11). The totals are `api` 35, `adapters-harness` 43, `adapters-model` 19, `domain` 8, `graders` 36, `runner` 11, `sandbox` 9, `stats` 31, `trace` 4, `web` 29 (these counts are current as of Phase 11). The runner tests cover pass, scored fail, model error (retryable), wall-clock timeout, unsupported grader, and a `unit_test` grader running against the agent's file.
 
 The API e2e test needs Postgres and Redis running:
 
@@ -2107,3 +2107,125 @@ We checked the mechanism in the trace files. All 16 tight-budget answers for the
 - **The p-value assumes independent trials.** The CI is the primary evidence, as §10.5 says.
 - **Two configs per call.** `compare` takes exactly two configs from one experiment.
 - **No persisted results.** The compare is computed from the trials on each request.
+
+## Phase 11 — Vue UI for the workflow
+
+**Goal:** Click the same loop you have been curling: tasks, configs, experiments, compare, trial inspector.
+
+Run every command from the repo root:
+
+```bash
+cd /Users/turing-satyam/work/beyond/task/agent-evals
+```
+
+### 11.0 What changed in this phase
+
+| Area | Change |
+|---|---|
+| `apps/web` | Replaced the Vite template with five pages (tasks, configs, experiments, compare, trial inspector) and a small API client. Uses `vue-router` (new dependency) |
+| `apps/web/vite.config.ts` | Dev proxy: the browser calls `/api/...` and Vite forwards to the API on port 3000 with the `/api` prefix removed. The API has no CORS. The prefix also keeps API paths (`/tasks`, `/configs`) apart from the UI's routes, which use the same names. `API_URL` overrides the target |
+| `apps/web/src/lib` | Pure helpers with unit tests: CSV export (formula-safe), form-to-request builders (config and experiment), trace timeline, trial outcome labels, number formatting |
+| `apps/api` | New `GET /experiments`, newest first. The Experiments page lists from it. Nothing else in the API changed |
+| `apps/web/src/pages/pages.spec.ts` | Server-renders each page's first state through the router. This catches template errors, not data flow |
+
+Trials in the UI: outcomes follow §7.8. A scored failure (the agent answered wrong) is shown as "Failed (scored)". An infrastructure failure is shown separately as "Infrastructure failure".
+
+### 11.1 Install and build
+
+```bash
+npm install
+npm run build:packages
+npm run build -w @agent-evals/web
+```
+
+`npm install` adds `vue-router` and the workspace links for `@agent-evals/domain` and `@agent-evals/stats` (type imports only). The web build runs `vue-tsc` with strict type checks and then `vite build`.
+
+### 11.2 Offline tests (no key, no network)
+
+```bash
+npm test
+```
+
+Expected: ten workspaces pass. `web` runs 29 tests: the helper tests, and the first-render smoke test for each page. The smoke test does not call the API.
+
+### 11.3 Start the stack
+
+Postgres and Redis must be running (Phase 6 and 7):
+
+```bash
+docker compose up -d db redis
+npm run start:dev -w @agent-evals/api
+```
+
+In a second terminal, start the UI:
+
+```bash
+npm run dev -w @agent-evals/web
+```
+
+Open http://localhost:5173. Port 5173 is Vite's default. The UI reaches the API through the proxy, so no CORS setup is needed. If the API is on another port, set `API_URL`, for example `API_URL=http://localhost:3001 npm run dev -w @agent-evals/web`.
+
+The proxy only exists in `vite` dev mode. `vite preview` and a production build need the same `/api` prefix routed to the API some other way. That is not set up.
+
+### 11.4 The pages
+
+| Page | URL | What it does |
+|---|---|---|
+| Experiments | `/experiments` | Lists experiments, newest first. The form creates one from chosen tasks (latest version of each), chosen configs, and trials per cell. Creating does not start it |
+| Experiment | `/experiments/:id` | Status and trial counts. **Start** is enabled only while the experiment is `pending`. While it runs, the page refreshes every 3 s. **Export CSV** downloads the trials in the table. **Compare configs** appears when there are two or more configs |
+| Compare | `/experiments/:id/compare` | Pick two configs from the experiment (A and B). Shows the verdict, each side's macro pass rate, the difference (A minus B) with its 95% interval and McNemar p-value, the per-task table, mean latency and tokens, and the excluded counts. Cost shows as a dash when it is not measured |
+| Trial | `/trials/:id` | Outcome, grader results with the judge's reasoning, metrics, error, the agent's final answer, the trace as a timeline with offsets, and a notes box |
+| Configs | `/configs` | The saved configs, and a form that creates one. Saving the same settings again reports that nothing new was created |
+| Tasks | `/tasks` | One row per task version, with tags and grader types |
+
+Notes in the trial page are saved in this browser only (`localStorage`, keyed by trial id). They are not sent to the API.
+
+### 11.5 Checkpoint 11: the drill, without curl
+
+The plan's drill is the checkpoint. Do it in the browser:
+
+1. **Configs** page: create **A** (memory off) and **B** (memory on). Leave the base tools on. A new config shows "Created … version N." Saving the same settings again shows "An identical config already exists … Nothing new was created."
+2. **Experiments** page: name the experiment, pick two tasks, pick both configs, and set trials per cell to 3. Create it. You land on the experiment page. Creating does not start it.
+3. On the experiment page, press **Start**. The counts update every 3 s while the status is `running`. It stops at `completed`, `partial`, or `failed`. Expect 12 trials.
+4. Open a failed trial. In our run, A failed all three `mem_recall_client_01` trials, and B passed all three. The trial page shows `exact_match` expected `HL-2044`, got "There is no client ID stored in the memory." The trace has three events (`step_boundary`, `message`, `message`) and no tool calls, so the agent never searched memory. Write three bullets in the notes box.
+5. Press **Export CSV** on the experiment page. The file has a header and one line per trial.
+6. Press **Compare configs**. Set Config A to B (memory on) and Config B to A (memory off). Delta is A minus B, so a positive delta means memory helped. Read the verdict.
+
+**The verdict for this drill is "Likely noise", and that is the correct answer for two tasks.** The 95% interval resamples tasks, and two tasks cannot narrow it. In our run the delta was +0.50 with interval [0.00, 1.00], p = 0.25. The memory effect is real for the one task it targets, but this experiment cannot show it statistically. For a verdict you can act on, add tasks: five or more, with several trials each. Phase 10 §10.5 explains the interval.
+
+### 11.6 What was checked here, and what you check
+
+Checked in this phase:
+
+- The web app builds with strict `vue-tsc` and `vite build`.
+- 29 web tests pass: the helpers, and the first-render smoke test of each page.
+- The API lint and typecheck pass. All API tests still pass (35).
+- The dev proxy works: the SPA route serves the app, `/api/tasks`, `/api/configs` and `/api/experiments` return data, and API error messages reach the browser.
+- The config bodies that `buildConfigInput` produces are accepted by the API (201 each), and the experiment created with the UI's body ran to completion (12 trials).
+- The trace timeline and the CSV export, run on a real failed trial and a real trial list.
+
+**Not checked here: clicking through the pages in a browser.** The smoke test shows that each page renders its first state. It does not click buttons, and it does not run the polling or the file download. Run the drill in §11.5 to confirm those.
+
+### 11.7 Troubleshooting
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| A page shows a request error (for example, "fetch failed" or a connection error) | The API is not running on port 3000, or `API_URL` is wrong | Start the API. Check `API_URL` |
+| The create form says "No tasks. Seed them with npm run seed:tasks." | The tasks are not seeded | `npm run seed:tasks` (the API must be running) |
+| **Start** is disabled | The experiment is no longer `pending`: it is running or has finished | Each experiment runs once. Create a new experiment to run again |
+| **Compare configs** does not appear | The experiment has only one config | Create the experiment with two configs |
+| The compare page shows "Not enough data" | Fewer than two tasks have scored trials on both configs | Add tasks, then run them |
+| The compare page shows a 409 error | No task has a scored trial on both configs yet, often because the trials are still running | Wait for the status to leave `running`, then compare again |
+| Trace says "Trace could not be loaded" | The trace file is missing, or the trial has no trace (`hasTrace` is false) | Check `data/traces/`, or `TRACE_DIR` if it is set. A trial that never reached the agent has no trace |
+| The notes disappeared | They are saved in the browser. A different browser, or cleared site data, has no notes | Notes are local by design |
+
+### 11.8 What this phase does not do
+
+- **No authentication.** The API has none, and the UI has none.
+- **No production serving.** The API proxy exists only in the dev server.
+- **No browser end-to-end tests.** The smoke test renders pages without a browser or an API.
+- **No pagination or filters.** Lists show everything. That is fine at this size.
+- **No charts.** The compare page is tables and badges. Charts are not planned.
+- **Notes are not part of the data.** They stay in the browser, not in the trial record.
+- **The compare page does not refresh.** Press **Compare** again after the trials finish.
+- **Cost is still a dash.** The runner does not compute cost yet (Phase 10 §10.7).

@@ -16,6 +16,12 @@ import { ExperimentsService } from './experiments.service.js';
 export class ExperimentsController {
   constructor(private readonly experiments: ExperimentsService) {}
 
+  @Get()
+  async list() {
+    const rows = await this.experiments.findAll();
+    return rows.map((row) => this.experiments.toView(row));
+  }
+
   @Post()
   async create(@Body(new ZodValidationPipe(ExperimentInputSchema)) body: ExperimentInput) {
     const experiment = await this.experiments.create(body);
