@@ -959,7 +959,161 @@ Sandbox directories are deleted after each trial. The trace and result files are
 
 ### 4.7 What this phase does not do
 
-- No real model. Tool calls come only from the scripted responses. Phase 5 adds OpenRouter.
+- The Phase 4 steps use the scripted model only. Phase 5 adds a live model (see below).
 - `list_dir` is covered by unit tests only. No task uses it yet.
 - The sandbox is a temp directory on the host, not a container. It keeps trials from seeing each other's files, but it does not contain a malicious tool or a shell. Phase 4 has no shell tool.
-- No `--model` or `--harness` flags yet. Phase 5 adds them.
+- The Phase 4 steps do not use `--model` or `--harness`. Phase 5 adds them.
+
+---
+
+## Phase 5 — Real model via OpenRouter
+
+**Goal:** Replace the mock with a live model. Run the same addition task and the write-file task against it, and see what a live model does that the mock cannot show.
+
+Run every command from the repo root:
+
+```bash
+cd /Users/turing-satyam/work/beyond/task/agent-evals
+```
+
+### 5.0 Packages and files added in this phase
+
+| Package / file | Purpose |
+|---|---|
+| `packages/adapters-model/src/openrouter.ts` | `OpenRouterAdapter`: OpenAI SDK pointed at `https://openrouter.ai/api/v1`. Maps messages and tools to the wire format, parses tool calls and token usage. Invalid tool-argument JSON stays visible in the trace (`__invalid_json`) |
+| `packages/adapters-model/src/registry.ts` | `parseModelSpec("provider:modelId")` and `createModelAdapter(provider)`. Providers: `openrouter`, `mock` |
+| `packages/adapters-harness/src/registry.ts` | `createHarness(id)`. Only `baseline` for now |
+| `scripts/lib/env.ts` | Loads `.env` into `process.env`. Existing shell variables win |
+| `scripts/smoke-model.ts` | One live call (Checkpoint 5a) |
+| `scripts/run-one-trial.ts` | Adds `--model <provider:modelId>` and `--harness <id>`. Records `harness` and `model` in `result.json`. Prints usage and latency |
+
+`--model` and `--script` cannot be used together. Without either flag the runner uses the mock model, as in Phases 3 and 4.
+
+### 5.1 Set the API key
+
+The key lives in `.env`, which is gitignored. `.env.example` has the variable name with an empty value:
+
+```bash
+# .env (not committed)
+OPENROUTER_API_KEY=sk-or-...
+```
+
+Do not paste the key into any tracked file or into a command you save to the repo.
+
+### 5.2 Install
+
+```bash
+npm install
+```
+
+This adds the `openai` SDK (`^7.62.0`) to `@agent-evals/adapters-model`.
+
+### 5.3 Offline tests (no key needed)
+
+```bash
+npm test -w @agent-evals/adapters-model -w @agent-evals/adapters-harness
+```
+
+The OpenRouter tests use a fake `fetch`, so they never call the network. Expected: both packages pass.
+
+### 5.4 Checkpoint 5a: smoke call (expect a reply and usage)
+
+```bash
+npx tsx scripts/smoke-model.ts
+echo "exit=$?"
+```
+
+Pass a model id as the first argument to try another model, for example `npx tsx scripts/smoke-model.ts openai/gpt-4.1-mini`.
+
+Expected output (the reply text may vary):
+
+```
+model:   openai/gpt-4.1-mini
+reply:   The capital of France is Paris.
+usage:   prompt=19 completion=8 total=27
+latency: 1804 ms
+exit=0
+```
+
+If `OPENROUTER_API_KEY` is missing, the script prints `OPENROUTER_API_KEY is not set. Add it to .env` and exits with code 2.
+
+### 5.5 Checkpoint 5b: the addition task, three times (expect PASS each run)
+
+```bash
+for i in 1 2 3; do
+  npx tsx scripts/run-one-trial.ts tasks/deterministic/01_add.json \
+    --model openrouter:openai/gpt-4.1-mini --harness baseline
+  echo "exit=$?"
+done
+```
+
+Expected output for each run (latency and IDs will differ):
+
+```
+PASS
+  exact_match: expected=42 got=42
+model:   openrouter:openai/gpt-4.1-mini
+harness: baseline
+stopped: completed (steps=1)
+usage:   prompt=148 completion=3 total=151
+latency: 1160 ms
+trace:   .../trace.json
+result:  .../result.json
+exit=0
+```
+
+The token counts above come from a real run. Your numbers may differ slightly.
+
+### 5.6 The write-file task on the live model
+
+Task 02 needs the model to call `write_file`. This shows that tool calls work against a real model:
+
+```bash
+npx tsx scripts/run-one-trial.ts tasks/deterministic/02_write_answer.json \
+  --model openrouter:openai/gpt-4.1-mini --harness baseline
+echo "exit=$?"
+```
+
+Expected: `PASS`, `state_check: all 1 state check(s) passed`, `stopped: completed (steps=2)`, exit 0.
+
+### 5.7 Inspect the live trial
+
+Run 5.6 first, so it is the most recent trial. Then open its trace and result:
+
+```bash
+TMPD="$(node -p 'require("os").tmpdir()')"
+RUN_DIR="$(ls -td "$TMPD"/agent-evals/trial-*/ | head -1)"
+cat "${RUN_DIR}trace.json"
+cat "${RUN_DIR}result.json"
+```
+
+The `result.json` should show `"harness": "baseline"` and `"model": { "provider": "openrouter", "modelId": "openai/gpt-4.1-mini" }`. The trace should contain a `tool_call` for `write_file` and a `tool_result` with `ok: true`.
+
+### 5.8 Checkpoint 5 passes when
+
+- 5a prints a reply with non-zero token usage.
+- 5b prints `PASS` with exit 0 for each run, and usage is logged.
+- 5.6 prints `PASS` (the model called the tool and wrote the file).
+
+### 5.9 What you should observe, and what it does not show yet
+
+In the example runs, the three `01_add` trials all passed with identical token counts. Temperature 0 does not guarantee identical outputs, and provider behavior can drift. Three passes on an easy task do not show variance, though. The non-determinism lesson needs many trials, or harder tasks, which come in Phase 8 and Phase 9. Do not treat three PASS results as proof that the model is reliable.
+
+### 5.10 Troubleshooting
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `OPENROUTER_API_KEY is not set (add it to .env)` | Key missing or empty in `.env` | Add the key to `.env` and rerun |
+| HTTP 401 from OpenRouter | Key is wrong or revoked | Check the key in the OpenRouter dashboard |
+| HTTP 404 or "model not found" | Model id is misspelled | Use the exact id, e.g. `openai/gpt-4.1-mini` |
+| `use either --model or --script, not both` | Both flags passed | Keep one |
+| `unknown model provider "..."` | Provider name is not `openrouter` or `mock` | Use `openrouter:<modelId>` |
+| `Cannot find module 'openai'` | `npm install` not run after the Phase 5 change | Run `npm install` |
+| Network or DNS errors in an agent-run shell | The sandbox blocks outbound calls | Run from a normal terminal |
+
+### 5.11 What this phase does not do
+
+- No cost calculation. Only tokens and latency are logged, so `estimatedCostUsd` in the metrics stays unset.
+- No N-trial runner. Each `run-one-trial.ts` call is one trial. Phase 7 adds experiment expansion.
+- Only the baseline harness exists. Hermes comes in Phase 12.
+- The SDK retries network errors, 429s, and 5xx responses up to 2 times. Other failures surface as `stoppedReason: "error"` only if they happen during the model call.
