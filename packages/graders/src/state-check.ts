@@ -2,7 +2,7 @@ import { readFile, stat } from 'node:fs/promises';
 import { isDeepStrictEqual } from 'node:util';
 import type { StateCheck } from '@agent-evals/domain';
 import { resolveInSandbox } from '@agent-evals/sandbox';
-import type { GraderOutcome } from './exact-match';
+import type { GraderOutcome } from './exact-match.js';
 
 export interface StateCheckDetail {
   path: string;

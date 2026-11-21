@@ -1,10 +1,10 @@
 import type { ChatMessage, ModelResponse } from '@agent-evals/adapters-model';
-import { executeTool, specsFor } from './tools';
+import { executeTool, specsFor } from './tools.js';
 import type {
   HarnessAdapter,
   HarnessRunInput,
   HarnessRunOutput,
-} from './types';
+} from './types.js';
 
 /**
  * Baseline tool-calling loop:

@@ -1,6 +1,6 @@
-import { MockModelAdapter } from './mock';
-import { OpenRouterAdapter } from './openrouter';
-import type { ModelAdapter } from './types';
+import { MockModelAdapter } from './mock.js';
+import { OpenRouterAdapter } from './openrouter.js';
+import type { ModelAdapter } from './types.js';
 
 export interface ModelSpec {
   provider: string;

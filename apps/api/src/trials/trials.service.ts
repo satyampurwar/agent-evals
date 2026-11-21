@@ -2,14 +2,18 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import type { Trace } from '@agent-evals/domain';
 import { Repository } from 'typeorm';
+import { TraceStore } from '../common/trace-store.js';
 import { TrialEntity } from '../entities/trial.entity.js';
 
-/** Trial as returned over HTTP: the trace is omitted (it has its own endpoint) and replaced by a flag. */
-export type TrialView = Omit<TrialEntity, 'trace' | 'experiment'> & { hasTrace: boolean };
+/** Trial as returned over HTTP. The trace lives in its own file and is served by /trials/:id/trace. */
+export type TrialView = Omit<TrialEntity, 'experiment'> & { hasTrace: boolean };
 
 @Injectable()
 export class TrialsService {
-  constructor(@InjectRepository(TrialEntity) private readonly repo: Repository<TrialEntity>) {}
+  constructor(
+    @InjectRepository(TrialEntity) private readonly repo: Repository<TrialEntity>,
+    private readonly traceStore: TraceStore,
+  ) {}
 
   async list(experimentId?: string): Promise<TrialView[]> {
     const rows = await this.repo.find({
@@ -27,19 +31,26 @@ export class TrialsService {
     return toView(row);
   }
 
-  /** 404 both when the trial is missing and when it has not produced a trace yet. */
+  /** 404 when the trial is missing, when it has no trace yet, or when the trace file is gone. */
   async trace(id: string): Promise<Trace> {
-    const row = await this.repo.findOne({ where: { id }, select: { id: true, trace: true } });
+    const row = await this.repo.findOne({ where: { id }, select: { id: true, traceUri: true } });
     if (!row) {
       throw new NotFoundException(`trial ${id} not found`);
     }
-    if (!row.trace) {
+    if (!row.traceUri) {
       throw new NotFoundException(`trace for trial ${id} has not been recorded yet`);
     }
-    return row.trace;
+    try {
+      return JSON.parse(await this.traceStore.read(row.traceUri)) as Trace;
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+        throw new NotFoundException(`trace file for trial ${id} is missing`);
+      }
+      throw err;
+    }
   }
 }
 
-function toView({ trace, experiment: _experiment, ...rest }: TrialEntity): TrialView {
-  return { ...rest, hasTrace: trace != null };
+function toView({ experiment: _experiment, ...rest }: TrialEntity): TrialView {
+  return { ...rest, hasTrace: rest.traceUri != null };
 }

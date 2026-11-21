@@ -1,4 +1,4 @@
-export { exactMatch } from './exact-match';
-export type { GraderOutcome } from './exact-match';
-export { stateCheck } from './state-check';
-export type { StateCheckDetail, StateCheckOutcome } from './state-check';
+export { exactMatch } from './exact-match.js';
+export type { GraderOutcome } from './exact-match.js';
+export { stateCheck } from './state-check.js';
+export type { StateCheckDetail, StateCheckOutcome } from './state-check.js';

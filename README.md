@@ -1322,14 +1322,14 @@ Expected:
 - The status shows `trials.total: 8` and `queued: 8`.
 - The trials list has length 8.
 
-Each trial pins the task version and config `contentHash` it was created with, and gets a deterministic `seed`. Nothing executes the trials yet. They stay `queued` until the worker phase. That is why the trace endpoint returns 404 for now:
+Each trial pins the task version and config `contentHash` it was created with, and gets a deterministic `seed`. At the moment of start the trials are `queued`. Phase 7 added the worker that runs them (see Phase 7). Right after start, the trace endpoint returns 404 until that trial finishes:
 
 ```bash
 TID=$(curl -s "http://localhost:3000/trials?experimentId=$EID" | jq -r '.[0].id')
 curl -s -o /dev/null -w "trace: HTTP %{http_code}\n" http://localhost:3000/trials/$TID/trace
 ```
 
-Expected: `trace: HTTP 404`, with a message that the trace has not been recorded yet.
+Expected right after start: `trace: HTTP 404`. Once the trial finishes, the same request returns `200`.
 
 ### 6.9 Checks for the error paths (optional)
 
@@ -1361,8 +1361,244 @@ Expected: `trace: HTTP 404`, with a message that the trace has not been recorded
 
 ### 6.12 What this phase does not do
 
-- Trials are queued, not run. Execution is Phase 7. An experiment shows `running` while its trials are `queued`.
+- Trials are queued, not run, in this phase. Phase 7 adds the worker that runs them. An experiment shows `running` while its trials are `queued`.
 - No migrations yet. `synchronize` creates the tables for local development only.
 - No authentication, pagination, or Redis use yet.
 - The seed script needs the API running. It does not write to the database directly.
 - `npm audit` reports 8 advisories from the new dependency tree. Not addressed in this phase.
+
+---
+
+## Phase 7 — Job queue: N trials for real
+
+**Goal:** One experiment expands into many isolated jobs. A failed or timed-out trial does not corrupt the others.
+
+Run every command from the repo root:
+
+```bash
+cd /Users/turing-satyam/work/beyond/task/agent-evals
+```
+
+### 7.0 Packages and files added in this phase
+
+| Package / file | Purpose |
+|---|---|
+| `packages/runner` (`@agent-evals/runner`) | `runTrial()`: the trial pipeline moved out of the CLI. Fresh sandbox, harness under a wall-clock timeout, graders, cleanup. Returns `succeeded`, `failed`, or `timeout`. Used by the CLI and the worker |
+| `scripts/run-one-trial.ts` | Now calls `runTrial()`. Same arguments and output, plus a status line. Exit codes: 0 pass, 1 fail or timeout, 2 infrastructure error |
+| `apps/api/src/queue/trial-queue.ts` | BullMQ queue `trials`. Each trial is one job, with `jobId` = trial id. 3 attempts, exponential backoff from 2 s |
+| `apps/api/src/execution/trial-executor.service.ts` | Job handler. Idempotent: skips terminal trials. Claims the trial, runs it, retries retryable failures, writes the trace file, then finalizes the trial and rolls up the experiment status in one transaction |
+| `apps/api/src/execution/trial.processor.ts` | BullMQ consumer. Concurrency from `TRIAL_CONCURRENCY` (default 2) |
+| `apps/api/src/execution/execution.module.ts` | Wires the executor and the consumer. Set `TRIAL_WORKER=off` to run the API without the consumer |
+| `apps/api/src/experiments/experiment-status.ts` | Trial counts and the experiment status rules (spec included) |
+| `apps/api/src/common/trace-store.ts` | Writes trace files to `data/traces/<experimentId>/<trialId>.json`. `TRACE_DIR` overrides the root. The database keeps only `traceUri` |
+| `apps/api/src/common/redis.ts` | Parses `REDIS_URL` into BullMQ connection options (spec included) |
+| `packages/trace`, `sandbox`, `graders`, `adapters-model`, `adapters-harness`, `runner` | Build to `dist/` like `domain`. Their imports now use `.js` specifiers, so Node can load them |
+| root `build:packages` script | Builds the runtime packages in dependency order. `postinstall` and the API's `prestart` / `prebuild` run it |
+| `apps/api` deps: `@nestjs/bullmq`, `bullmq`, `ioredis` | Job queue. `ioredis` is required by BullMQ as an optional peer |
+| `.gitignore` | Adds `data/` (trace files) |
+
+Removed: the inline `trace` column on `trials`. Traces are files now. Development `synchronize` drops that column on the next boot.
+
+### 7.1 Install and build
+
+```bash
+npm install
+```
+
+If npm reports `SELF_SIGNED_CERT_IN_CHAIN`, use `NODE_OPTIONS=--use-system-ca npm install` (see Phase 6).
+
+`postinstall` runs `npm run build:packages`. After you edit any file under `packages/`, rebuild before running the API or another package's tests, because they import `dist/`:
+
+```bash
+npm run build:packages
+```
+
+### 7.2 Offline tests (no key, no network)
+
+```bash
+npm test
+```
+
+Expected: eight workspaces pass. The totals are `api` 30, `adapters-harness` 18, `adapters-model` 17, `domain` 8, `graders` 12, `runner` 6, `sandbox` 9, `trace` 4. The runner tests cover the five outcomes: pass, scored fail, model error (retryable), wall-clock timeout, and unsupported grader.
+
+The API e2e test needs Postgres and Redis running:
+
+```bash
+npm run test:e2e -w @agent-evals/api
+```
+
+### 7.3 Checkpoint 7-0: the CLI still runs offline (expect PASS, then FAIL)
+
+```bash
+npx tsx scripts/run-one-trial.ts tasks/deterministic/02_write_answer.json --script fixtures/scripted/write_answer.json
+echo "exit=$?"
+
+npx tsx scripts/run-one-trial.ts tasks/deterministic/01_add.json --script fixtures/scripted/write_answer.json
+echo "exit=$?"
+```
+
+The first run prints `PASS` and exits 0. The second prints `FAIL` with `expected=42 got=done` and exits 1.
+
+### 7.4 Start the stack
+
+```bash
+docker compose up -d db redis
+npm run start:dev -w @agent-evals/api
+```
+
+Keep the API running in its own terminal. The worker runs inside the API process, so worker errors appear in that terminal's log.
+
+Options:
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `TRIAL_CONCURRENCY` | `2` | Trials that run at the same time |
+| `TRIAL_WORKER` | on | Set to `off` to run the API without consuming the queue |
+| `TRACE_DIR` | `data/traces` | Where trace files go |
+
+Phase 6 must already be done: the tasks are seeded and at least one config exists. In another terminal, look up the config from Phase 6 (`baseline-gpt-mini`, version 1, temperature 0.2):
+
+```bash
+A=http://localhost:3000
+npm run seed:tasks
+C1=$(curl -s $A/configs | jq -r '[.[] | select(.name=="baseline-gpt-mini" and .version==1)][0].id')
+echo "config: $C1"
+```
+
+If that prints `config: null`, run the Phase 6 config steps first.
+
+### 7.5 Checkpoint 7a: five trials through the queue (expect 5 succeeded)
+
+```bash
+EXP=$(curl -s -X POST $A/experiments -H 'content-type: application/json' \
+  -d "{\"name\":\"smoke-n5\",\"hypothesis\":\"Platform can run repeated trials\",\"taskIds\":[\"det_add_01\"],\"configIds\":[\"$C1\"],\"nTrials\":5}")
+EID=$(echo "$EXP" | jq -r .id)
+
+curl -s -o /dev/null -w "start: HTTP %{http_code}\n" -X POST $A/experiments/$EID/start
+
+# poll until the experiment leaves "running"
+until [ "$(curl -s $A/experiments/$EID/status | jq -r .status)" != "running" ]; do sleep 2; done
+curl -s $A/experiments/$EID/status | jq .
+curl -s "$A/trials?experimentId=$EID" | jq -c '.[] | {trialIndex, status, passed, seed, hasTrace}'
+```
+
+Expected:
+
+- `start: HTTP 202`
+- The status is `completed`, with `"succeeded": 5` and no queued or running trials.
+- Each of the five trials has `"status": "succeeded"`, `"passed": true`, and `"hasTrace": true`.
+- Each trial has a different `seed`.
+
+Check that each trace file exists:
+
+```bash
+ls data/traces/$EID/
+```
+
+Expected: five `.json` files named by trial id.
+
+### 7.6 Checkpoint 7b: a timeout does not delete the other trials (expect partial)
+
+Create a config whose wall-clock budget is 1 ms. Every trial with it must time out. The config is immutable, so this is a new config, not an edit:
+
+```bash
+PROBE=$(curl -s -X POST $A/configs -H 'content-type: application/json' -d '{
+  "name": "timeout-probe",
+  "harness": { "id": "baseline", "settings": {
+    "skillsEnabled": [], "memory": { "enabled": false, "persistAcrossTrials": false },
+    "tools": ["read_file", "write_file", "list_dir"], "maxSteps": 8, "maxTokens": 2048, "timeoutMs": 1 } },
+  "model": { "provider": "openrouter", "modelId": "openai/gpt-4.1-mini", "temperature": 0.2 }
+}' | jq -r .id)
+
+EXP=$(curl -s -X POST $A/experiments -H 'content-type: application/json' \
+  -d "{\"name\":\"timeout-mix\",\"hypothesis\":\"timeouts do not delete other trials\",\"taskIds\":[\"det_add_01\",\"det_write_answer_01\"],\"configIds\":[\"$C1\",\"$PROBE\"],\"nTrials\":2}")
+EID=$(echo "$EXP" | jq -r .id)
+curl -s -o /dev/null -w "start: HTTP %{http_code}\n" -X POST $A/experiments/$EID/start
+until [ "$(curl -s $A/experiments/$EID/status | jq -r .status)" != "running" ]; do sleep 2; done
+curl -s $A/experiments/$EID/status | jq -c '{status, trials}'
+curl -s "$A/trials?experimentId=$EID" | jq -c '.[] | {taskId, status, passed, error: .error.code}'
+```
+
+Expected:
+
+- The experiment status is `partial`.
+- Trials: `"succeeded": 4`, `"timeout": 4`, and 8 rows in total.
+- The four probe trials show `"status": "timeout"`, `"error": "timeout"`, and `"passed": false`.
+- The four `$C1` trials show `"succeeded"` and `"passed": true`. This includes `det_write_answer_01`, which calls `write_file` on the live model.
+- Every row has a trace. A timed-out trial's trace holds the events recorded before the cut-off.
+
+### 7.7 Checkpoint 7c: an infrastructure failure is retried, then recorded as failed
+
+Use a model ID that does not exist. OpenRouter rejects it, the harness stops with `error`, and the executor records a retryable `model_error`. BullMQ retries it until the attempts run out:
+
+```bash
+BAD=$(curl -s -X POST $A/configs -H 'content-type: application/json' -d '{
+  "name": "bad-model",
+  "harness": { "id": "baseline", "settings": {
+    "skillsEnabled": [], "memory": { "enabled": false, "persistAcrossTrials": false },
+    "tools": ["read_file", "write_file", "list_dir"], "maxSteps": 8, "maxTokens": 2048, "timeoutMs": 60000 } },
+  "model": { "provider": "openrouter", "modelId": "openai/no-such-model-xyz", "temperature": 0 }
+}' | jq -r .id)
+
+EXP=$(curl -s -X POST $A/experiments -H 'content-type: application/json' \
+  -d "{\"name\":\"bad-model-retry\",\"hypothesis\":\"infra failures are retried then recorded\",\"taskIds\":[\"det_add_01\"],\"configIds\":[\"$BAD\"],\"nTrials\":1}")
+EID=$(echo "$EXP" | jq -r .id)
+curl -s -o /dev/null -X POST $A/experiments/$EID/start
+until [ "$(curl -s $A/experiments/$EID/status | jq -r .status)" != "running" ]; do sleep 2; done
+curl -s $A/experiments/$EID/status | jq -c '{status, trials}'
+TID=$(curl -s "$A/trials?experimentId=$EID" | jq -r '.[0].id')
+curl -s $A/trials/$TID | jq -c '{status, error}'
+
+# BullMQ attempt counter for the job (field "atm")
+docker compose exec -T redis redis-cli HGET bull:trials:$TID atm
+```
+
+Expected:
+
+- The experiment status is `failed`, because every trial had an infrastructure failure.
+- The trial has `"status": "failed"` and `"error": {"code": "model_error", "retryable": true, ...}`.
+- The Redis counter prints `3`. The job ran three attempts, with about 2 s and 4 s of backoff between them.
+
+### 7.8 Infra failure versus scored failure
+
+| Trial status | Meaning | `passed` | Counts toward experiment `partial`? |
+|---|---|---|---|
+| `succeeded` | The agent finished and graders ran | `true` or `false` | No. A wrong answer is a valid result |
+| `failed` | Infrastructure problem: model error, sandbox error, unsupported grader, setup error (e.g. missing API key) | `false` | Yes. It also makes the experiment `failed` if every trial failed |
+| `timeout` | The trial exceeded its wall-clock budget | `false` | Yes |
+
+Experiment status:
+
+- `running`: some trial is `queued` or `running`
+- `completed`: every trial was scored, passing or failing
+- `partial`: some trials failed, timed out, or were cancelled
+- `failed`: every trial had an infrastructure failure
+
+### 7.9 Inspect a trial
+
+```bash
+curl -s $A/trials/$TID/trace | jq '{trialId, finalAnswer, events: (.events | length)}'
+```
+
+The trace file is at `data/traces/<experimentId>/<trialId>.json`. The trace endpoint reads that file. It returns 404 when the trial has no trace yet, or when the file is missing.
+
+### 7.10 Troubleshooting
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `BullMQ could not load the optional 'ioredis' package` at API start | `ioredis` not installed | `npm install ioredis@^5 -w @agent-evals/api` |
+| Experiment stays `running` and nothing moves | No consumer: API stopped, `TRIAL_WORKER=off`, or Redis down | Start the API without `TRIAL_WORKER=off` and check Redis with `docker compose ps redis` |
+| Trials end as `failed` with `setup_error` and no retries | Missing `OPENROUTER_API_KEY` or unknown provider. Setup errors are not retried | Add the key to `.env`, then create a new experiment |
+| `Cannot find module '@agent-evals/runner'` or stale behavior | `dist/` not built, or built before your last edit | `npm run build:packages` |
+| `POST /start` returns 500 and the experiment is `running` with `queued` trials | Redis was down when enqueueing. The rows were committed, the jobs were not | Restart Redis. There is no requeue endpoint yet, so create a new experiment |
+| `POST /start` returns 409 | The experiment was already started | Create a new experiment |
+
+### 7.11 What this phase does not do
+
+- **Timeouts do not cancel the harness.** The runner records the trial as `timeout` and removes its sandbox. A model call already in flight keeps running until it returns. The baseline harness then stops at its next step check.
+- **Every model error is retried, including bad model IDs.** The 400 "not a valid model ID" from 7.7 uses all three attempts. Classifying 4xx responses as non-retryable is a follow-up.
+- **The worker is in-process.** The plan allowed a separate `workers/node-worker`. `TRIAL_WORKER=off` is the switch for that later.
+- **No cancel endpoint, no requeue, no cost metering.** `estimatedCostUsd` stays unset.
+- **Traces are local files**, not blob storage.
+- **No statistics yet.** Phase 10 adds them.
+- `npm audit` still reports the 8 advisories from Phase 6.

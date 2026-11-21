@@ -7,7 +7,7 @@ import {
   Unique,
   type Relation,
 } from 'typeorm';
-import type { GradeResult, Trace, Trial } from '@agent-evals/domain';
+import type { GradeResult, Trial } from '@agent-evals/domain';
 import { ExperimentEntity } from './experiment.entity.js';
 
 export type TrialStatus = Trial['status'];
@@ -64,10 +64,7 @@ export class TrialEntity {
   @Column({ type: 'jsonb', nullable: true })
   error!: Trial['error'] | null;
 
-  /** Full trace, stored inline for now. Phase 7+ can move large traces to blob storage and fill traceUri. */
-  @Column({ type: 'jsonb', nullable: true })
-  trace!: Trace | null;
-
+  /** Key of the trace file under the trace store root. Null until the trial finishes. */
   @Column({ type: 'text', nullable: true })
   traceUri!: string | null;
 

@@ -1,5 +1,6 @@
 /**
  * Run one trial end-to-end: task -> sandbox -> harness -> graders -> trace.json + result.json.
+ * The pipeline itself lives in @agent-evals/runner (the API worker uses it too).
  *
  * Usage:
  *   npx tsx scripts/run-one-trial.ts tasks/deterministic/01_add.json
@@ -10,13 +11,14 @@
  *   --model <provider:modelId>   e.g. openrouter:openai/gpt-4.1-mini (live), mock:any (offline "42")
  *   --script <responses.json>    replay a fixed ModelResponse[] file (offline)
  *   (neither)                    mock model answering "42"
+ *
+ * Exit codes: 0 PASS, 1 FAIL (agent answered, graders said no) or TIMEOUT, 2 ERROR (infrastructure).
  */
 import { randomUUID } from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { TaskSchema } from '@agent-evals/domain';
-import type { GradeResult } from '@agent-evals/domain';
 import {
   MockModelAdapter,
   ScriptedModelAdapter,
@@ -24,10 +26,9 @@ import {
   parseModelSpec,
 } from '@agent-evals/adapters-model';
 import type { ModelAdapter, ModelResponse } from '@agent-evals/adapters-model';
-import { createHarness, noopMemory, TOOL_NAMES } from '@agent-evals/adapters-harness';
-import { exactMatch, stateCheck } from '@agent-evals/graders';
-import { createSandbox, materializeFiles } from '@agent-evals/sandbox';
-import { createTraceBuffer, serializeTrace } from '@agent-evals/trace';
+import { createHarness, TOOL_NAMES } from '@agent-evals/adapters-harness';
+import { runTrial } from '@agent-evals/runner';
+import { serializeTrace } from '@agent-evals/trace';
 import { loadDotEnv } from './lib/env';
 
 interface Args {
@@ -67,6 +68,7 @@ function chooseModel(args: Args): { model: ModelAdapter; provider: string; model
 async function main() {
   loadDotEnv();
   const args = parseArgs(process.argv.slice(2));
+
   if (!args.taskPath) {
     console.error(
       'usage: tsx scripts/run-one-trial.ts <task.json> [--model provider:modelId | --script responses.json] [--harness baseline]',
@@ -81,112 +83,68 @@ async function main() {
   const { model, provider, modelId } = chooseModel(args);
   const harness = createHarness(args.harnessId);
 
-  // 3. isolated sandbox for this trial, seeded with the task's setup files
+  // 3. run the trial (fresh sandbox, harness, graders, cleanup)
   const trialId = `trial-${randomUUID()}`;
-  const sandbox = await createSandbox(trialId);
+  const result = await runTrial({
+    trialId,
+    task,
+    harness,
+    model,
+    modelId,
+    modelParams: { temperature: 0 },
+    seed: 0,
+    budgets: { maxSteps: 10, maxTokens: 256, timeoutMs: 60_000 },
+    toolIds: task.toolsAllowed ?? [...TOOL_NAMES],
+  });
+
+  // 4. persist trace + result
   const outDir = join(tmpdir(), 'agent-evals', trialId);
   mkdirSync(outDir, { recursive: true });
-
-  try {
-    await materializeFiles(sandbox.dir, task.setup?.files);
-
-    // 4. run harness
-    const trace = createTraceBuffer();
-    const startedAt = Date.now();
-    const output = await harness.run({
-      task,
-      model,
-      modelId,
-      modelParams: { temperature: 0 },
-      context: {
+  const tracePath = join(outDir, 'trace.json');
+  writeFileSync(tracePath, serializeTrace(result.trace));
+  const resultPath = join(outDir, 'result.json');
+  writeFileSync(
+    resultPath,
+    JSON.stringify(
+      {
         trialId,
-        seed: 0,
-        sandboxDir: sandbox.dir,
-        budgets: { maxSteps: 10, maxTokens: 256, timeoutMs: 60_000 },
-        memory: noopMemory,
-        skillIds: [],
-        toolIds: task.toolsAllowed ?? [...TOOL_NAMES],
-        emit: trace.emit,
+        taskId: task.id,
+        status: result.status,
+        passed: result.passed,
+        score: result.score,
+        stoppedReason: result.stoppedReason,
+        harness: harness.id,
+        model: { provider, modelId },
+        grade: result.grade,
+        error: result.error,
+        metrics: result.metrics,
+        traceUri: tracePath,
       },
-    });
-    const latencyMs = Date.now() - startedAt;
+      null,
+      2,
+    ),
+  );
 
-    // 5. grade (state checks read the sandbox, so run before cleanup)
-    const graderResults: GradeResult['graderResults'] = [];
-    for (const g of task.graders) {
-      if (g.type === 'exact_match') {
-        const r = exactMatch(output.finalAnswer, g.expected, g.normalize);
-        graderResults.push({ graderType: g.type, passed: r.passed, score: r.score, reasoning: r.reasoning });
-      } else if (g.type === 'state_check') {
-        const r = await stateCheck(sandbox.dir, g.checks);
-        graderResults.push({
-          graderType: g.type,
-          passed: r.passed,
-          score: r.score,
-          reasoning: r.reasoning,
-          details: { checks: r.details },
-        });
-      } else {
-        throw new Error(`grader "${(g as { type: string }).type}" is not implemented yet`);
-      }
-    }
-    const passed = graderResults.every((r) => r.passed);
-    const grade: GradeResult = {
-      passed,
-      score: passed ? 1 : 0,
-      graderResults,
-      aggregatePolicy: 'all_must_pass',
-    };
-
-    // 6. persist trace + result, print verdict
-    const tracePath = join(outDir, 'trace.json');
-    writeFileSync(
-      tracePath,
-      serializeTrace({ trialId, events: trace.snapshot(), finalAnswer: output.finalAnswer }),
-    );
-    const resultPath = join(outDir, 'result.json');
-    const totalTokens = output.usage.promptTokens + output.usage.completionTokens;
-    writeFileSync(
-      resultPath,
-      JSON.stringify(
-        {
-          trialId,
-          taskId: task.id,
-          passed,
-          score: grade.score,
-          stoppedReason: output.stoppedReason,
-          harness: harness.id,
-          model: { provider, modelId },
-          grade,
-          metrics: {
-            latencyMs,
-            promptTokens: output.usage.promptTokens,
-            completionTokens: output.usage.completionTokens,
-            totalTokens,
-            stepCount: output.stepCount,
-          },
-          traceUri: tracePath,
-        },
-        null,
-        2,
-      ),
-    );
-
-    console.log(passed ? 'PASS' : 'FAIL');
-    for (const r of graderResults) console.log(`  ${r.graderType}: ${r.reasoning}`);
-    console.log(`model:   ${provider}:${modelId}`);
-    console.log(`harness: ${harness.id}`);
-    console.log(`stopped: ${output.stoppedReason} (steps=${output.stepCount})`);
-    console.log(
-      `usage:   prompt=${output.usage.promptTokens} completion=${output.usage.completionTokens} total=${totalTokens}`,
-    );
-    console.log(`latency: ${latencyMs} ms`);
-    console.log(`trace:   ${tracePath}`);
-    console.log(`result:  ${resultPath}`);
-    process.exitCode = passed ? 0 : 1;
-  } finally {
-    await sandbox.cleanup();
+  // 5. verdict
+  const { metrics } = result;
+  if (result.status === 'succeeded') {
+    console.log(result.passed ? 'PASS' : 'FAIL');
+  } else {
+    console.log(`${result.status === 'timeout' ? 'TIMEOUT' : 'ERROR'} (${result.error?.code}): ${result.error?.message}`);
   }
+  for (const r of result.grade?.graderResults ?? []) console.log(`  ${r.graderType}: ${r.reasoning}`);
+  console.log(`model:   ${provider}:${modelId}`);
+  console.log(`harness: ${harness.id}`);
+  console.log(`stopped: ${result.stoppedReason ?? 'none'} (steps=${metrics.stepCount})`);
+  console.log(
+    `usage:   prompt=${metrics.promptTokens} completion=${metrics.completionTokens} total=${metrics.totalTokens}`,
+  );
+  console.log(`latency: ${metrics.latencyMs} ms`);
+  console.log(`trace:   ${tracePath}`);
+  console.log(`result:  ${resultPath}`);
+
+  process.exitCode =
+    result.status === 'succeeded' ? (result.passed ? 0 : 1) : result.status === 'timeout' ? 1 : 2;
 }
 
 main().catch((err) => {

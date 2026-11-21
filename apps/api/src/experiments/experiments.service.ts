@@ -13,22 +13,22 @@ import { ConfigsService } from '../configs/configs.service.js';
 import { ConfigEntity } from '../entities/config.entity.js';
 import { ExperimentEntity, type ConfigRef, type TaskRef } from '../entities/experiment.entity.js';
 import { TrialEntity } from '../entities/trial.entity.js';
+import { TrialQueue } from '../queue/trial-queue.js';
 import { TasksService } from '../tasks/tasks.service.js';
+import { countTrialsByStatus, type TrialCounts } from './experiment-status.js';
 import { expandMatrix } from './expand-matrix.js';
 
 /** Guard against accidentally queuing an enormous matrix in one request. */
 export const MAX_TRIALS_PER_EXPERIMENT = 10_000;
 const INSERT_BATCH_SIZE = 500;
 
-export type TrialCounts = Record<TrialEntity['status'] | 'total', number>;
-
 @Injectable()
 export class ExperimentsService {
   constructor(
     @InjectRepository(ExperimentEntity) private readonly experiments: Repository<ExperimentEntity>,
-    @InjectRepository(TrialEntity) private readonly trials: Repository<TrialEntity>,
     private readonly tasks: TasksService,
     private readonly configs: ConfigsService,
+    private readonly queue: TrialQueue,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -88,11 +88,12 @@ export class ExperimentsService {
   }
 
   /**
-   * Queues one trial per cell of the pinned matrix and moves the experiment from pending to running.
-   * Runs in a transaction with a row lock, so starting twice cannot queue trials twice.
+   * Creates one trial row per matrix cell, moves the experiment to running, then enqueues one job per trial.
+   * The rows are committed before enqueueing, so a worker never sees a job whose trial row is missing.
+   * Locked, so starting twice cannot create trials twice.
    */
   async start(id: string): Promise<{ experiment: ExperimentEntity; queued: number }> {
-    return this.dataSource.transaction(async (manager) => {
+    const { experiment, trialIds } = await this.dataSource.transaction(async (manager) => {
       const experiment = await manager.findOne(ExperimentEntity, {
         where: { id },
         lock: { mode: 'pessimistic_write' },
@@ -107,37 +108,37 @@ export class ExperimentsService {
       }
 
       const planned = expandMatrix(experiment.id, experiment.taskRefs, experiment.configRefs, experiment.nTrials);
+      const rows = planned.map((p) => ({
+        id: randomUUID(),
+        experimentId: experiment.id,
+        taskId: p.taskId,
+        taskVersion: p.taskVersion,
+        configId: p.configId,
+        configContentHash: p.configContentHash,
+        trialIndex: p.trialIndex,
+        seed: p.seed,
+        status: 'queued' as const,
+        score: null,
+        passed: null,
+        metrics: {},
+        grade: null,
+        error: null,
+        traceUri: null,
+        startedAt: null,
+        finishedAt: null,
+      }));
       // Chunked: one INSERT per batch keeps us under Postgres' 65,535 bind-parameter limit.
-      for (let i = 0; i < planned.length; i += INSERT_BATCH_SIZE) {
-        await manager.insert(
-          TrialEntity,
-          planned.slice(i, i + INSERT_BATCH_SIZE).map((p) => ({
-            id: randomUUID(),
-            experimentId: experiment.id,
-            taskId: p.taskId,
-            taskVersion: p.taskVersion,
-            configId: p.configId,
-            configContentHash: p.configContentHash,
-            trialIndex: p.trialIndex,
-            seed: p.seed,
-            status: 'queued' as const,
-            score: null,
-            passed: null,
-            metrics: {},
-            grade: null,
-            error: null,
-            trace: null,
-            traceUri: null,
-            startedAt: null,
-            finishedAt: null,
-          })),
-        );
+      for (let i = 0; i < rows.length; i += INSERT_BATCH_SIZE) {
+        await manager.insert(TrialEntity, rows.slice(i, i + INSERT_BATCH_SIZE));
       }
 
       experiment.status = 'running';
       await manager.save(experiment);
-      return { experiment, queued: planned.length };
+      return { experiment, trialIds: rows.map((r) => r.id) };
     });
+
+    await this.queue.enqueue(trialIds);
+    return { experiment, queued: trialIds.length };
   }
 
   async findOne(id: string): Promise<ExperimentEntity> {
@@ -148,30 +149,8 @@ export class ExperimentsService {
     return experiment;
   }
 
-  async countTrials(experimentId: string): Promise<TrialCounts> {
-    const rows = await this.trials
-      .createQueryBuilder('t')
-      .select('t.status', 'status')
-      .addSelect('COUNT(*)', 'count')
-      .where('t.experimentId = :experimentId', { experimentId })
-      .groupBy('t.status')
-      .getRawMany<{ status: TrialEntity['status']; count: string }>();
-
-    const counts: TrialCounts = {
-      total: 0,
-      queued: 0,
-      running: 0,
-      succeeded: 0,
-      failed: 0,
-      timeout: 0,
-      cancelled: 0,
-    };
-    for (const row of rows) {
-      const n = Number(row.count);
-      counts[row.status] = n;
-      counts.total += n;
-    }
-    return counts;
+  countTrials(experimentId: string): Promise<TrialCounts> {
+    return countTrialsByStatus(this.dataSource.manager, experimentId);
   }
 
   /** Maps the stored row to the public Experiment shape from the domain package. */

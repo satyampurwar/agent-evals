@@ -1,13 +1,16 @@
 import { Module } from '@nestjs/common';
+import { BullModule } from '@nestjs/bullmq';
 import { createObserveModule } from '@nestjs/observe';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
+import { redisConnection } from './common/redis.js';
 import { ConfigsModule } from './configs/configs.module.js';
 import { ConfigEntity } from './entities/config.entity.js';
 import { ExperimentEntity } from './entities/experiment.entity.js';
 import { TaskEntity } from './entities/task.entity.js';
 import { TrialEntity } from './entities/trial.entity.js';
+import { ExecutionModule } from './execution/execution.module.js';
 import { ExperimentsModule } from './experiments/experiments.module.js';
 import { TasksModule } from './tasks/tasks.module.js';
 import { TrialsModule } from './trials/trials.module.js';
@@ -42,10 +45,14 @@ const entities = [TaskEntity, ConfigEntity, ExperimentEntity, TrialEntity];
         };
       },
     }),
+    BullModule.forRootAsync({
+      useFactory: () => ({ connection: redisConnection() }),
+    }),
     TasksModule,
     ConfigsModule,
     ExperimentsModule,
     TrialsModule,
+    ExecutionModule,
   ],
   controllers: [AppController],
   providers: [AppService],

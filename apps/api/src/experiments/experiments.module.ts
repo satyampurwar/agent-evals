@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigsModule } from '../configs/configs.module.js';
 import { ExperimentEntity } from '../entities/experiment.entity.js';
 import { TrialEntity } from '../entities/trial.entity.js';
+import { TrialQueueModule } from '../queue/trial-queue.js';
 import { TasksModule } from '../tasks/tasks.module.js';
 import { ExperimentsController } from './experiments.controller.js';
 import { ExperimentsService } from './experiments.service.js';
@@ -12,6 +13,7 @@ import { ExperimentsService } from './experiments.service.js';
     TypeOrmModule.forFeature([ExperimentEntity, TrialEntity]),
     TasksModule,
     ConfigsModule,
+    TrialQueueModule,
   ],
   controllers: [ExperimentsController],
   providers: [ExperimentsService],

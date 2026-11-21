@@ -1,4 +1,4 @@
-import type { ModelAdapter, ModelRequest, ModelResponse } from './types';
+import type { ModelAdapter, ModelRequest, ModelResponse } from './types.js';
 
 /**
  * Deterministic model for tests and offline demos. Replays `script` in order,

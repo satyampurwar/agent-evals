@@ -10,7 +10,7 @@ import type {
   ModelResponse,
   ToolCall,
   ToolSpec,
-} from './types';
+} from './types.js';
 
 export const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
 

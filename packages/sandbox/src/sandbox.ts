@@ -1,7 +1,7 @@
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
-import { resolveInSandbox } from './paths';
+import { resolveInSandbox } from './paths.js';
 
 export interface Sandbox {
   /** Absolute path of the trial's private working directory. */

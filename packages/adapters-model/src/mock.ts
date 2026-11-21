@@ -1,4 +1,4 @@
-import type { ModelAdapter, ModelRequest, ModelResponse } from './types';
+import type { ModelAdapter, ModelRequest, ModelResponse } from './types.js';
 
 /** Deterministic, offline model for CI and local runs. Always replies with `response`. */
 export class MockModelAdapter implements ModelAdapter {

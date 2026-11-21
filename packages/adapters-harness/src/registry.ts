@@ -1,5 +1,5 @@
-import { BaselineHarness } from './baseline';
-import type { HarnessAdapter } from './types';
+import { BaselineHarness } from './baseline.js';
+import type { HarnessAdapter } from './types.js';
 
 /** Harness ids accepted by `--harness`. */
 export const HARNESS_IDS = ['baseline'] as const;

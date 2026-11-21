@@ -1,3 +1,3 @@
-export { createSandbox, materializeFiles } from './sandbox';
-export type { Sandbox } from './sandbox';
-export { resolveInSandbox, SandboxPathError } from './paths';
+export { createSandbox, materializeFiles } from './sandbox.js';
+export type { Sandbox } from './sandbox.js';
+export { resolveInSandbox, SandboxPathError } from './paths.js';

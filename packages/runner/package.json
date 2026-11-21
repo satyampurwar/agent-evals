@@ -1,0 +1,26 @@
+{
+  "name": "@agent-evals/runner",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@agent-evals/adapters-harness": "*",
+    "@agent-evals/adapters-model": "*",
+    "@agent-evals/domain": "*",
+    "@agent-evals/graders": "*",
+    "@agent-evals/sandbox": "*",
+    "@agent-evals/trace": "*"
+  }
+}

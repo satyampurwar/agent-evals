@@ -4,9 +4,9 @@ export type {
   HarnessRunOutput,
   MemoryStore,
   TrialContext,
-} from './types';
-export { noopMemory } from './types';
-export { BaselineHarness } from './baseline';
-export { TOOL_NAMES, TOOL_SPECS, executeTool, specsFor } from './tools';
-export type { ToolOutcome } from './tools';
-export { createHarness, HARNESS_IDS } from './registry';
+} from './types.js';
+export { noopMemory } from './types.js';
+export { BaselineHarness } from './baseline.js';
+export { TOOL_NAMES, TOOL_SPECS, executeTool, specsFor } from './tools.js';
+export type { ToolOutcome } from './tools.js';
+export { createHarness, HARNESS_IDS } from './registry.js';
