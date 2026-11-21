@@ -1,0 +1,14 @@
+[
+  {
+    "message": {
+      "role": "assistant",
+      "content": "",
+      "toolCalls": [{ "id": "m1", "name": "memory_read", "arguments": { "query": "client id" } }]
+    },
+    "usage": { "promptTokens": 40, "completionTokens": 10 }
+  },
+  {
+    "message": { "role": "assistant", "content": "HL-2044" },
+    "usage": { "promptTokens": 60, "completionTokens": 3 }
+  }
+]

@@ -1419,7 +1419,7 @@ npm run build:packages
 npm test
 ```
 
-Expected: eight workspaces pass. The totals are `api` 30, `adapters-harness` 18, `adapters-model` 17, `domain` 8, `graders` 12, `runner` 6, `sandbox` 9, `trace` 4. The runner tests cover the five outcomes: pass, scored fail, model error (retryable), wall-clock timeout, and unsupported grader.
+Expected: eight workspaces pass. The totals are `api` 30, `adapters-harness` 43, `adapters-model` 17, `domain` 8, `graders` 17, `runner` 7, `sandbox` 9, `trace` 4 (these counts are current as of Phase 8). The runner tests cover pass, scored fail, model error (retryable), wall-clock timeout, unsupported grader, and a `unit_test` grader running against the agent's file.
 
 The API e2e test needs Postgres and Redis running:
 
@@ -1602,3 +1602,186 @@ The trace file is at `data/traces/<experimentId>/<trialId>.json`. The trace endp
 - **Traces are local files**, not blob storage.
 - **No statistics yet.** Phase 10 adds them.
 - `npm audit` still reports the 8 advisories from Phase 6.
+
+---
+
+## Phase 8 — Author the full task set (≥20)
+
+**Goal:** Meet the assignment's coverage (≥20 tasks, mixed graders, some that discriminate memory and skills) with tasks that can actually separate configs.
+
+Run every command from the repo root:
+
+```bash
+cd /Users/turing-satyam/work/beyond/task/agent-evals
+```
+
+### 8.0 What changed in this phase
+
+| Area | Change |
+|---|---|
+| `tasks/` | 19 new task files (21 in total, listed in `tasks/manifest.json`). Folders: `deterministic/`, `judge/`, `discriminating/` |
+| `packages/graders` | `unitTest()` grader: runs the task's command in the sandbox, exit 0 passes. Timeout and non-zero exit are scored failures. The child gets only `PATH` in its environment |
+| `packages/adapters-harness` | `createTrialMemory()` (per-trial key-value store seeded from `setup.memory`), `csv_summary` skill, `memory_read` / `memory_write` tools, `resolveToolIds()`. The baseline loop emits `memory_read`, `memory_write` and `skill_invoke` trace events |
+| `packages/domain` | `TaskSetup.memory` (optional map of facts that start in the trial's memory) |
+| `packages/runner` | Runs `unit_test` graders. Passes `setup.memory` into the trial |
+| `apps/api` | The executor computes tools with `resolveToolIds()`: config tools plus memory and skill tools, narrowed (never widened) by `toolsAllowed` |
+| `scripts/validate-task-set.ts` | Checks the task set (see 8.2) |
+| `scripts/run-one-trial.ts` | New flags `--memory` and `--skill <id>` |
+| `fixtures/scripted/` | `memory_recall_client.json` and `skill_csv_sum.json`, for offline checks of the tool path |
+
+Behavior change: the baseline loop now refuses any tool the trial was not offered, even if the model names it. Before this phase, a model could call a tool that the config had left out. The refusal comes back as a failed `tool_result` with `tool not available in this trial: <name>`.
+
+### 8.1 Task inventory
+
+| Batch | Folder | Tasks | Grader |
+|---|---|---|---|
+| A | `deterministic/` | `det_add_01` (Phase 3), `det_extract_order_01`, `det_letter_count_01`, `det_unit_convert_01`, `det_weekday_01` | `exact_match` (5) |
+| B | `deterministic/` | `det_write_answer_01` (Phase 4), `det_state_json_01`, `det_state_nested_01`, `det_state_multi_01` | `state_check` (4) |
+| C | `deterministic/` | `det_unit_fizzbuzz_01`, `det_unit_slugify_01`, `det_unit_roman_01` | `unit_test` (3) |
+| D | `judge/` | `judge_summary_01`, `judge_explain_01`, `judge_email_01`, `judge_bugreport_01`, `judge_tradeoff_01` | `llm_judge` (5). Gradeable from Phase 9 |
+| E | `discriminating/` | `mem_recall_client_01`, `mem_deploy_file_01` | memory-discriminating (`exact_match`, `state_check`) |
+| E | `discriminating/` | `skill_csv_sum_01`, `skill_csv_mean_01` | skill-discriminating (`exact_match`) |
+
+Some tasks hold their own fixtures in `setup.files`. Both CSVs (150 orders and 120 requests) are in the task JSON. They were generated once with a seeded script, and the expected answers (`11846` and `228`) were computed from them. The validator does not re-derive the answers.
+
+Two design notes:
+
+- **Unit-test tasks** ship their test file in `setup.files`, and the agent writes `solution.js`. The grader runs `node test_*.js`, so the test decides the result and the answer text does not matter. A correct reference solution passes, and an empty one fails.
+- **Discriminating tasks** keep the key fact out of the prompt and out of the sandbox. The memory tasks have no other route to the fact. The skill tasks can be attempted by hand, but the probe in 8.4 shows the model gets them wrong that way.
+
+### 8.2 Build, seed, and validate
+
+```bash
+npm run build:packages
+npm test
+```
+
+Expected: eight workspaces pass. The totals are listed in Phase 7 (§7.2).
+
+Seed the tasks. The API must be running (`npm run start:dev -w @agent-evals/api`, as in §7.4):
+
+```bash
+npm run seed:tasks
+```
+
+Expected on a fresh database, where the 2 Phase 3 and 4 tasks already exist: `created: 19, unchanged: 2`. Re-running reports the same tasks as unchanged, so it is safe.
+
+Validate the task set:
+
+```bash
+npx tsx scripts/validate-task-set.ts
+```
+
+Expected:
+
+```
+tasks: 21 (minimum 20)
+graders: exact_match=8, state_check=5, unit_test=3, llm_judge=5
+memory-tagged: 2, skill-tagged: 2
+task set OK
+```
+
+The validator exits 1 and lists each problem when a rule fails. The rules: every manifest entry matches the domain schema, every `.json` under `tasks/` is listed in the manifest, ids are unique, there are at least 20 tasks, every grader type appears, there is at least one memory and one skill task, discriminating tasks name their discriminator in `expectedDiscriminators`, and `toolsAllowed` only names real tools.
+
+Checkpoint 8:
+
+```bash
+curl -s http://localhost:3000/tasks | jq length
+```
+
+Expected: `21`.
+
+### 8.3 How the discriminators are wired
+
+Discriminators are switched by the config, not by the task. The task only says what it needs.
+
+```json
+{
+  "name": "p8-memory",
+  "harness": {
+    "id": "baseline",
+    "settings": {
+      "skillsEnabled": [],
+      "memory": { "enabled": true, "persistAcrossTrials": false },
+      "tools": ["read_file", "write_file", "list_dir"],
+      "maxSteps": 8, "maxTokens": 4096, "timeoutMs": 60000
+    }
+  },
+  "model": { "provider": "openrouter", "modelId": "openai/gpt-4.1-mini", "temperature": 0 }
+}
+```
+
+- **Memory:** `memory.enabled: true` adds `memory_read` and `memory_write`. Each trial's store starts with `task.setup.memory`. `mem_recall_client_01` holds `client_id = HL-2044` only in that store.
+- **Skill:** `skillsEnabled: ["csv_summary"]` adds the `csv_summary` tool. It computes `sum`, `mean`, `min`, `max` or `count` over one column, with an optional list of `where` conditions that must all match. The model gets an exact result instead of doing arithmetic over 150 rows.
+- **Narrowing:** a task's `toolsAllowed` can remove tools. It cannot add any.
+
+A config's `persistAcrossTrials` is stored but not implemented. Every trial starts with an empty memory.
+
+Offline, the same wiring works through the CLI:
+
+```bash
+npx tsx scripts/run-one-trial.ts tasks/discriminating/mem_recall_client_01.json --memory --script fixtures/scripted/memory_recall_client.json
+npx tsx scripts/run-one-trial.ts tasks/discriminating/skill_csv_sum_01.json --skill csv_summary --script fixtures/scripted/skill_csv_sum.json
+```
+
+Both print `PASS`. Scripted replies always give the right answer, so the pass alone proves nothing. Check the trace instead: the run with `--memory` has a `memory_read` event with the hit, and the run without it has a `tool_result` with `ok: false`.
+
+### 8.4 Live checks (what I ran)
+
+**Smoke, every task once, base config (`p8-base`, no memory, no skill, `gpt-4.1-mini`, temperature 0):**
+
+```bash
+A=http://localhost:3000
+BASE=$(curl -s $A/configs | jq -r '.[] | select(.name=="p8-base") | .id')
+IDS=$(curl -s $A/tasks | jq -c '[.[].id]')
+E=$(curl -s -X POST $A/experiments -H 'content-type: application/json' \
+  -d "{\"name\":\"p8-full-smoke\",\"hypothesis\":\"every task runs once\",\"taskIds\":$IDS,\"configIds\":[\"$BASE\"],\"nTrials\":1}" | jq -r .id)
+curl -s -o /dev/null -X POST $A/experiments/$E/start
+until [ "$(curl -s $A/experiments/$E/status | jq -r .status)" != "running" ]; do sleep 3; done
+curl -s $A/experiments/$E/status | jq -c '{status, trials}'
+```
+
+Result: experiment `partial`, with 16 succeeded and 5 failed.
+
+| Group | Result |
+|---|---|
+| 12 deterministic tasks (exact, state, unit test) | all pass, including the 3 unit-test tasks run through the worker |
+| 5 judge tasks | all `failed` with `grader_not_implemented`. Not retried. Phase 9 adds the judge |
+| 4 discriminating tasks (`mem_*`, `skill_*`) | all fail without their tool, as intended |
+
+`partial` here is the correct reading. Five trials had an infrastructure failure (an unimplemented grader), so the experiment is partial, not completed. Scored failures alone would not do that.
+
+**Discrimination probe, two trials per cell, temperature 0:**
+
+| Task | Base config | With the tool | Tool calls per trial, tool on |
+|---|---|---|---|
+| `mem_recall_client_01` | 0/2 | 2/2 | `memory_read` ×2 |
+| `mem_deploy_file_01` | 0/2 | 2/2 | `memory_read` ×4, `write_file` ×1 |
+| `skill_csv_sum_01` | 0/2 | 2/2 | `csv_summary` ×1 |
+| `skill_csv_mean_01` | 0/2 | 2/2 | `csv_summary` ×1 |
+
+With the tool off, the base model answered `skill_*` by reading the whole CSV and got it wrong both times. For `mem_*` it never called a tool and answered without the fact.
+
+This is a direction check, not a measurement. Two trials per cell at temperature 0 says nothing about effect size or noise. Phase 10 adds the statistics for that.
+
+### 8.5 Troubleshooting
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| Validator: `unknown tool "..."` | A `toolsAllowed` entry is misspelled | Use a name from `TOOL_SPECS` |
+| Validator: `not listed in tasks/manifest.json` | A task file was added without a manifest entry | Add it to the manifest |
+| `POST /tasks/import` returns 409 and the batch is rejected | A task's content changed under the same `version` | Bump `version` for the changed task. Trials pin versions, so edits under one version are refused |
+| Trial fails with `setup_error` and an `unknown skill` message | A config lists a skill id that does not exist, e.g. `csv_sumary` | Fix the config's `skillsEnabled`. Configs are immutable, so create a new one |
+| Trace shows `tool not available in this trial: memory_read` | The config has memory off but the task needs memory | Expected for the base config. Use a config with `memory.enabled: true` |
+| `judge_*` trials fail with `grader_not_implemented` | The `llm_judge` grader arrives in Phase 9 | Expected until Phase 9 |
+| `unit_test` grade reasoning says `timed out` | The agent's code loops, or the test is slow. This is a scored failure (`status: succeeded`, `passed: false`) | Read the trace. Raise `timeoutMs` only if the test is genuinely slow |
+
+### 8.6 What this phase does not do
+
+- **Memory is a seeded fact, not a turn-1 write.** The plan allowed this proxy when history cannot be stripped. The baseline harness takes one prompt per trial, so a fact that the agent saves with `memory_write` on turn 1 and must read back later has no place to run yet. The discrimination still holds (the fact is unreachable without memory), but it does not test writes across turns.
+- **`persistAcrossTrials` is not implemented.** Every trial starts with an empty memory.
+- **No `llm_judge` yet.** The 5 judge tasks are authored and validated, but they fail until Phase 9.
+- **The CSV reader handles plain values only.** Quoted fields and embedded commas are not supported. The fixtures do not need them.
+- **`skill_invoke` uses the tool name as the skill id** (`csv_summary` for both). That holds until a skill has more than one tool.
+- **Unit-test commands run through `sh -c` with the sandbox as cwd.** Task authors are trusted. The child gets only `PATH`, so API keys are not visible to it, but nothing stops network access from the command.
+- **The probe is small.** Two trials per cell at temperature 0. Treat the table as a direction check.

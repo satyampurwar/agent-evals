@@ -1,0 +1,29 @@
+{
+  "id": "skill_csv_mean_01",
+  "version": "1.0.0",
+  "name": "Mean latency for one endpoint",
+  "description": "Mean of one column for one group, rounded to a whole number. Skill-discriminating",
+  "prompt": "The file latency.csv has one row per request. What is the mean latency_ms for requests to the search endpoint, rounded to the nearest whole number? Reply with only the number.",
+  "setup": {
+    "files": {
+      "latency.csv": "request_id,endpoint,latency_ms\nr001,search,86\nr002,profile,442\nr003,search,139\nr004,profile,46\nr005,profile,116\nr006,checkout,112\nr007,search,150\nr008,search,311\nr009,search,140\nr010,checkout,28\nr011,profile,103\nr012,profile,224\nr013,search,121\nr014,checkout,146\nr015,search,486\nr016,profile,337\nr017,checkout,366\nr018,checkout,28\nr019,checkout,178\nr020,profile,133\nr021,checkout,450\nr022,checkout,148\nr023,checkout,196\nr024,search,434\nr025,profile,335\nr026,profile,346\nr027,profile,23\nr028,checkout,68\nr029,checkout,323\nr030,checkout,237\nr031,profile,456\nr032,search,250\nr033,checkout,310\nr034,search,126\nr035,checkout,476\nr036,checkout,354\nr037,checkout,274\nr038,search,31\nr039,checkout,156\nr040,profile,434\nr041,search,78\nr042,search,184\nr043,checkout,468\nr044,search,416\nr045,checkout,493\nr046,checkout,115\nr047,profile,494\nr048,checkout,276\nr049,profile,181\nr050,profile,163\nr051,profile,172\nr052,profile,251\nr053,search,141\nr054,search,152\nr055,profile,445\nr056,profile,126\nr057,profile,266\nr058,checkout,476\nr059,search,312\nr060,profile,456\nr061,checkout,496\nr062,search,354\nr063,search,391\nr064,search,473\nr065,profile,312\nr066,checkout,420\nr067,profile,34\nr068,search,337\nr069,checkout,427\nr070,profile,71\nr071,checkout,469\nr072,search,52\nr073,profile,424\nr074,search,123\nr075,checkout,55\nr076,search,342\nr077,profile,23\nr078,search,219\nr079,profile,364\nr080,search,190\nr081,checkout,140\nr082,profile,100\nr083,profile,56\nr084,checkout,169\nr085,checkout,379\nr086,checkout,434\nr087,checkout,59\nr088,search,43\nr089,checkout,145\nr090,checkout,314\nr091,profile,386\nr092,search,236\nr093,checkout,34\nr094,search,60\nr095,checkout,100\nr096,search,459\nr097,search,134\nr098,profile,215\nr099,search,420\nr100,search,273\nr101,profile,31\nr102,profile,97\nr103,checkout,434\nr104,search,176\nr105,search,49\nr106,checkout,205\nr107,search,262\nr108,search,309\nr109,checkout,356\nr110,profile,354\nr111,checkout,191\nr112,checkout,163\nr113,profile,345\nr114,checkout,227\nr115,profile,58\nr116,search,224\nr117,search,202\nr118,checkout,440\nr119,profile,361\nr120,checkout,297\n"
+    }
+  },
+  "graders": [
+    {
+      "type": "exact_match",
+      "field": "final_answer",
+      "expected": "228",
+      "normalize": "trim_lower"
+    }
+  ],
+  "tags": [
+    "skill:csv_summary",
+    "discriminating",
+    "deterministic",
+    "exact_match"
+  ],
+  "expectedDiscriminators": [
+    "skill:csv_summary"
+  ]
+}

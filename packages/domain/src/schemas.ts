@@ -58,6 +58,8 @@ export type GraderSpec = z.infer<typeof GraderSpecSchema>;
 export const TaskSetupSchema = z.object({
   files: z.record(z.string(), z.string()).optional(),
   seed: z.number().optional(),
+  /** Facts already in the trial's memory store before the agent starts. Only reachable with memory enabled. */
+  memory: z.record(z.string(), z.string()).optional(),
 });
 
 export type TaskSetup = z.infer<typeof TaskSetupSchema>;

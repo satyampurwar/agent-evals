@@ -1,0 +1,16 @@
+{
+  "id": "judge_tradeoff_01",
+  "version": "1.0.0",
+  "name": "SQL versus NoSQL tradeoffs",
+  "description": "Three bullets, each naming one benefit and one cost of a database type",
+  "prompt": "Compare SQL and NoSQL databases for a team building an order-tracking service. Give exactly three bullet points. Each bullet must name one benefit and one cost of a database type, and at least one bullet must recommend a choice for this service.",
+  "graders": [
+    {
+      "type": "llm_judge",
+      "rubricId": "tradeoff_v1",
+      "judgeModel": "openai/gpt-4.1-mini",
+      "passThreshold": 0.7
+    }
+  ],
+  "tags": ["judge", "llm_judge", "technical_reasoning"]
+}

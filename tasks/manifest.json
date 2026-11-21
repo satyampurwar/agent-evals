@@ -1,6 +1,25 @@
 {
   "tasks": [
     "deterministic/01_add.json",
-    "deterministic/02_write_answer.json"
+    "deterministic/02_write_answer.json",
+    "deterministic/03_exact_extract.json",
+    "deterministic/04_exact_letter_count.json",
+    "deterministic/05_exact_unit_convert.json",
+    "deterministic/06_exact_weekday.json",
+    "deterministic/07_state_json.json",
+    "deterministic/08_state_nested.json",
+    "deterministic/09_state_multi.json",
+    "deterministic/10_unit_fizzbuzz.json",
+    "deterministic/11_unit_slugify.json",
+    "deterministic/12_unit_roman.json",
+    "judge/judge_summary_01.json",
+    "judge/judge_explain_01.json",
+    "judge/judge_email_01.json",
+    "judge/judge_bugreport_01.json",
+    "judge/judge_tradeoff_01.json",
+    "discriminating/mem_recall_client_01.json",
+    "discriminating/mem_deploy_file_01.json",
+    "discriminating/skill_csv_sum_01.json",
+    "discriminating/skill_csv_mean_01.json"
   ]
 }

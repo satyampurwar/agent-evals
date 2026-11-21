@@ -1,0 +1,16 @@
+{
+  "id": "det_unit_convert_01",
+  "version": "1.0.0",
+  "name": "Convert kilometers to meters",
+  "description": "Exact unit conversion with a decimal input",
+  "prompt": "A rope is 3.5 kilometers long. How many meters is that? Reply with only the number.",
+  "graders": [
+    {
+      "type": "exact_match",
+      "field": "final_answer",
+      "expected": "3500",
+      "normalize": "trim_lower"
+    }
+  ],
+  "tags": ["deterministic", "exact_match", "arithmetic"]
+}

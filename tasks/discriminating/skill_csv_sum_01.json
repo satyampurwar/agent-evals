@@ -1,0 +1,29 @@
+{
+  "id": "skill_csv_sum_01",
+  "version": "1.0.0",
+  "name": "Filtered sum over a 150-row CSV",
+  "description": "Sum one column after an equality filter. Skill-discriminating: needs csv_summary to be exact under the step budget",
+  "prompt": "The file sales.csv lists 150 orders. What is the total amount of the orders whose region is north and whose status is paid? Reply with only the number.",
+  "setup": {
+    "files": {
+      "sales.csv": "order_id,region,status,amount\n1001,north,refunded,287\n1002,north,refunded,823\n1003,west,refunded,467\n1004,east,paid,209\n1005,west,open,842\n1006,south,paid,552\n1007,south,refunded,702\n1008,south,refunded,149\n1009,east,refunded,365\n1010,west,refunded,493\n1011,north,refunded,306\n1012,north,open,558\n1013,east,open,446\n1014,south,refunded,260\n1015,north,open,388\n1016,west,paid,481\n1017,east,paid,177\n1018,north,paid,674\n1019,west,open,478\n1020,north,paid,936\n1021,west,paid,794\n1022,north,open,845\n1023,east,paid,924\n1024,east,paid,708\n1025,north,paid,889\n1026,west,refunded,709\n1027,east,open,615\n1028,north,paid,969\n1029,north,refunded,958\n1030,west,refunded,957\n1031,east,paid,797\n1032,south,open,409\n1033,north,paid,295\n1034,west,refunded,619\n1035,west,open,799\n1036,north,paid,635\n1037,east,open,948\n1038,south,refunded,906\n1039,east,open,512\n1040,east,paid,360\n1041,north,paid,389\n1042,north,paid,716\n1043,south,open,374\n1044,north,paid,394\n1045,south,refunded,661\n1046,east,paid,951\n1047,west,open,646\n1048,north,open,218\n1049,north,paid,827\n1050,south,paid,818\n1051,south,open,198\n1052,north,open,479\n1053,west,refunded,903\n1054,north,open,992\n1055,west,paid,635\n1056,south,refunded,766\n1057,west,open,769\n1058,west,refunded,876\n1059,east,refunded,222\n1060,south,open,236\n1061,south,paid,194\n1062,south,paid,780\n1063,north,paid,999\n1064,north,paid,807\n1065,south,refunded,998\n1066,east,paid,304\n1067,west,refunded,499\n1068,west,paid,229\n1069,north,refunded,859\n1070,east,refunded,615\n1071,west,paid,890\n1072,west,refunded,418\n1073,west,paid,925\n1074,east,refunded,514\n1075,east,refunded,226\n1076,west,open,794\n1077,south,paid,993\n1078,south,paid,771\n1079,south,refunded,873\n1080,west,refunded,663\n1081,west,paid,370\n1082,south,open,759\n1083,north,paid,223\n1084,east,paid,652\n1085,west,open,213\n1086,north,refunded,509\n1087,west,refunded,146\n1088,south,paid,656\n1089,north,paid,731\n1090,north,refunded,782\n1091,west,open,727\n1092,north,open,982\n1093,east,open,288\n1094,west,refunded,310\n1095,north,refunded,778\n1096,north,refunded,985\n1097,north,refunded,131\n1098,south,paid,374\n1099,east,refunded,837\n1100,east,refunded,540\n1101,east,paid,652\n1102,north,paid,104\n1103,south,open,990\n1104,north,paid,888\n1105,south,paid,540\n1106,west,open,331\n1107,south,paid,477\n1108,west,refunded,748\n1109,east,open,495\n1110,west,paid,712\n1111,west,paid,863\n1112,east,open,894\n1113,east,refunded,793\n1114,east,open,324\n1115,north,open,395\n1116,east,refunded,928\n1117,west,open,244\n1118,east,refunded,391\n1119,north,refunded,672\n1120,north,open,107\n1121,north,refunded,672\n1122,west,paid,876\n1123,south,open,192\n1124,west,refunded,796\n1125,north,paid,610\n1126,east,open,886\n1127,south,refunded,861\n1128,north,paid,760\n1129,west,paid,785\n1130,south,open,437\n1131,north,refunded,681\n1132,south,refunded,316\n1133,south,paid,136\n1134,east,refunded,490\n1135,south,refunded,942\n1136,east,paid,212\n1137,west,paid,911\n1138,east,refunded,172\n1139,west,refunded,686\n1140,west,refunded,500\n1141,north,refunded,204\n1142,west,refunded,207\n1143,east,refunded,930\n1144,north,open,114\n1145,west,refunded,443\n1146,north,open,256\n1147,east,paid,855\n1148,east,paid,682\n1149,west,refunded,446\n1150,east,refunded,523\n"
+    }
+  },
+  "graders": [
+    {
+      "type": "exact_match",
+      "field": "final_answer",
+      "expected": "11846",
+      "normalize": "trim_lower"
+    }
+  ],
+  "tags": [
+    "skill:csv_summary",
+    "discriminating",
+    "deterministic",
+    "exact_match"
+  ],
+  "expectedDiscriminators": [
+    "skill:csv_summary"
+  ]
+}

@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -8,6 +8,7 @@ import type { TraceEvent } from '@agent-evals/domain';
 import { ScriptedModelAdapter } from '@agent-evals/adapters-model';
 import type { ModelResponse } from '@agent-evals/adapters-model';
 import { BaselineHarness } from './baseline';
+import { createTrialMemory } from './memory';
 import { noopMemory } from './types';
 
 let sandboxDir: string;
@@ -120,5 +121,91 @@ describe('BaselineHarness tool loop', () => {
     const { out, events } = await run([]);
     expect(out).toMatchObject({ stoppedReason: 'error', stepCount: 1 });
     expect(events.at(-1)).toMatchObject({ type: 'error', code: 'model_error' });
+  });
+
+  it('refuses a tool the trial was not offered, even if the model names it', async () => {
+    const { out, events } = await run(
+      [call('c1', 'write_file', { path: 'answer.txt', content: 'ok' }), reply('done')],
+      { toolIds: ['read_file'] },
+    );
+    expect(out.stoppedReason).toBe('completed');
+    expect(existsSync(join(sandboxDir, 'answer.txt'))).toBe(false);
+    expect(events.filter((e) => e.type === 'tool_result')).toMatchObject([
+      { callId: 'c1', ok: false, result: { error: 'tool not available in this trial: write_file' } },
+    ]);
+  });
+});
+
+describe('BaselineHarness memory and skill events', () => {
+  async function runWithMemory(script: ModelResponse[], seed: Record<string, string>, toolIds: string[]) {
+    const events: TraceEvent[] = [];
+    const out = await new BaselineHarness().run({
+      task: task(),
+      model: new ScriptedModelAdapter(script),
+      modelId: 'scripted',
+      modelParams: { temperature: 0 },
+      context: {
+        trialId: 'trial-mem',
+        seed: 0,
+        sandboxDir,
+        budgets: { maxSteps: 5, maxTokens: 1000, timeoutMs: 10_000 },
+        memory: createTrialMemory(seed),
+        skillIds: [],
+        toolIds,
+        emit: (e) => events.push(e),
+      },
+    });
+    return { out, events };
+  }
+
+  it('emits memory_read with the hits the tool returned', async () => {
+    const { events } = await runWithMemory(
+      [call('m1', 'memory_read', { query: 'client id' }), reply('HL-2044')],
+      { client_id: 'HL-2044' },
+      ['memory_read'],
+    );
+    expect(events.find((e) => e.type === 'memory_read')).toMatchObject({
+      type: 'memory_read',
+      query: 'client id',
+      hits: [{ key: 'client_id', value: 'HL-2044' }],
+    });
+  });
+
+  it('emits memory_write after a successful write, and the value is readable in the same trial', async () => {
+    const { events } = await runWithMemory(
+      [
+        call('w1', 'memory_write', { key: 'color', value: 'blue' }),
+        call('r1', 'memory_read', { query: 'color' }),
+        reply('blue'),
+      ],
+      {},
+      ['memory_read', 'memory_write'],
+    );
+    expect(events.find((e) => e.type === 'memory_write')).toMatchObject({ key: 'color', value: 'blue' });
+    expect(events.find((e) => e.type === 'memory_read')).toMatchObject({ hits: [{ key: 'color', value: 'blue' }] });
+  });
+
+  it('does not reach seeded memory when the memory tools were not offered', async () => {
+    const { events } = await runWithMemory(
+      [call('m1', 'memory_read', { query: 'client id' }), reply('unknown')],
+      { client_id: 'HL-2044' },
+      [],
+    );
+    expect(events.find((e) => e.type === 'memory_read')).toBeUndefined();
+    expect(events.filter((e) => e.type === 'tool_result')).toMatchObject([{ ok: false }]);
+  });
+
+  it('emits skill_invoke for a skill tool call', async () => {
+    const csv = ['region,amount', 'north,10', 'south,5'].join('\n');
+    await writeFile(join(sandboxDir, 'sales.csv'), csv);
+    const { events } = await runWithMemory(
+      [call('s1', 'csv_summary', { path: 'sales.csv', column: 'amount', op: 'sum' }), reply('15')],
+      {},
+      ['csv_summary'],
+    );
+    expect(events.find((e) => e.type === 'skill_invoke')).toMatchObject({ skillId: 'csv_summary' });
+    expect(events.filter((e) => e.type === 'tool_result')).toMatchObject([
+      { ok: true, result: { value: 15, rows: 2 } },
+    ]);
   });
 });

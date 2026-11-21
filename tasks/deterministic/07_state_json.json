@@ -1,0 +1,19 @@
+{
+  "id": "det_state_json_01",
+  "version": "1.0.0",
+  "name": "Write a JSON config file",
+  "description": "Agent writes config.json with a number and a string. state_check reads the JSON path",
+  "prompt": "Create config.json containing a JSON object with the key retries set to the number 3 and the key mode set to the string strict. Use the write_file tool. Then reply with the word done.",
+  "toolsAllowed": ["write_file"],
+  "graders": [
+    {
+      "type": "state_check",
+      "checks": [
+        { "path": "config.json", "exists": true },
+        { "path": "config.json", "jsonPathEquals": { "path": "retries", "value": 3 } },
+        { "path": "config.json", "jsonPathEquals": { "path": "mode", "value": "strict" } }
+      ]
+    }
+  ],
+  "tags": ["deterministic", "state_check", "tools"]
+}

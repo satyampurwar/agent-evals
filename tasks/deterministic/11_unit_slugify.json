@@ -1,0 +1,28 @@
+{
+  "id": "det_unit_slugify_01",
+  "version": "1.0.0",
+  "name": "Slugify function",
+  "description": "Text normalization verified by unit test. Edge cases: punctuation runs, leading and trailing separators",
+  "prompt": "Write solution.js in the sandbox. It must use CommonJS and export a function slugify(text). slugify lowercases the text, turns every run of characters that are not a-z or 0-9 into a single hyphen, and removes hyphens at the start and end. The tests are in test_slugify.js; read them first. Use write_file. Then reply with the word done.",
+  "setup": {
+    "files": {
+      "test_slugify.js": "const assert = require('node:assert/strict');\nconst { slugify } = require('./solution.js');\nassert.equal(slugify('Hello World'), 'hello-world');\nassert.equal(slugify('  Rock & Roll!! '), 'rock-roll');\nassert.equal(slugify('a__b'), 'a-b');\nassert.equal(slugify('---x---'), 'x');\nassert.equal(slugify('Version 2.0'), 'version-2-0');\nassert.equal(slugify(''), '');\nconsole.log('slugify ok');\n"
+    }
+  },
+  "toolsAllowed": [
+    "write_file",
+    "read_file"
+  ],
+  "graders": [
+    {
+      "type": "unit_test",
+      "command": "node test_slugify.js",
+      "timeoutMs": 5000
+    }
+  ],
+  "tags": [
+    "deterministic",
+    "unit_test",
+    "code"
+  ]
+}

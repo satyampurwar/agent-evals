@@ -1,0 +1,15 @@
+{
+  "id": "det_state_nested_01",
+  "version": "1.0.0",
+  "name": "Write a file in a new folder",
+  "description": "Agent must create missing parent folders. The file content is checked exactly",
+  "prompt": "Create the file reports/2026/summary.txt containing exactly the word ready. Create any folders it needs. Use the write_file tool. Then reply with the word done.",
+  "toolsAllowed": ["write_file"],
+  "graders": [
+    {
+      "type": "state_check",
+      "checks": [{ "path": "reports/2026/summary.txt", "exists": true, "equals": "ready" }]
+    }
+  ],
+  "tags": ["deterministic", "state_check", "tools"]
+}

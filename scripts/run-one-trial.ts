@@ -6,6 +6,12 @@
  *   npx tsx scripts/run-one-trial.ts tasks/deterministic/01_add.json
  *   npx tsx scripts/run-one-trial.ts tasks/deterministic/01_add.json --model openrouter:openai/gpt-4.1-mini --harness baseline
  *   npx tsx scripts/run-one-trial.ts tasks/deterministic/02_write_answer.json --script fixtures/scripted/write_answer.json
+ *   npx tsx scripts/run-one-trial.ts tasks/discriminating/memory_recall_client_01.json --memory --model openrouter:openai/gpt-4.1-mini
+ *   npx tsx scripts/run-one-trial.ts tasks/discriminating/skill_csv_sum_01.json --skill csv_summary --model openrouter:openai/gpt-4.1-mini
+ *
+ * Config flags (the API reads the same settings from the config document):
+ *   --memory                     enable memory_read / memory_write (trial memory starts from task.setup.memory)
+ *   --skill <id>                 enable a skill, e.g. csv_summary (repeatable)
  *
  * Model selection (pick one):
  *   --model <provider:modelId>   e.g. openrouter:openai/gpt-4.1-mini (live), mock:any (offline "42")
@@ -26,7 +32,7 @@ import {
   parseModelSpec,
 } from '@agent-evals/adapters-model';
 import type { ModelAdapter, ModelResponse } from '@agent-evals/adapters-model';
-import { createHarness, TOOL_NAMES } from '@agent-evals/adapters-harness';
+import { createHarness, resolveToolIds, TOOL_NAMES } from '@agent-evals/adapters-harness';
 import { runTrial } from '@agent-evals/runner';
 import { serializeTrace } from '@agent-evals/trace';
 import { loadDotEnv } from './lib/env';
@@ -36,15 +42,19 @@ interface Args {
   modelSpec?: string;
   scriptPath?: string;
   harnessId: string;
+  memoryEnabled: boolean;
+  skillsEnabled: string[];
 }
 
 function parseArgs(argv: string[]): Args {
-  const out: Args = { harnessId: 'baseline' };
+  const out: Args = { harnessId: 'baseline', memoryEnabled: false, skillsEnabled: [] };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--model') out.modelSpec = argv[++i];
     else if (a === '--script') out.scriptPath = argv[++i];
     else if (a === '--harness') out.harnessId = argv[++i];
+    else if (a === '--memory') out.memoryEnabled = true;
+    else if (a === '--skill') out.skillsEnabled.push(argv[++i]);
     else if (!a.startsWith('--') && out.taskPath === undefined) out.taskPath = a;
   }
   return out;
@@ -94,7 +104,11 @@ async function main() {
     modelParams: { temperature: 0 },
     seed: 0,
     budgets: { maxSteps: 10, maxTokens: 256, timeoutMs: 60_000 },
-    toolIds: task.toolsAllowed ?? [...TOOL_NAMES],
+    toolIds: resolveToolIds(
+      { tools: [...TOOL_NAMES], memoryEnabled: args.memoryEnabled, skillsEnabled: args.skillsEnabled },
+      task.toolsAllowed,
+    ),
+    memorySeed: task.setup?.memory,
   });
 
   // 4. persist trace + result

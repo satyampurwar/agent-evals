@@ -1,0 +1,16 @@
+{
+  "id": "det_weekday_01",
+  "version": "1.0.0",
+  "name": "Day of the week for a date",
+  "description": "Exact calendar fact. The answer is a single word",
+  "prompt": "What day of the week was 2026-01-01? Reply with only the English name of the day.",
+  "graders": [
+    {
+      "type": "exact_match",
+      "field": "final_answer",
+      "expected": "thursday",
+      "normalize": "trim_lower"
+    }
+  ],
+  "tags": ["deterministic", "exact_match", "calendar"]
+}

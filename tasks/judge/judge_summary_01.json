@@ -1,0 +1,16 @@
+{
+  "id": "judge_summary_01",
+  "version": "1.0.0",
+  "name": "Two-sentence summary",
+  "description": "Summary must cover three named points and stay within two sentences",
+  "prompt": "Summarize the following update in at most two sentences. Cover all three points: the outage cause, the affected region, and the fix date.\n\nUpdate: On Tuesday the payments service went down for 40 minutes because a config change broke the database pool. Only customers in the EU region were affected. The team rolled the change back and will ship a permanent fix on Friday, after a staged rollout.",
+  "graders": [
+    {
+      "type": "llm_judge",
+      "rubricId": "summary_v1",
+      "judgeModel": "openai/gpt-4.1-mini",
+      "passThreshold": 0.7
+    }
+  ],
+  "tags": ["judge", "llm_judge", "summarization"]
+}

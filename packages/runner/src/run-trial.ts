@@ -1,8 +1,8 @@
 import type { GradeResult, Task, Trace } from '@agent-evals/domain';
-import { noopMemory } from '@agent-evals/adapters-harness';
+import { createTrialMemory } from '@agent-evals/adapters-harness';
 import type { HarnessAdapter, HarnessRunOutput } from '@agent-evals/adapters-harness';
 import type { ModelAdapter } from '@agent-evals/adapters-model';
-import { exactMatch, stateCheck } from '@agent-evals/graders';
+import { exactMatch, stateCheck, unitTest } from '@agent-evals/graders';
 import { createSandbox, materializeFiles } from '@agent-evals/sandbox';
 import type { Sandbox } from '@agent-evals/sandbox';
 import { createTraceBuffer } from '@agent-evals/trace';
@@ -25,6 +25,8 @@ export interface RunTrialInput {
   budgets: TrialBudgets;
   /** Already resolved by the caller (e.g. config tools intersected with task.toolsAllowed). */
   toolIds: string[];
+  /** Facts the trial's memory starts with (`task.setup.memory`). Unreachable unless a memory tool is in `toolIds`. */
+  memorySeed?: Record<string, string>;
 }
 
 /**
@@ -101,7 +103,7 @@ export async function runTrial(input: RunTrialInput): Promise<RunTrialResult> {
           seed: input.seed,
           sandboxDir: sandbox.dir,
           budgets: input.budgets,
-          memory: noopMemory,
+          memory: createTrialMemory(input.memorySeed),
           skillIds: [],
           toolIds: input.toolIds,
           emit: trace.emit,
@@ -181,6 +183,15 @@ async function gradeTask(task: Task, finalAnswer: string, sandboxDir: string): P
         score: r.score,
         reasoning: r.reasoning,
         details: { checks: r.details },
+      });
+    } else if (g.type === 'unit_test') {
+      const r = await unitTest(sandboxDir, g.command, g.timeoutMs);
+      graderResults.push({
+        graderType: g.type,
+        passed: r.passed,
+        score: r.score,
+        reasoning: r.reasoning,
+        details: { exitCode: r.exitCode, timedOut: r.timedOut, output: r.output },
       });
     } else {
       throw new RunnerError('grader_not_implemented', `grader "${g.type}" is not implemented yet`);

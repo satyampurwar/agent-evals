@@ -1,0 +1,28 @@
+{
+  "id": "det_unit_roman_01",
+  "version": "1.0.0",
+  "name": "Integer to Roman numerals",
+  "description": "Subtractive notation (IV, IX, XL, XC, CD, CM) verified by unit test",
+  "prompt": "Write solution.js in the sandbox. It must use CommonJS and export a function toRoman(n) that converts an integer from 1 to 3999 to a Roman numeral string using standard subtractive notation. The tests are in test_roman.js; read them first. Use write_file. Then reply with the word done.",
+  "setup": {
+    "files": {
+      "test_roman.js": "const assert = require('node:assert/strict');\nconst { toRoman } = require('./solution.js');\nassert.equal(toRoman(1), 'I');\nassert.equal(toRoman(4), 'IV');\nassert.equal(toRoman(9), 'IX');\nassert.equal(toRoman(14), 'XIV');\nassert.equal(toRoman(40), 'XL');\nassert.equal(toRoman(90), 'XC');\nassert.equal(toRoman(400), 'CD');\nassert.equal(toRoman(1994), 'MCMXCIV');\nassert.equal(toRoman(2026), 'MMXXVI');\nassert.equal(toRoman(3999), 'MMMCMXCIX');\nconsole.log('roman ok');\n"
+    }
+  },
+  "toolsAllowed": [
+    "write_file",
+    "read_file"
+  ],
+  "graders": [
+    {
+      "type": "unit_test",
+      "command": "node test_roman.js",
+      "timeoutMs": 5000
+    }
+  ],
+  "tags": [
+    "deterministic",
+    "unit_test",
+    "code"
+  ]
+}

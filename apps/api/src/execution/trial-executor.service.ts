@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, Repository } from 'typeorm';
 import type { Config, Task } from '@agent-evals/domain';
-import { createHarness } from '@agent-evals/adapters-harness';
+import { createHarness, resolveToolIds } from '@agent-evals/adapters-harness';
 import { createModelAdapter } from '@agent-evals/adapters-model';
 import { runTrial } from '@agent-evals/runner';
 import type { RunTrialResult } from '@agent-evals/runner';
@@ -78,9 +78,15 @@ export class TrialExecutor {
       const cfg: Config = config.document;
       const taskDoc: Task = task.document;
       const settings = cfg.harness.settings;
-      // The config picks the tools; a task may narrow them further but cannot widen them.
-      const allowed = taskDoc.toolsAllowed;
-      const toolIds = allowed ? settings.tools.filter((t) => allowed.includes(t)) : settings.tools;
+      // The config picks the tools (core, memory, skills); a task may narrow them further but cannot widen them.
+      const toolIds = resolveToolIds(
+        {
+          tools: settings.tools,
+          memoryEnabled: settings.memory.enabled,
+          skillsEnabled: settings.skillsEnabled,
+        },
+        taskDoc.toolsAllowed,
+      );
 
       return await runTrial({
         trialId: trial.id,
@@ -96,6 +102,7 @@ export class TrialExecutor {
           timeoutMs: settings.timeoutMs,
         },
         toolIds,
+        memorySeed: taskDoc.setup?.memory,
       });
     } catch (err) {
       // Bad config, unknown provider, or missing API key: setup problems are not retried.

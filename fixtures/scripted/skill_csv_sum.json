@@ -1,0 +1,28 @@
+[
+  {
+    "message": {
+      "role": "assistant",
+      "content": "",
+      "toolCalls": [
+        {
+          "id": "s1",
+          "name": "csv_summary",
+          "arguments": {
+            "path": "sales.csv",
+            "column": "amount",
+            "op": "sum",
+            "where": [
+              { "column": "region", "equals": "north" },
+              { "column": "status", "equals": "paid" }
+            ]
+          }
+        }
+      ]
+    },
+    "usage": { "promptTokens": 40, "completionTokens": 12 }
+  },
+  {
+    "message": { "role": "assistant", "content": "11846" },
+    "usage": { "promptTokens": 70, "completionTokens": 3 }
+  }
+]

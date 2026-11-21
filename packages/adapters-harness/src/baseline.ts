@@ -1,10 +1,34 @@
-import type { ChatMessage, ModelResponse } from '@agent-evals/adapters-model';
-import { executeTool, specsFor } from './tools.js';
+import type { ChatMessage, ModelResponse, ToolCall } from '@agent-evals/adapters-model';
+import type { TraceEvent } from '@agent-evals/domain';
+import { executeTool, isSkillTool, specsFor } from './tools.js';
+import type { ToolOutcome } from './tools.js';
 import type {
   HarnessAdapter,
   HarnessRunInput,
   HarnessRunOutput,
 } from './types.js';
+
+/**
+ * Extra trace events for memory and skill tools, on top of the generic tool_call / tool_result pair.
+ * Only successful calls are recorded: a failed memory write did not change the store.
+ */
+function emitDerivedEvent(
+  call: ToolCall,
+  out: ToolOutcome,
+  emit: (event: TraceEvent) => void,
+  ts: string,
+): void {
+  if (!out.ok) return;
+  const args = call.arguments ?? {};
+  if (call.name === 'memory_read') {
+    const hits = (out.result as { hits?: unknown[] }).hits ?? [];
+    emit({ ts, type: 'memory_read', query: String(args.query ?? ''), hits });
+  } else if (call.name === 'memory_write') {
+    emit({ ts, type: 'memory_write', key: String(args.key ?? ''), value: args.value });
+  } else if (isSkillTool(call.name)) {
+    emit({ ts, type: 'skill_invoke', skillId: call.name, input: args });
+  }
+}
 
 /**
  * Baseline tool-calling loop:
@@ -82,8 +106,12 @@ export class BaselineHarness implements HarnessAdapter {
 
       for (const call of calls) {
         emit({ ts: now(), type: 'tool_call', name: call.name, args: call.arguments, callId: call.id });
-        const out = await executeTool(sandboxDir, call);
+        // The model can name any tool; only the tools this trial was offered may run.
+        const out = context.toolIds.includes(call.name)
+          ? await executeTool(sandboxDir, call, context.memory)
+          : { ok: false, result: { error: `tool not available in this trial: ${call.name}` } };
         emit({ ts: now(), type: 'tool_result', callId: call.id, ok: out.ok, result: out.result });
+        emitDerivedEvent(call, out, emit, now());
         messages.push({
           role: 'tool',
           toolCallId: call.id,

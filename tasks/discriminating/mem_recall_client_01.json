@@ -1,0 +1,22 @@
+{
+  "id": "mem_recall_client_01",
+  "version": "1.0.0",
+  "name": "Recall the client ID from memory",
+  "description": "The client ID is not in the prompt or the sandbox. It exists only in the trial's memory store, so it can only be answered with memory_read. Memory-discriminating; a documented proxy for a real multi-turn fact (see README Phase 8)",
+  "prompt": "Which client ID is on our account? Search memory for it. Reply with only the ID.",
+  "setup": {
+    "memory": {
+      "client_id": "HL-2044"
+    }
+  },
+  "graders": [
+    {
+      "type": "exact_match",
+      "field": "final_answer",
+      "expected": "HL-2044",
+      "normalize": "trim_lower"
+    }
+  ],
+  "tags": ["memory", "discriminating", "deterministic", "exact_match"],
+  "expectedDiscriminators": ["memory"]
+}

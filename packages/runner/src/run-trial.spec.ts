@@ -78,12 +78,40 @@ describe('runTrial', () => {
   it('marks an unsupported grader as failed (infra), not as a scored failure', async () => {
     const task: Task = {
       ...addTask,
-      graders: [{ type: 'unit_test', command: 'pytest', timeoutMs: 1000 }],
+      graders: [{ type: 'llm_judge', rubricId: 'summary_v1', judgeModel: 'openai/gpt-4.1-mini', passThreshold: 0.7 }],
     };
     const r = await runTrial(input({ task }));
     expect(r.status).toBe('failed');
     expect(r.error).toMatchObject({ code: 'grader_not_implemented', retryable: false });
     expect(r.passed).toBe(false);
+  });
+
+  it('runs a unit_test grader against the sandbox the agent wrote to', async () => {
+    const task: Task = {
+      ...addTask,
+      setup: { files: { 'test_double.js': "const { double } = require('./solution.js');\nif (double(4) !== 8) process.exit(1);\n" } },
+      graders: [{ type: 'unit_test', command: 'node test_double.js', timeoutMs: 5000 }],
+    };
+    const writesSolution = new ScriptedModelAdapter([
+      {
+        message: {
+          role: 'assistant',
+          content: '',
+          toolCalls: [
+            { id: 'c1', name: 'write_file', arguments: { path: 'solution.js', content: 'exports.double = (x) => x * 2;' } },
+          ],
+        },
+        usage: { promptTokens: 1, completionTokens: 1 },
+      },
+      {
+        message: { role: 'assistant', content: 'done' },
+        usage: { promptTokens: 1, completionTokens: 1 },
+      },
+    ]);
+    const r = await runTrial(input({ task, model: writesSolution, toolIds: ['write_file'] }));
+    expect(r.status).toBe('succeeded');
+    expect(r.passed).toBe(true);
+    expect(r.grade?.graderResults[0]).toMatchObject({ graderType: 'unit_test', passed: true });
   });
 
   it('reports token usage and step count from the harness', async () => {

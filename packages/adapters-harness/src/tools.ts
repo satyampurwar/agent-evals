@@ -2,11 +2,67 @@ import { readFile, readdir, mkdir, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import type { ToolCall, ToolSpec } from '@agent-evals/adapters-model';
 import { resolveInSandbox, SandboxPathError } from '@agent-evals/sandbox';
+import { CSV_OPS, csvSummary, SKILL_TOOLS } from './skills.js';
+import { noopMemory, type MemoryStore } from './types.js';
 
-/** Every tool the baseline harness knows how to run. Tasks can narrow this with `toolsAllowed`. */
+/** Core tools. Always available unless the config leaves them out. Tasks can narrow this with `toolsAllowed`. */
 export const TOOL_NAMES = ['write_file', 'read_file', 'list_dir'] as const;
 
+/** Offered only when `harness.settings.memory.enabled` is true. */
+export const MEMORY_TOOL_NAMES = ['memory_read', 'memory_write'] as const;
+
+const SKILL_TOOL_NAMES: readonly string[] = Object.values(SKILL_TOOLS).flat();
+
 export const TOOL_SPECS: ToolSpec[] = [
+  {
+    name: 'memory_read',
+    description:
+      'Search the memory store. Returns every entry whose key or value contains all the words in the query. Use "" to list everything.',
+    parameters: {
+      type: 'object',
+      properties: { query: { type: 'string', description: 'Words to look for, e.g. "client id"' } },
+      required: ['query'],
+    },
+  },
+  {
+    name: 'memory_write',
+    description: 'Store a text value under a key in the memory store. Overwrites an existing key.',
+    parameters: {
+      type: 'object',
+      properties: {
+        key: { type: 'string', description: 'Short identifier, e.g. "client_id"' },
+        value: { type: 'string', description: 'Text to remember' },
+      },
+      required: ['key', 'value'],
+    },
+  },
+  {
+    name: 'csv_summary',
+    description:
+      'Compute one aggregate over a numeric column of a CSV file in the sandbox (header row required). Optional filter keeps only rows where one column equals a value. Returns the exact result.',
+    parameters: {
+      type: 'object',
+      properties: {
+        path: { type: 'string', description: 'Relative path to the CSV file' },
+        column: { type: 'string', description: 'Numeric column to aggregate' },
+        op: { type: 'string', enum: [...CSV_OPS], description: 'Aggregate to compute' },
+        where: {
+          type: 'array',
+          description: 'Optional filters. A row is kept only if every condition matches (AND)',
+          items: {
+            type: 'object',
+            properties: {
+              column: { type: 'string' },
+              equals: { type: 'string' },
+            },
+            required: ['column', 'equals'],
+          },
+        },
+      },
+      required: ['path', 'column', 'op'],
+    },
+  },
+  
   {
     name: 'write_file',
     description:
@@ -50,6 +106,36 @@ export function specsFor(toolIds: readonly string[]): ToolSpec[] {
   return TOOL_SPECS.filter((s) => toolIds.includes(s.name));
 }
 
+export interface ToolSettings {
+  tools: readonly string[];
+  memoryEnabled: boolean;
+  skillsEnabled: readonly string[];
+}
+
+/**
+ * The tool ids a trial may use. The config adds tools (core, memory, skill); a task's `toolsAllowed`
+ * can only narrow that list, never widen it. Throws on an unknown skill id so a config typo fails loudly.
+ */
+export function resolveToolIds(settings: ToolSettings, toolsAllowed?: readonly string[]): string[] {
+  const fromSkills = settings.skillsEnabled.flatMap((skill) => {
+    const tools = SKILL_TOOLS[skill];
+    if (!tools) throw new Error(`unknown skill "${skill}" (known: ${Object.keys(SKILL_TOOLS).join(', ')})`);
+    return tools;
+  });
+  const available = [
+    ...settings.tools,
+    ...(settings.memoryEnabled ? MEMORY_TOOL_NAMES : []),
+    ...fromSkills,
+  ];
+  const unique = [...new Set(available)];
+  return toolsAllowed ? unique.filter((t) => toolsAllowed.includes(t)) : unique;
+}
+
+/** True for tools that come from a skill (used to emit `skill_invoke` trace events). */
+export function isSkillTool(name: string): boolean {
+  return SKILL_TOOL_NAMES.includes(name);
+}
+
 function requireString(args: Record<string, unknown>, key: string): string {
   const v = args[key];
   if (typeof v !== 'string') {
@@ -71,11 +157,41 @@ function describeError(err: unknown, path?: string): string {
  * Run one tool call against the sandbox. Never throws: failures come back as
  * `{ ok: false, result: { error } }` so the model can see them and recover.
  */
-export async function executeTool(sandboxDir: string, call: ToolCall): Promise<ToolOutcome> {
+export async function executeTool(
+  sandboxDir: string,
+  call: ToolCall,
+  memory: MemoryStore = noopMemory,
+): Promise<ToolOutcome> {
   const args = call.arguments ?? {};
   let path: string | undefined;
   try {
     switch (call.name) {
+      case 'memory_read': {
+        const query = requireString(args, 'query');
+        const hits = await memory.read(query);
+        return { ok: true, result: { query, hits } };
+      }
+      case 'memory_write': {
+        const key = requireString(args, 'key');
+        const value = requireString(args, 'value');
+        await memory.write(key, value);
+        return { ok: true, result: { key } };
+      }
+      case 'csv_summary': {
+        path = requireString(args, 'path');
+        const column = requireString(args, 'column');
+        const op = requireString(args, 'op') as (typeof CSV_OPS)[number];
+        const where = args.where as { column: string; equals: string }[] | undefined;
+        if (
+          where !== undefined &&
+          (!Array.isArray(where) ||
+            where.some((c) => typeof c?.column !== 'string' || typeof c?.equals !== 'string'))
+        ) {
+          throw new Error('where must be a list of {column: string, equals: string}');
+        }
+        const summary = await csvSummary(sandboxDir, { path, column, op, where });
+        return { ok: true, result: summary };
+      }
       case 'write_file': {
         path = requireString(args, 'path');
         const content = requireString(args, 'content');

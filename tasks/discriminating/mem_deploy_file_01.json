@@ -1,0 +1,25 @@
+{
+  "id": "mem_deploy_file_01",
+  "version": "1.0.0",
+  "name": "Write deploy facts recalled from memory",
+  "description": "Two facts live only in memory. The agent must recall both and write them into a file. Memory-discriminating; checks the file content, so the recall must have happened",
+  "prompt": "Create deploy.json as a JSON object with two keys: region holds the deploy region and owner holds the deploy owner. Both values are stored in memory. Look them up, then write deploy.json with the write_file tool. Then reply with the word done.",
+  "setup": {
+    "memory": {
+      "deploy_region": "eu-west-2",
+      "deploy_owner": "ops-team-b"
+    }
+  },
+  "graders": [
+    {
+      "type": "state_check",
+      "checks": [
+        { "path": "deploy.json", "exists": true },
+        { "path": "deploy.json", "jsonPathEquals": { "path": "region", "value": "eu-west-2" } },
+        { "path": "deploy.json", "jsonPathEquals": { "path": "owner", "value": "ops-team-b" } }
+      ]
+    }
+  ],
+  "tags": ["memory", "discriminating", "deterministic", "state_check"],
+  "expectedDiscriminators": ["memory"]
+}

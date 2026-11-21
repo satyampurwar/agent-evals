@@ -1,0 +1,16 @@
+{
+  "id": "judge_bugreport_01",
+  "version": "1.0.0",
+  "name": "Structured bug report",
+  "description": "Bug report must have numbered steps to reproduce, expected behaviour, and actual behaviour",
+  "prompt": "Turn this support message into a bug report: \"The CSV export button does nothing when I have a filter on. I click it, nothing downloads, and no error shows. It works when I clear the filter. I'm on Chrome 124.\" Include numbered steps to reproduce, the expected behaviour, the actual behaviour, and the environment.",
+  "graders": [
+    {
+      "type": "llm_judge",
+      "rubricId": "bugreport_v1",
+      "judgeModel": "openai/gpt-4.1-mini",
+      "passThreshold": 0.7
+    }
+  ],
+  "tags": ["judge", "llm_judge", "structured_output"]
+}

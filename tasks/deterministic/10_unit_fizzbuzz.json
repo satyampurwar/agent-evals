@@ -1,0 +1,28 @@
+{
+  "id": "det_unit_fizzbuzz_01",
+  "version": "1.0.0",
+  "name": "FizzBuzz module",
+  "description": "Code that must pass a unit test file. Graded by running the test, not by reading the answer",
+  "prompt": "Write solution.js in the sandbox. It must use CommonJS and export a function fizzbuzz(n). fizzbuzz(n) returns 'Fizz' for multiples of 3, 'Buzz' for multiples of 5, 'FizzBuzz' for multiples of both, and otherwise the number as a string. The tests are in test_fizzbuzz.js; read them first. Use write_file. Then reply with the word done.",
+  "setup": {
+    "files": {
+      "test_fizzbuzz.js": "const assert = require('node:assert/strict');\nconst { fizzbuzz } = require('./solution.js');\nassert.equal(fizzbuzz(1), '1');\nassert.equal(fizzbuzz(3), 'Fizz');\nassert.equal(fizzbuzz(5), 'Buzz');\nassert.equal(fizzbuzz(7), '7');\nassert.equal(fizzbuzz(15), 'FizzBuzz');\nassert.equal(fizzbuzz(30), 'FizzBuzz');\nconsole.log('fizzbuzz ok');\n"
+    }
+  },
+  "toolsAllowed": [
+    "write_file",
+    "read_file"
+  ],
+  "graders": [
+    {
+      "type": "unit_test",
+      "command": "node test_fizzbuzz.js",
+      "timeoutMs": 5000
+    }
+  ],
+  "tags": [
+    "deterministic",
+    "unit_test",
+    "code"
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "id": "det_extract_order_01",
+  "version": "1.0.0",
+  "name": "Extract the order number",
+  "description": "Pick one number out of text that holds several. Distractors are an invoice id and a date",
+  "prompt": "Read this note: \"Invoice INV-7731 was paid on 2026-03-02. The replacement order is 4096 and ships Monday.\" Which number is the replacement order? Reply with only the number.",
+  "graders": [
+    {
+      "type": "exact_match",
+      "field": "final_answer",
+      "expected": "4096",
+      "normalize": "trim_lower"
+    }
+  ],
+  "tags": ["deterministic", "exact_match", "extraction"]
+}

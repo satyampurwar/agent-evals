@@ -1,0 +1,16 @@
+{
+  "id": "det_letter_count_01",
+  "version": "1.0.0",
+  "name": "Count a letter",
+  "description": "Exact count of one letter in a word. Models often miscount repeated letters",
+  "prompt": "How many times does the letter e appear in the word excellence? Reply with only the number.",
+  "graders": [
+    {
+      "type": "exact_match",
+      "field": "final_answer",
+      "expected": "4",
+      "normalize": "trim_lower"
+    }
+  ],
+  "tags": ["deterministic", "exact_match", "counting"]
+}

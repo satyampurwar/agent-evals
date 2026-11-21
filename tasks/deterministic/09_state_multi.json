@@ -1,0 +1,19 @@
+{
+  "id": "det_state_multi_01",
+  "version": "1.0.0",
+  "name": "Two files and one forbidden file",
+  "description": "Two files must hold exact content, and a third file must not exist. Checks for extra writes",
+  "prompt": "Create a.txt containing exactly the word alpha and b.txt containing exactly the word beta. Do not create draft.txt. Use the write_file tool. Then reply with the word done.",
+  "toolsAllowed": ["write_file"],
+  "graders": [
+    {
+      "type": "state_check",
+      "checks": [
+        { "path": "a.txt", "exists": true, "equals": "alpha" },
+        { "path": "b.txt", "exists": true, "equals": "beta" },
+        { "path": "draft.txt", "exists": false }
+      ]
+    }
+  ],
+  "tags": ["deterministic", "state_check", "tools"]
+}
