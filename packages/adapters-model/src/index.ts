@@ -7,3 +7,4 @@ export type {
   ToolSpec,
 } from './types';
 export { MockModelAdapter } from './mock';
+export { ScriptedModelAdapter } from './scripted';

@@ -1,0 +1,15 @@
+{
+  "id": "det_write_answer_01",
+  "version": "1.0.0",
+  "name": "Write answer file",
+  "description": "Agent writes answer.txt with exactly 'ok' using the sandbox write tool",
+  "prompt": "Create a file named answer.txt containing exactly the word ok. Then reply with the word done.",
+  "toolsAllowed": ["write_file"],
+  "graders": [
+    {
+      "type": "state_check",
+      "checks": [{ "path": "answer.txt", "exists": true, "equals": "ok" }]
+    }
+  ],
+  "tags": ["deterministic", "state_check", "tools"]
+}

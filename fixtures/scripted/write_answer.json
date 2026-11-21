@@ -1,0 +1,16 @@
+[
+  {
+    "message": {
+      "role": "assistant",
+      "content": "",
+      "toolCalls": [
+        { "id": "call_1", "name": "write_file", "arguments": { "path": "answer.txt", "content": "ok" } }
+      ]
+    },
+    "usage": { "promptTokens": 20, "completionTokens": 8 }
+  },
+  {
+    "message": { "role": "assistant", "content": "done" },
+    "usage": { "promptTokens": 30, "completionTokens": 2 }
+  }
+]

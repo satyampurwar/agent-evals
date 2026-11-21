@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@agent-evals/adapters-model": "*",
-    "@agent-evals/domain": "*"
+    "@agent-evals/domain": "*",
+    "@agent-evals/sandbox": "*"
   }
 }
