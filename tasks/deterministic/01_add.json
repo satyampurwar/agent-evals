@@ -1,0 +1,16 @@
+{
+  "id": "det_add_01",
+  "version": "1.0.0",
+  "name": "Simple addition",
+  "description": "Exact numeric answer",
+  "prompt": "What is 17 + 25? Reply with only the number.",
+  "graders": [
+    {
+      "type": "exact_match",
+      "field": "final_answer",
+      "expected": "42",
+      "normalize": "trim_lower"
+    }
+  ],
+  "tags": ["deterministic", "exact_match"]
+}
