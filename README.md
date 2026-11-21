@@ -1419,7 +1419,7 @@ npm run build:packages
 npm test
 ```
 
-Expected: ten workspaces pass (`stats` was added in Phase 10, `web` in Phase 11). The totals are `api` 35, `adapters-harness` 52, `adapters-model` 19, `domain` 8, `graders` 36, `runner` 11, `sandbox` 9, `stats` 31, `trace` 4, `web` 29 (these counts are current as of Phase 12; Phase 12 raised `adapters-harness` from 43 to 52). The Python worker has its own suite: 35 tests, see Phase 12. The runner tests cover pass, scored fail, model error (retryable), wall-clock timeout, unsupported grader, and a `unit_test` grader running against the agent's file.
+Expected: ten workspaces pass (`stats` was added in Phase 10, `web` in Phase 11). The totals are `api` 50, `adapters-harness` 52, `adapters-model` 19, `domain` 8, `graders` 36, `runner` 11, `sandbox` 9, `stats` 31, `trace` 4, `web` 29 (these counts are current as of Phase 13; Phase 13 raised `api` from 35 to 50 with the export tests). The Python worker has its own suite: 35 tests, see Phase 12. The runner tests cover pass, scored fail, model error (retryable), wall-clock timeout, unsupported grader, and a `unit_test` grader running against the agent's file.
 
 The API e2e test needs Postgres and Redis running:
 
@@ -2434,3 +2434,159 @@ These are the differences a reader needs to know before comparing results:
 - **The live checkpoint is one run per cell.** The table in 12.5 is a record of one run each. It is not a benchmark, and the results vary between runs.
 - **No cost.** The runner does not compute cost yet (§10.7).
 - **Only `csv_summary` is wired as a skill.** Hermes's built-in tools are not exposed (§12.9 item 2).
+
+## Phase 13 — Second model, export, and the full stack in Docker
+
+**Goal:** A second model runs beside the first, the results export as JSON and CSV, and the whole system starts with one command and one `.env` file.
+
+Run every command from the repo root unless a step says otherwise:
+
+```bash
+cd /Users/turing-satyam/work/beyond/task/agent-evals
+```
+
+### 13.0 What changed in this phase
+
+| Area | Change |
+|---|---|
+| `apps/api` | `GET /experiments/:id/export?format=json\|csv`. New `experiments/export.ts` (pure functions, CSV escaping shared with the web's rule) and `export.spec.ts`. `trials.service.ts` exports its trial mapper so the export and `GET /trials` return the same trial shape |
+| `apps/api/src/worker.ts` | A trial consumer without HTTP (`npm run build -w @agent-evals/api`, then `npm run start:worker -w @agent-evals/api`). The API runs with `TRIAL_WORKER=off` and this process consumes the queue |
+| `Dockerfile.node` | One image for the API, the worker, and the seeder. Built from the whole monorepo (npm workspaces need every package) |
+| `apps/web/Dockerfile`, `apps/web/nginx.conf` | Builds the Vue app, serves it with nginx, and forwards `/api/...` to the API with the prefix removed (same routing as the Vite dev proxy) |
+| `workers/python-worker/Dockerfile`, `.dockerignore` | The Hermes worker image. Installs `uv.lock` with `--frozen --no-dev` |
+| `docker-compose.yml` | Adds `api`, `worker`, `seed`, `python-worker`, `web`, with health checks and dependencies. `db` and `redis` keep their ports |
+| `.dockerignore` (root) | Keeps `.env`, `node_modules`, `data/`, and build output out of the images |
+| `workers/python-worker/src/.../settings.py` | Fixed the repo-root path. It assumed the source-tree depth and failed inside the image (see 13.5) |
+| `.env.example` | Lists the optional host-port variables that compose reads |
+
+Nothing in `packages/` changed.
+
+### 13.1 Second model
+
+The plan's example, `anthropic/claude-3.5-haiku`, is no longer served by OpenRouter. A trial against it returned `404 ... no provider serves this model anymore`. This phase uses `anthropic/claude-haiku-4.5`, the current Haiku, which passed a live trial. Any other OpenRouter model id works the same way.
+
+Create the second config in the Configs page (the model field is free text) or with curl:
+
+```bash
+curl -s -X POST localhost:3000/configs -H 'content-type: application/json' -d '{
+  "name": "claude-haiku-4.5 baseline",
+  "harness": { "id": "baseline", "settings": { "skillsEnabled": [], "memory": { "enabled": false, "persistAcrossTrials": false }, "tools": [], "maxSteps": 6, "maxTokens": 1000, "timeoutMs": 120000 } },
+  "model": { "provider": "openrouter", "modelId": "anthropic/claude-haiku-4.5", "temperature": 0 }
+}'
+```
+
+Use `maxTokens` 1000 for a small check. The key used here could not afford an 8000-token request to Haiku. OpenRouter reserves the requested output tokens at the model's price, and it answered `402 ... can only afford 4523`. A smaller budget fits.
+
+### 13.2 Export
+
+```bash
+curl -s "localhost:3000/experiments/<ID>/export?format=json" -o exp.json
+curl -s "localhost:3000/experiments/<ID>/export?format=csv" -o exp.csv
+```
+
+- **JSON** (default): `{ experiment, configs, trials }`. Each config carries `name`, `version`, `contentHash`, `harnessId`, `provider`, `modelId`, and `temperature`, so the file says which model and harness produced each trial.
+- **CSV**: one row per trial, with the columns in `TRIAL_EXPORT_COLUMNS` (`apps/api/src/experiments/export.ts`). Each row carries `configName`, `harnessId`, and `modelId`, so a file with two models stays readable without the JSON.
+- Both responses set `Content-Disposition: attachment`, so a browser downloads them.
+- Errors: `format` other than `json` or `csv` is 400. An unknown experiment is 404. A value that is not a UUID is 400.
+- `estimatedCostUsd` is blank. The runner does not measure cost yet (§10.7).
+- The Experiment page's own CSV button is unchanged. It still builds the file in the browser from `/trials`.
+
+### 13.3 The full stack
+
+**Install and start.** You need Docker and a `.env` file:
+
+```bash
+cp .env.example .env          # then set OPENROUTER_API_KEY
+docker compose up --build     # add -d to run in the background
+```
+
+The first build also downloads the base images, so it is slower. Later builds reuse cached layers.
+
+| Service | Image | Port (host) | What it runs |
+|---|---|---|---|
+| `db` | `postgres:16` | `5432` (or `POSTGRES_HOST_PORT`) | Postgres, healthy when `pg_isready` passes |
+| `redis` | `redis:7` | `6379` (or `REDIS_HOST_PORT`) | Redis, healthy when `redis-cli ping` passes |
+| `api` | `Dockerfile.node` | `3000` (or `API_HOST_PORT`) | The API. `TRIAL_WORKER=off`, so it queues trials but runs none |
+| `worker` | `Dockerfile.node` | none | Consumes the trial queue. Waits for `api` and `python-worker` to be healthy |
+| `python-worker` | `workers/python-worker/Dockerfile` | `8001` (or `PYTHON_WORKER_HOST_PORT`) | The Hermes harness. Healthy on `/health` |
+| `seed` | `Dockerfile.node` | none | Loads the 21 tasks into the API, then exits with 0. Running it again reports them as unchanged |
+| `web` | `apps/web/Dockerfile` | `5173` (or `WEB_HOST_PORT`) | The UI, served by nginx. `/api/...` goes to the API |
+
+Services find each other by name (`db`, `redis`, `api`, `python-worker`). Their addresses come from the compose file, not from `.env`, which still says `localhost` for runs on the host.
+
+Two volumes are shared between services:
+
+- `traces` (`/data/traces`): the worker writes trace files, and the API serves them at `/trials/:id/trace`.
+- `sandboxes` (`/sandboxes`): trial sandboxes are created under `TMPDIR=/sandboxes`. The Hermes worker reads and writes the same directories, by the same absolute path, because the trial contract passes that path.
+
+**Open the UI** at http://localhost:5173. The API is at http://localhost:3000. Stop the stack with `docker compose down`. To start from an empty database, use `docker compose down -v`, which also removes the volumes.
+
+**If you already run the API on the host** (`npm run dev:api`, port 3000) or the Postgres container from Phase 6: stop the host API first, or set `API_HOST_PORT` to another port. Compose names the project after the directory, so in this checkout the `db` and `redis` containers from Phase 6 are reused when their settings match.
+
+### 13.4 Checkpoint 13: a clean clone starts with one command and one `.env`
+
+A clean clone has to come from git, so the checkpoint has to be run from a commit. Before the commit exists, the same test runs on a copy of the tree with only the files that would be committed (tracked files plus untracked files that are not ignored):
+
+```bash
+rm -rf /tmp/agent-evals-clean && mkdir -p /tmp/agent-evals-clean
+git ls-files -co --exclude-standard -z | rsync -a --from0 --files-from=- ./ /tmp/agent-evals-clean/
+cp .env /tmp/agent-evals-clean/.env           # the one file the clone needs
+# This run also appended the host-port lines from .env.example to that copy (for example WEB_HOST_PORT=5174),
+# because the dev stack already holds 3000, 5433, and 6379. A fresh clone needs none of them.
+cd /tmp/agent-evals-clean && docker compose up --build -d
+```
+
+Recorded for this phase (fresh copy, empty volumes, `.env` copied, host ports moved to avoid the dev stack):
+
+| Step | Result |
+|---|---|
+| `docker compose up --build -d` from empty volumes | All images build. `db`, `redis`, `api`, and `python-worker` report healthy. `web` and `worker` run (neither has a health check). `seed` exits 0 with `created: 21, unchanged: 0` |
+| `GET /` on the API, `GET /health` on the Python worker | `Hello World!` and `{"ok":true,"worker":"python"}` |
+| The web app through nginx | `/` and the route `/experiments` both return 200. `/api/tasks` returns 21 tasks |
+| Experiment 1: 3 tasks × `gpt-4.1-mini` and `claude-haiku-4.5`, 1 trial each | `completed`, 6 trials. All 6 passed. The JSON export lists both configs with their models. The CSV has 6 rows, and each row names its model |
+| Experiment 2: `mem_recall_client_01` on the `hermes` harness (memory on, `gpt-4.1-mini`) | `completed`. Passed, 2 steps, 4744 tokens. The trace has `memory_read` |
+| Trace through the API | `GET /trials/:id/trace` returns the trace the worker wrote to the shared volume |
+| `format=xml`, unknown id | 400 and 404 |
+| Worker and Python logs after the runs | No error lines other than the Observe notice (§13.6) |
+
+What this checkpoint shows: the one command starts every service, the tasks load without a manual step, both models run through the queue, and the export and trace endpoints work across the containers.
+
+The checkpoint did not run in your dev checkout. There, `docker compose up --build` reuses your running `db` and `redis` containers and needs port 3000 free.
+
+**Not checked here:** the browser drill from Phase 11 (clicking through the UI). Browser automation was not requested. The pages were checked through nginx with `curl`.
+
+### 13.5 Bugs the checkpoint found, and what was changed
+
+1. **The Python worker failed to start in the image.** `settings.py` took the repo root from `parents[4]` of its own path. That index exists in the source tree but not in the image, which puts the package under `/app/src`. The worker now computes the root from its own directory (`WORKER_DIR.parent.parent`), which is the same path on the host and in the image. In the image the root is `/`, where no `.env` exists. Compose passes the settings as environment variables instead.
+2. **Hermes trials failed with `sandbox directory does not exist`.** The worker creates the trial sandbox in its own filesystem, and the Python worker checked for it in its own. The fix is the shared `sandboxes` volume at the same path in both services, with `TMPDIR` set on the worker (see 13.3).
+
+### 13.6 Troubleshooting
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `env file .../.env not found` | The clone has no `.env` | `cp .env.example .env`, then set `OPENROUTER_API_KEY` |
+| `Bind for 0.0.0.0:<port> failed: port is already allocated` | A host process or another container uses the port (for example 3000 for the API, or 5432 for a local Postgres) | Stop it, or set the matching `*_HOST_PORT` in `.env` |
+| `404 ... no provider serves this model` | The model id has been retired on OpenRouter | Use a current id (`curl https://openrouter.ai/api/v1/models` lists them) |
+| `402 ... can only afford N` | The key's credit cannot cover the requested output tokens | Lower `maxTokens`, or add credit to the key |
+| `seed` shows `created: 0, unchanged: 21` | The tasks are already loaded | Expected. The seed is idempotent |
+| `worker` logs `Observe is installed but sends nothing` | The app is not linked to NestJS Observe | Expected until `npx @nestjs/observe link` (AGENTS.md). It does not affect trials |
+| The UI shows no tasks | `seed` did not run, or `api` is not healthy | `docker compose ps`, then `docker compose logs seed` |
+| Hermes trial fails with `sandbox directory does not exist` | An older `docker-compose.yml` without the `sandboxes` volume | Use the current compose file, then `docker compose up -d` |
+| Changed code does not show up | The image was built before the change | `docker compose up --build -d` |
+
+### 13.7 Deviations from the plan
+
+- **The second model** is `anthropic/claude-haiku-4.5`. The plan's example id is retired (§13.1).
+- **The `worker` service** runs the API's own code (`apps/api/dist/worker.js`) and not the empty `workers/node-worker` package. That package is still unused. The API's existing `TRIAL_WORKER` switch makes the split possible.
+- **The seeder is a service.** The plan had a manual step. The stack loads the tasks itself.
+- **The UI runs in nginx** in the image, not in the Vite dev server. The dev proxy still works in dev mode.
+- **Images are not pinned by digest.** Base images use tags (`node:24-alpine`, `python:3.12-slim`, `nginx:alpine`, `postgres:16`, `redis:7`). `uv` is pinned to the version used locally (0.13.9).
+- **Containers run as root,** and `.env` values reach the containers as environment variables (visible with `docker inspect`). This is fine for a local stack, not for deployment.
+- **The API still uses TypeORM `synchronize`** from the earlier phases. Migrations come later.
+
+### 13.8 What this phase does not do
+
+- **No cost.** `estimatedCostUsd` stays blank (§10.7).
+- **No deployment.** There is no registry push, no TLS, and no secrets store.
+- **No browser checks in this phase.** The UI drill from §11.5 is still to be run by hand.
+- **The export is not paginated.** A large experiment returns everything in one response.

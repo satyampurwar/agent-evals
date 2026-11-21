@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -7,9 +8,12 @@ import {
   ParseUUIDPipe,
   Post,
   Query,
+  Res,
 } from '@nestjs/common';
 import { ExperimentInputSchema, type ExperimentInput } from '@agent-evals/domain';
+import type { Response } from 'express';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
+import { experimentToCsv } from './export.js';
 import { ExperimentsService } from './experiments.service.js';
 
 @Controller('experiments')
@@ -50,6 +54,29 @@ export class ExperimentsController {
     @Query('b', ParseUUIDPipe) b: string,
   ) {
     return this.experiments.compare(id, a, b);
+  }
+
+  /**
+   * Exports the experiment's trials. `format=json` (default) returns the experiment, its configs and
+   * every trial. `format=csv` returns one row per trial (columns in TRIAL_EXPORT_COLUMNS).
+   */
+  @Get(':id/export')
+  async export(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query('format') format: string | undefined,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const chosen = format ?? 'json';
+    if (chosen !== 'json' && chosen !== 'csv') {
+      throw new BadRequestException(`format must be "json" or "csv", got "${chosen}"`);
+    }
+    const data = await this.experiments.exportData(id);
+    res.setHeader('Content-Disposition', `attachment; filename="experiment-${id}.${chosen}"`);
+    if (chosen === 'csv') {
+      res.type('text/csv; charset=utf-8');
+      return experimentToCsv(data);
+    }
+    return data;
   }
 
   @Get(':id/status')

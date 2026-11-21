@@ -5,9 +5,12 @@ from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-# src/agent_evals_python_worker/settings.py -> repo root is four levels up from the package directory.
-REPO_ROOT = Path(__file__).resolve().parents[4]
+# src/agent_evals_python_worker/settings.py -> the worker directory is two levels up from the package's src/.
+# In the repo that is workers/python-worker. In the container it is /app.
 WORKER_DIR = Path(__file__).resolve().parents[2]
+# The repo root is two levels above the worker directory. In the container that resolves to "/", where no .env
+# exists; compose passes the settings as environment variables instead.
+REPO_ROOT = WORKER_DIR.parent.parent
 
 
 class Settings(BaseSettings):

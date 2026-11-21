@@ -20,7 +20,7 @@ export class TrialsService {
       where: experimentId ? { experimentId } : {},
       order: { experimentId: 'ASC', taskId: 'ASC', configId: 'ASC', trialIndex: 'ASC' },
     });
-    return rows.map(toView);
+    return rows.map(toTrialView);
   }
 
   async findOne(id: string): Promise<TrialView> {
@@ -28,7 +28,7 @@ export class TrialsService {
     if (!row) {
       throw new NotFoundException(`trial ${id} not found`);
     }
-    return toView(row);
+    return toTrialView(row);
   }
 
   /** 404 when the trial is missing, when it has no trace yet, or when the trace file is gone. */
@@ -51,6 +51,7 @@ export class TrialsService {
   }
 }
 
-function toView({ experiment: _experiment, ...rest }: TrialEntity): TrialView {
+/** Shared with the experiment export, so both return the same trial shape. */
+export function toTrialView({ experiment: _experiment, ...rest }: TrialEntity): TrialView {
   return { ...rest, hasTrace: rest.traceUri != null };
 }

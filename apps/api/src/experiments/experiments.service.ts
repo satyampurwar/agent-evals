@@ -16,7 +16,9 @@ import { ExperimentEntity, type ConfigRef, type TaskRef } from '../entities/expe
 import { TrialEntity } from '../entities/trial.entity.js';
 import { TrialQueue } from '../queue/trial-queue.js';
 import { TasksService } from '../tasks/tasks.service.js';
+import { toTrialView } from '../trials/trials.service.js';
 import { toSideInput } from './compare-input.js';
+import { type ExperimentExport, type ExportConfig } from './export.js';
 import { countTrialsByStatus, type TrialCounts } from './experiment-status.js';
 import { expandMatrix } from './expand-matrix.js';
 
@@ -158,6 +160,41 @@ export class ExperimentsService {
 
   countTrials(experimentId: string): Promise<TrialCounts> {
     return countTrialsByStatus(this.dataSource.manager, experimentId);
+  }
+
+  /**
+   * Everything the export needs: the experiment, the configs it pins (in matrix order, with the
+   * harness and model each one uses), and every trial, ordered like the trials list.
+   */
+  async exportData(id: string): Promise<ExperimentExport> {
+    const experiment = await this.findOne(id);
+    const configIds = experiment.configRefs.map((c) => c.id);
+    const configRows = configIds.length
+      ? await this.dataSource.manager.find(ConfigEntity, { where: { id: In(configIds) } })
+      : [];
+    const configs: ExportConfig[] = configIds
+      .map((configId) => configRows.find((row) => row.id === configId))
+      .filter((row): row is ConfigEntity => row !== undefined)
+      .map((row) => ({
+        id: row.id,
+        name: row.name,
+        version: row.version,
+        contentHash: row.contentHash,
+        harnessId: row.document.harness.id,
+        provider: row.document.model.provider,
+        modelId: row.document.model.modelId,
+        temperature: row.document.model.temperature,
+        ...(row.document.model.topP !== undefined ? { topP: row.document.model.topP } : {}),
+      }));
+    const trials = await this.dataSource.manager.find(TrialEntity, {
+      where: { experimentId: id },
+      order: { taskId: 'ASC', configId: 'ASC', trialIndex: 'ASC' },
+    });
+    return {
+      experiment: this.toView(experiment),
+      configs,
+      trials: trials.map(toTrialView),
+    };
   }
 
   /**

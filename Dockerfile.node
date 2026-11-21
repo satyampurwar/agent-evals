@@ -1,0 +1,21 @@
+# One image for the API, the trial worker, and the task seeder. It is built from the whole monorepo:
+# npm workspaces need every package, and scripts/seed-tasks.ts runs with tsx from the root node_modules.
+# `npm ci` runs the postinstall hook, which builds the shared packages (build:packages).
+FROM node:24-alpine
+
+WORKDIR /app
+
+COPY . .
+
+RUN npm ci \
+ && npm run build -w @agent-evals/api
+
+ENV NODE_ENV=production \
+    PORT=3000 \
+    TRACE_DIR=/data/traces
+
+EXPOSE 3000
+
+# Compose sets the command for each service: the API (apps/api/dist/main.js), the worker
+# (apps/api/dist/worker.js), or the seeder (npx tsx scripts/seed-tasks.ts).
+CMD ["node", "apps/api/dist/main.js"]

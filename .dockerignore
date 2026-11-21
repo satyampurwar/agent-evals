@@ -1,0 +1,20 @@
+# Build context for the root-level images (Dockerfile.node and apps/web/Dockerfile).
+# Dependencies and build output are rebuilt inside the image.
+**/node_modules
+**/dist
+**/*.tsbuildinfo
+
+# Secrets and local state never go into an image. Compose passes .env at run time.
+.env
+.env.*
+!.env.example
+data
+pgdata
+.git
+
+# Python worker local state (it is rebuilt in the image).
+**/.venv
+**/.hermes-home
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache

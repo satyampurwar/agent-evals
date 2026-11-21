@@ -17,6 +17,7 @@
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
+    "start:worker": "node dist/worker",
     "lint": "oxlint --type-aware src/ test/",
     "test": "vitest run",
     "test:watch": "vitest",
