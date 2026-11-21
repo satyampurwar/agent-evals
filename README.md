@@ -41,7 +41,7 @@ docker compose up --build
 - API: http://localhost:3000
 - The `seed` service loads the 21-task catalog once and exits.
 
-From a clean clone this is the whole setup. Phase 13 checked it on a fresh copy of the tree with empty volumes (§13.4), not on a git clone. Phase 15 did not repeat that check, so run it once on a new machine before you rely on it.
+From a clean clone this is the whole setup, and `runbook.md` walks through it step by step with the output to expect. Phase 13 checked it on a fresh copy of the tree with empty volumes (§13.4), not on a git clone. Phase 15 did not repeat that check, so run it once on a new machine before you rely on it.
 
 ### Add a task
 
@@ -91,6 +91,198 @@ The JSON carries the experiment, its configs (with content hashes), and every tr
 - [EXPERIMENT.md](EXPERIMENT.md): the pre-registered memory experiment, its pilot, amendments, both runs, and the conclusion.
 - [LIMITS.md](LIMITS.md): what the platform and its results cannot support.
 - [COST.md](COST.md): the cost formula, a hand check against the data, actual spend, and reduction strategies.
+- [runbook.md](runbook.md): run the whole application from an empty machine, step by step, with expected output, troubleshooting, and reset.
+- [video.md](video.md): the plan, timeline, script, and checklist for the demo video.
+
+### Repository structure
+
+Paths are relative to `agent-evals/`. Folders marked *(local)* are created on your machine and are not in git.
+
+```
+agent-evals/
+├── README.md                  setup, how-to, and the per-phase build log
+├── runbook.md                 run everything from scratch
+├── video.md                   demo video plan and script
+├── DESIGN.md                  architecture, adapters, data model, statistics
+├── EXPERIMENT.md              the memory A/B experiment and its results
+├── LIMITS.md                  what the platform and results cannot support
+├── COST.md                    cost formula, spend, reduction strategies
+├── judge-validation.txt       saved judge-vs-human agreement output
+├── prices.json                list prices used for cost estimates
+├── package.json               npm workspaces root and scripts
+├── docker-compose.yml         the full stack
+├── Dockerfile.node            image for api, worker, seed
+├── .env.example               template for .env
+├── apps/
+│   ├── api/                   NestJS API and the trial worker
+│   └── web/                   Vue 3 UI
+├── packages/
+│   ├── domain/                Zod schemas, types, pricing
+│   ├── trace/                 trace buffer and validation
+│   ├── sandbox/               per-trial directories, path safety
+│   ├── adapters-model/        ModelAdapter interface and providers
+│   ├── adapters-harness/      HarnessAdapter interface, baseline, Hermes client
+│   ├── graders/               exact_match, state_check, unit_test, llm_judge
+│   ├── runner/                runTrial: one trial, sandbox to graded result
+│   └── stats/                 bootstrap, McNemar, compare
+├── workers/
+│   ├── python-worker/         FastAPI service that runs Hermes Agent
+│   └── node-worker/           empty placeholder
+├── tasks/                     the 21-task catalog and its manifest
+├── fixtures/                  judge labels, scripted model replies, stats fixtures
+├── scripts/                   command-line tools
+├── results/                   saved experiment outputs
+├── data/            (local)   trace files when the API runs on the host
+└── tests/                     empty
+```
+
+#### Root files
+
+| File | Purpose |
+|---|---|
+| `README.md` | Start here: what it does, setup, how to add a task, harness or model. The rest is a log of each build phase with its checkpoints |
+| `runbook.md` | Run the whole app from an empty machine: Docker path, host path, running an experiment, reading results, tests, troubleshooting, reset |
+| `video.md` | What the demo video must cover, with timeline, script, data to show, and what not to claim |
+| `DESIGN.md` | Architecture and component responsibilities, the two adapter interfaces, data model, isolation, graders and judge validation, statistics and how N was chosen |
+| `EXPERIMENT.md` | The pre-registered memory A/B: hypothesis, design, pilot, amendments, v1 and post-hoc v2 results, three trajectories, conclusion |
+| `LIMITS.md` | Known limits, each tied to evidence from this project |
+| `COST.md` | The cost formula, a hand check against stored data, list price against the provider's bill, actual spend, reduction strategies |
+| `judge-validation.txt` | Saved output of `scripts/validate-judge.ts`: 25 labels, 92% agreement, κ 0.826 |
+| `prices.json` | List prices (USD per million tokens) per model. The runner prices every agent and judge call from it. A model without an entry fails its trials with `price_missing` |
+| `package.json` | npm workspaces root (`apps/*`, `packages/*`, `workers/node-worker`). Scripts: `build:packages`, `test`, `seed:tasks`, `dev:api`, `dev:web`, `dev:worker:python` |
+| `package-lock.json` | Locked dependency versions for the whole workspace |
+| `docker-compose.yml` | The full stack: `db`, `redis`, `api`, `worker`, `python-worker`, `seed`, `web`, plus the shared volumes (`traces`, `sandboxes`, `hermes`, `pgdata`) |
+| `Dockerfile.node` | One image for `api`, `worker` and `seed`: installs the workspace, builds the packages and the API, and includes `prices.json` |
+| `.env.example` | Template for `.env`: API key, database and Redis URLs, ports, price table path |
+| `.env` *(local)* | Your secrets and settings. Never committed, never copied into an image |
+| `.dockerignore` | Keeps `node_modules`, `dist`, `.env`, `data`, `.git` and Python state out of the build context |
+| `.gitignore` | Ignores `.env`, `node_modules`, `dist`, `data/`, Python caches, and the Hermes state directory |
+| `node_modules/` *(local)* | Installed dependencies |
+
+#### `apps/api`: NestJS API and trial worker
+
+| Path | Purpose |
+|---|---|
+| `src/main.ts` | API entry point (HTTP on port 3000) |
+| `src/worker.ts` | Entry point for a queue-consumer process with no HTTP. The Compose `worker` service runs it |
+| `src/load-env.ts` | Loads the repo-root `.env` before anything reads `process.env`. Shell variables win |
+| `src/app.module.ts` | Root module: TypeORM and Postgres, BullMQ, and the feature modules. `DB_SYNCHRONIZE` controls schema auto-creation |
+| `src/app.controller.ts`, `src/app.service.ts` | `GET /` health check (`Hello World!`) |
+| `src/entities/` | TypeORM tables: `task`, `config`, `experiment`, `trial` |
+| `src/tasks/` | `POST /tasks/import`, `GET /tasks`, `GET /tasks/:id`. Stores each task version once, by content hash |
+| `src/configs/` | `POST /configs`, `GET /configs`. Immutable configs: same content returns the existing one, changed content becomes a new version |
+| `src/experiments/` | Create, start, status, compare and export. `expand-matrix.ts` plans tasks × configs × N trials with a deterministic seed. `experiment-status.ts` rolls trial states into an experiment status. `compare-input.ts` turns trial rows into stats input. `export.ts` builds the JSON and CSV |
+| `src/trials/` | `GET /trials`, `GET /trials/:id`, `GET /trials/:id/trace` |
+| `src/queue/trial-queue.ts` | The BullMQ `trials` queue. Each job has 3 attempts with exponential backoff |
+| `src/execution/` | `trial.processor.ts` consumes jobs (`TRIAL_CONCURRENCY`). `trial-executor.service.ts` runs one trial through `runTrial`, writes the trace and trial row together, and updates the experiment status. `prices.ts` loads `prices.json` |
+| `src/common/` | `canonical-json.ts` (sorted-key JSON and SHA-256 for content hashes), `redis.ts` (connection options), `trace-store.ts` (reads and writes trace files under `TRACE_DIR`), `zod-validation.pipe.ts` (request validation), `uuid.ts` |
+| `src/**/*.spec.ts` | Unit tests |
+| `test/app.e2e-spec.ts` | End-to-end test. Needs Postgres and Redis |
+| `package.json`, `tsconfig*.json`, `nest-cli.json`, `vitest.config*.ts` | Build and test configuration |
+| `.oxlintrc.json`, `.prettierrc`, `.gitattributes` | Lint, format, and git settings from the Nest scaffold |
+| `AGENTS.md`, `CLAUDE.md`, `.agents/`, `.claude/` | Coding-assistant guidance files from the Nest scaffold. Not used at run time |
+| `README.md` | The default Nest README. The project documentation is the root `README.md` |
+
+#### `apps/web`: Vue 3 UI
+
+| Path | Purpose |
+|---|---|
+| `src/main.ts`, `src/App.vue`, `src/router.ts` | App bootstrap, shell and navigation, and routes: `/tasks`, `/configs`, `/experiments`, `/experiments/:id`, `/experiments/:id/compare`, `/trials/:id` |
+| `src/pages/TasksPage.vue` | Task catalog, one row per task version |
+| `src/pages/ConfigsPage.vue` | Saved configs (version, content hash) and a form that creates baseline configs |
+| `src/pages/ExperimentsPage.vue` | Experiment list and the create form |
+| `src/pages/ExperimentDetailPage.vue` | Status, counts, **Start**, trial table, CSV export, link to Compare |
+| `src/pages/ComparePage.vue` | Verdict, noise badge, macro pass rates with intervals, difference A − B, per-task table, latency, tokens, cost |
+| `src/pages/TrialPage.vue` | One trial: outcome, grader results and reasoning, metrics, final answer, trace timeline, notes |
+| `src/api/client.ts`, `src/api/endpoints.ts` | Fetch wrapper (all calls go to `/api`) and typed endpoint functions |
+| `src/lib/format.ts` | Display formatting, including verdict text. A missing value shows as a dash, never as 0 |
+| `src/lib/forms.ts` | Builds and validates config and experiment inputs from form fields |
+| `src/lib/trace.ts` | Turns trace events into timeline rows |
+| `src/lib/trial.ts` | Maps a trial to an outcome: passed, failed, timeout, infra, cancelled, pending |
+| `src/lib/csv.ts` | CSV export in the browser, with escaping against spreadsheet formula injection |
+| `src/**/*.spec.ts` | Unit tests |
+| `vite.config.ts` | Dev server and the `/api` proxy to the API |
+| `Dockerfile`, `nginx.conf` | Production image: builds the app, serves it with nginx, proxies `/api/` to the API |
+| `index.html`, `public/`, `src/assets/`, `src/style.css` | Page shell, static assets, global styles |
+| `package.json`, `tsconfig*.json`, `.vscode/`, `.gitignore`, `README.md` | Build configuration and Vite scaffold files |
+
+#### `packages/*`: shared libraries
+
+Every package has `package.json`, `tsconfig.json`, and `tsconfig.build.json` (builds to `dist/`). Run `npm run build:packages` after changing one.
+
+| Package | Files | Purpose |
+|---|---|---|
+| `domain` | `src/schemas.ts` | Zod schemas and types for Task, Config, Experiment, Trial, TraceEvent, graders |
+| | `src/pricing.ts` | `PriceTableSchema`, `costUsd`, `unpricedModels`, `UnknownPriceError` |
+| | `src/index.ts`, `src/__tests__/` | Public exports; schema and pricing tests with valid and broken task fixtures |
+| `trace` | `src/index.ts` | Trace buffer (`emit`), serialization, validation |
+| `sandbox` | `src/sandbox.ts` | `createSandbox` (a fresh temporary directory per trial), cleanup, `materializeFiles` for task setup files |
+| | `src/paths.ts` | `resolveInSandbox` rejects absolute paths, `..` escapes, and symlinks leaving the sandbox |
+| `adapters-model` | `src/types.ts` | The `ModelAdapter` interface and request and response types |
+| | `src/openrouter.ts` | The OpenRouter adapter (also reports token usage) |
+| | `src/mock.ts`, `src/scripted.ts` | Offline adapters: a fixed reply, and a replayed script that records requests |
+| | `src/registry.ts` | `createModelAdapter(provider)` and `parseModelSpec("provider:modelId")` |
+| `adapters-harness` | `src/types.ts` | The `HarnessAdapter` interface, `TrialContext`, and run input and output |
+| | `src/baseline.ts` | The TypeScript tool-calling loop with step and token budgets |
+| | `src/hermes.ts` | `HermesHarness`: sends one trial to the Python worker and converts the reply into trace events |
+| | `src/tools.ts` | The sandboxed tools (`read_file`, `write_file`, `list_dir`, memory tools) and tool-id resolution |
+| | `src/skills.ts` | The `csv_summary` skill |
+| | `src/memory.ts` | The per-trial memory store, seeded from the task |
+| | `src/registry.ts` | `createHarness(id)` and `HARNESS_IDS`. Add a harness here |
+| `graders` | `src/exact-match.ts`, `src/state-check.ts`, `src/unit-test.ts` | The deterministic graders. `unit-test` runs a command in the sandbox and uses its exit code |
+| | `src/llm-judge.ts`, `src/rubrics.ts` | The judge (temperature 0, JSON output, one retry) and the versioned rubrics |
+| `runner` | `src/run-trial.ts` | `runTrial`: sandbox, harness under a timeout, graders, cost estimate, status and error codes (`model_error`, `setup_error`, `price_missing`) |
+| `stats` | `src/pass-rate.ts` | `passRate`, the Wilson interval for a pass count, and the `Interval` type |
+| | `src/bootstrap.ts`, `src/rng.ts` | Bootstrap confidence intervals over tasks, driven by a seeded PRNG so results repeat |
+| | `src/mcnemar.ts` | Exact McNemar test on paired trials |
+| | `src/compare.ts` | `compareConfigs`: macro pass rates, delta interval, per-task deltas, verdict |
+
+Each `src/*.spec.ts` file is the unit test for the file with the same name.
+
+#### `workers/python-worker`: Hermes harness
+
+| Path | Purpose |
+|---|---|
+| `app/main.py` | The `uvicorn` target (`app.main:app`). Re-exports the FastAPI app |
+| `src/agent_evals_python_worker/server.py` | FastAPI app: `GET /health` and `POST /run-trial` |
+| `.../contract.py` | The request and response models for `/run-trial`. Mirrored by `packages/adapters-harness/src/hermes.ts` |
+| `.../hermes_runner.py` | Runs one trial with Hermes Agent: pins `HERMES_HOME`, offers exactly the trial's tools, enforces budgets |
+| `.../tools.py` | The platform's tools ported to Python, with the same names, schemas, and error strings as the baseline harness |
+| `.../sandbox.py` | Python port of the sandbox path rules |
+| `.../events.py` | Turns a finished Hermes conversation into trace events |
+| `.../settings.py` | Worker settings from the environment and the repo-root `.env` |
+| `tests/` | 35 tests, using a scripted OpenAI-compatible endpoint (`fake_openai.py`) instead of the network |
+| `pyproject.toml`, `uv.lock`, `.python-version` | Dependencies and the Python version, managed with `uv` |
+| `Dockerfile`, `.dockerignore`, `README.md` | Image build and the worker's own documentation |
+| `.hermes-home/` *(local)* | Hermes Agent state created at run time (sessions, logs). Ignored by git and by the build |
+
+`workers/node-worker` is listed in the workspaces and is empty. The Node trial worker is `apps/api/src/worker.ts`.
+
+#### Data and tooling folders
+
+| Path | Purpose |
+|---|---|
+| `tasks/manifest.json` | The ordered list of task files the seed and the validator read |
+| `tasks/deterministic/` | 12 tasks graded by code: `01_add` to `06_exact_weekday` (`exact_match`, plus one `state_check`), `07` to `09` (`state_check`), `10` to `12` (`unit_test`) |
+| `tasks/judge/` | 5 tasks graded by the LLM judge: summary, explain, email, bug report, trade-off |
+| `tasks/discriminating/` | 4 tasks built to separate configs: 2 memory tasks (`mem_recall_client_01`, `mem_deploy_file_01`) and 2 skill tasks (`skill_csv_sum_01`, `skill_csv_mean_01`) |
+| `fixtures/judge-human-labels/` | 25 labelled answers (`lbl_01.json` to `lbl_25.json`) the judge is validated against |
+| `fixtures/scripted/` | Scripted model replies for offline runs of `run-one-trial.ts` |
+| `fixtures/stats/` | `known_gap.json` and `coin_flip.json`: data with a known answer, to test the comparison |
+| `scripts/seed-tasks.ts` | Loads the catalog into the API (`npm run seed:tasks`) |
+| `scripts/validate-task-set.ts` | Checks the task set: schema, minimum size, grader coverage, rubrics, judge prices |
+| `scripts/validate-judge.ts` | Runs the judge on the 25 labels and prints agreement and κ |
+| `scripts/run-experiment.ts` | Runs the memory A/B through the API and writes results to `results/` |
+| `scripts/run-one-trial.ts` | Runs one trial from the command line, without the API |
+| `scripts/demo-isolation.ts` | Shows that one trial cannot read another trial's files |
+| `scripts/smoke-model.ts` | One live call to OpenRouter, printing the reply and usage |
+| `scripts/stats-fixtures.ts` | Checks or regenerates the files in `fixtures/stats/` |
+| `scripts/lib/env.ts` | `loadDotEnv`, shared by the scripts |
+| `results/memory-ab/` | The pre-registered run (v1): `compare.json`, `export.json`, `export.csv` |
+| `results/memory-ab-v2-write-file/` | The post-hoc run with `write_file` in both arms |
+| `results/memory-ab-pilot/` | The 4-trial pilot |
+| `data/traces/` *(local)* | `<experimentId>/<trialId>.json` trace files, when the API runs on the host. In Docker they live in the `traces` volume |
+| `tests/` | Empty |
 
 ### Tests
 
@@ -103,7 +295,7 @@ cd workers/python-worker && uv run pytest   # Python worker, 35 tests
 
 ### Video
 
-Not recorded. The walkthrough script is in implementation.md §25 (≤10 minutes: the compare view, a failed trial's trajectory, and the judge agreement). The assistant that wrote this repo cannot record video, so this is still open.
+Not recorded. The plan, timeline, script, and checklist are in [video.md](video.md), which follows implementation.md §25 (≤10 minutes: the compare view, a failed trial's trajectory, and the judge agreement). The assistant that wrote this repo cannot record video, so this is still open.
 
 ### Known open items
 
