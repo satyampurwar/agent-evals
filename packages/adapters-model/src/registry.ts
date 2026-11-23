@@ -1,7 +1,16 @@
+/**
+ * Factory for model adapters by provider name.
+ *
+ * Configs store `model.provider` (e.g. `"openrouter"`). Callers pass that string here instead of
+ * constructing adapters themselves — a classic factory pattern so adding a provider is one switch
+ * case, and API keys stay in the environment rather than in config JSON.
+ */
+
 import { MockModelAdapter } from './mock.js';
 import { OpenRouterAdapter } from './openrouter.js';
 import type { ModelAdapter } from './types.js';
 
+/** Parsed `"provider:modelId"` string used by CLIs and some configs. */
 export interface ModelSpec {
   provider: string;
   modelId: string;

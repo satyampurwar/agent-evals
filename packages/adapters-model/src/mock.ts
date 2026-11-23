@@ -1,3 +1,11 @@
+/**
+ * Offline stub model for tests and local smoke runs.
+ *
+ * Always returns the same text answer and never calls the network. Useful when you need a real
+ * harness loop without spending tokens or depending on OpenRouter. Prefer `ScriptedModelAdapter`
+ * when the test must assert tool-calling multi-step behaviour.
+ */
+
 import type { ModelAdapter, ModelRequest, ModelResponse } from './types.js';
 
 /** Deterministic, offline model for CI and local runs. Always replies with `response`. */

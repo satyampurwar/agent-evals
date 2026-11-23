@@ -1,9 +1,18 @@
+/**
+ * State-check grader — assert files left in the sandbox after the agent stops.
+ *
+ * Use when success is about side effects (wrote the right file, JSON field, etc.) rather than the
+ * final answer text. Paths are confined with `resolveInSandbox`. The runner calls this before
+ * sandbox cleanup so checks still see the agent's files.
+ */
+
 import { readFile, stat } from 'node:fs/promises';
 import { isDeepStrictEqual } from 'node:util';
 import type { StateCheck } from '@agent-evals/domain';
 import { resolveInSandbox } from '@agent-evals/sandbox';
 import type { GraderOutcome } from './exact-match.js';
 
+/** Per-path detail included in the grade `details` field. */
 export interface StateCheckDetail {
   path: string;
   passed: boolean;

@@ -1,7 +1,8 @@
-"""Turn a finished Hermes conversation into trace events (domain `TraceEventSchema` shapes).
+"""Convert a finished Hermes message list into domain-shaped TraceEvent dicts.
 
-The message list is the source of truth for order, arguments and results. The callbacks supply the
-timestamps: when each model call started and when each tool call started and finished.
+The Nest/runner side expects the same event types the baseline harness emits
+(message, tool_call, tool_result, memory_*, skill_invoke, step_boundary, …).
+Message order is authoritative; callback maps supply timestamps for each step/tool.
 """
 
 from __future__ import annotations

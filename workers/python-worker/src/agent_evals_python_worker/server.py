@@ -1,3 +1,15 @@
+"""FastAPI HTTP surface for the Hermes worker (separate OS process from Nest/Node).
+
+Architecture for newcomers:
+  1. A trial config with harness.id == "hermes" makes the Node side use HermesHarness.
+  2. HermesHarness HTTP-POSTs one RunTrialRequest to this app's /run-trial.
+  3. We run Hermes Agent for that trial (see hermes_runner) and return RunTrialResponse
+     (final answer, usage, step count, trace-shaped events).
+  4. Graders and persistence stay on the TypeScript side — this worker only "acts".
+
+Port default: 8001. Health: GET /health.
+"""
+
 import truststore
 from fastapi import FastAPI, HTTPException
 
@@ -13,12 +25,16 @@ app = FastAPI(title="agent-evals-python-worker")
 
 @app.get("/health")
 def health() -> dict[str, object]:
+    """Liveness probe for compose / local smoke checks."""
     return {"ok": True, "worker": "python"}
 
 
 @app.post("/run-trial", response_model=RunTrialResponse)
 def run_trial_route(req: RunTrialRequest) -> RunTrialResponse:
-    # Sync on purpose: FastAPI runs it in a worker thread, and Hermes's loop is blocking.
+    """Run one Hermes trial for the JSON body Nest/HermesHarness sent.
+
+    Sync on purpose: FastAPI runs it in a worker thread, and Hermes's loop is blocking.
+    """
     try:
         return run_trial(req)
     except MissingApiKeyError as err:

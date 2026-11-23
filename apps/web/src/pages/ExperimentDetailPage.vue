@@ -1,3 +1,10 @@
+<!--
+  Route: /experiments/:id — live status, start button, trial table, CSV export.
+
+  `defineProps` receives `:id` from the router (`props: true` in router.ts).
+  While status is "running", a timer polls the API; `onBeforeUnmount` clears it
+  so navigation away does not leak intervals.
+-->
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { RouterLink } from 'vue-router';

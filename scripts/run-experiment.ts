@@ -1,19 +1,21 @@
 /**
- * Runs the pre-registered memory A/B experiment (see EXPERIMENT.md) through the API.
+ * CLI: drive the pre-registered memory A/B experiment end-to-end via the HTTP API.
+ *
+ * When to run: after the API, queue worker, and (if using Hermes) Python worker are up, and
+ * tasks are seeded. Use `--dry-run` first to print the plan without creating anything.
+ * See EXPERIMENT.md for the scientific pre-registration this script implements.
+ *
+ * What it does: creates/reuses the two configs (mem-off vs mem-on), creates one experiment
+ * over the chosen task groups, starts it, polls until terminal status, then writes
+ * compare.json / export.json / export.csv under results/<name>/ and prints a summary.
  *
  *   npx tsx scripts/run-experiment.ts --dry-run
  *   npx tsx scripts/run-experiment.ts --name memory-ab --n 10 --configs mem-off,mem-on --tasks memory,control
- *   npx tsx scripts/run-experiment.ts --resume <experimentId>   # re-collect results only; starts no trials
+ *   npx tsx scripts/run-experiment.ts --resume <experimentId>   # re-collect only; starts no trials
  *
- * What it does: creates (or reuses) the two configs, creates one experiment over the chosen task groups,
- * starts it, polls until it finishes, then writes compare.json, export.json and export.csv under
- * results/<name>/ and prints the summary.
- *
- * The task groups and the two configs are fixed here on purpose: the pre-registration names them, and a
- * run must not change them. Change EXPERIMENT.md and this file together, and record the change.
- *
- * Env: API_URL (default http://localhost:3000). OPENROUTER_API_KEY is not needed here; the API and the
- * worker use it. The price list is read from OpenRouter's public model list, to turn usage into cost.
+ * Task groups and arms are fixed on purpose (pre-registration). Change EXPERIMENT.md and
+ * this file together. Env: API_URL (default http://localhost:3000). OPENROUTER_API_KEY is
+ * not needed here — the API/worker use it. Cost uses OpenRouter's public model price list.
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';

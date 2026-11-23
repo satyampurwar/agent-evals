@@ -1,3 +1,10 @@
+<!--
+  Route: /configs — list existing agent configs and create a new one.
+
+  A "config" is harness + model settings (memory on/off, tools, budgets) reused
+  across experiments. Form state uses `reactive()`; `buildConfigInput` validates
+  before POST /configs.
+-->
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue';
 import type { Config } from '@agent-evals/domain';

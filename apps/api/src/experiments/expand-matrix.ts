@@ -1,6 +1,16 @@
+/**
+ * Pure helpers that turn an experiment plan into concrete trial slots.
+ *
+ * Example: 5 tasks × 2 configs × nTrials=10 → 100 PlannedTrial objects.
+ * Each gets a deterministic `seed` (hash of identity) so retries / re-runs of the
+ * same cell stay reproducible when the harness/model uses the seed.
+ *
+ * No I/O here — ExperimentsService.start persists the result as TrialEntity rows.
+ */
 import { sha256Hex } from '../common/canonical-json.js';
 import type { ConfigRef, TaskRef } from '../entities/experiment.entity.js';
 
+/** One cell of the experiment matrix, before it becomes a DB row. */
 export interface PlannedTrial {
   taskId: string;
   taskVersion: string;

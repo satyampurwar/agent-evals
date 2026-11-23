@@ -1,3 +1,18 @@
+/**
+ * Trial lifecycle orchestrator for agent-evals.
+ *
+ * A **trial** is one (task × config × trialIndex) run. This module is what BullMQ workers call
+ * after dequeuing a trial: it does not talk to NestJS or the DB itself. The flow is:
+ *
+ * 1. **Preflight** — refuse to start if the agent or judge model has no list price
+ * 2. **Sandbox** — create a fresh temp directory and write `task.setup.files`
+ * 3. **Harness** — run the agent loop (`baseline` or `hermes`) with a `ModelAdapter`, budgets, and tools
+ * 4. **Grade** — run each grader against the final answer / sandbox (before cleanup)
+ * 5. **Cleanup** — delete the sandbox; return status, metrics, grade, and the append-only trace
+ *
+ * Trial-level problems become a `RunTrialResult` with `status` / `error` — this function does not throw for those.
+ */
+
 import { costUsd, unpricedModels } from '@agent-evals/domain';
 import type { GradeResult, PriceTable, Task, TokenUsage, Trace } from '@agent-evals/domain';
 import { createTrialMemory } from '@agent-evals/adapters-harness';
@@ -9,6 +24,7 @@ import { createSandbox, materializeFiles } from '@agent-evals/sandbox';
 import type { Sandbox } from '@agent-evals/sandbox';
 import { createTraceBuffer } from '@agent-evals/trace';
 
+/** Step / token / wall-clock caps copied from the config's harness settings for one trial. */
 export interface TrialBudgets {
   maxSteps: number;
   maxTokens: number;
@@ -16,6 +32,7 @@ export interface TrialBudgets {
   timeoutMs: number;
 }
 
+/** Everything needed to execute one trial without touching the API or database. */
 export interface RunTrialInput {
   trialId: string;
   task: Task;
@@ -46,12 +63,14 @@ export interface RunTrialInput {
  */
 export type TrialStatus = 'succeeded' | 'failed' | 'timeout';
 
+/** Structured failure info persisted on the trial when status is not a clean success. */
 export interface TrialError {
   code: string;
   message: string;
   retryable: boolean;
 }
 
+/** Outcome of `runTrial`: status, grade, metrics, and the full in-memory trace. */
 export interface RunTrialResult {
   status: TrialStatus;
   /** True only for a succeeded trial whose graders all passed. */
@@ -214,6 +233,7 @@ function estimateCost(
   );
 }
 
+/** Failed result when a required model id is missing from the price table (no sandbox was created). */
 function priceMissingResult(trialId: string, unpriced: string[], latencyMs: number): RunTrialResult {
   return {
     status: 'failed',
@@ -239,6 +259,10 @@ function priceMissingResult(trialId: string, unpriced: string[], latencyMs: numb
   };
 }
 
+/**
+ * Runs every grader listed on the task. All must pass (`all_must_pass`).
+ * Appends each `llm_judge` call's usage to `judgeCalls` for cost metering.
+ */
 async function gradeTask(
   task: Task,
   finalAnswer: string,
@@ -310,6 +334,7 @@ async function gradeTask(
   return { passed, score: passed ? 1 : 0, graderResults, aggregatePolicy: 'all_must_pass' };
 }
 
+/** Resolves with `TIMED_OUT` if `work` does not finish within `ms` (does not cancel `work`). */
 async function withTimeout<T>(work: Promise<T>, ms: number): Promise<T | typeof TIMED_OUT> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   const expired = new Promise<typeof TIMED_OUT>((resolve) => {
@@ -323,6 +348,7 @@ async function withTimeout<T>(work: Promise<T>, ms: number): Promise<T | typeof 
   }
 }
 
+/** Most recent `error` event message in the trace, if any. */
 function lastErrorMessage(events: Trace['events']): string | undefined {
   for (let i = events.length - 1; i >= 0; i--) {
     const e = events[i];
@@ -331,6 +357,7 @@ function lastErrorMessage(events: Trace['events']): string | undefined {
   return undefined;
 }
 
+/** Maps thrown errors into the trial error shape (`RunnerError` keeps its code / retryable flag). */
 function toTrialError(err: unknown): TrialError {
   if (err instanceof RunnerError) {
     return { code: err.code, message: err.message, retryable: err.retryable };

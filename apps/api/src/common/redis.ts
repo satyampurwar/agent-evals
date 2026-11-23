@@ -1,3 +1,9 @@
+/**
+ * Parse `REDIS_URL` into the `{ host, port, ... }` object BullMQ expects.
+ *
+ * Docker Compose typically sets REDIS_URL=redis://redis:6379; local default is localhost.
+ * BullMQ uses Redis as its job store — this helper is only about connection config.
+ */
 export interface RedisConnectionOptions {
   host: string;
   port: number;

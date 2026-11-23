@@ -1,25 +1,25 @@
 /**
- * Run one trial end-to-end: task -> sandbox -> harness -> graders -> trace.json + result.json.
- * The pipeline itself lives in @agent-evals/runner (the API worker uses it too).
+ * CLI: run a single eval trial locally, without the Nest API or database.
  *
- * Usage:
+ * When to run: while developing a task, harness flag, or grader — faster feedback than a
+ * full experiment. The same pipeline (`@agent-evals/runner`) powers the API queue worker.
+ *
+ * What it does: load a task JSON → create sandbox → run harness + model → grade → write
+ * trace.json and result.json under a temp dir, then print PASS/FAIL and metrics.
+ *
  *   npx tsx scripts/run-one-trial.ts tasks/deterministic/01_add.json
  *   npx tsx scripts/run-one-trial.ts tasks/deterministic/01_add.json --model openrouter:openai/gpt-4.1-mini --harness baseline
  *   npx tsx scripts/run-one-trial.ts tasks/deterministic/02_write_answer.json --script fixtures/scripted/write_answer.json
  *   npx tsx scripts/run-one-trial.ts tasks/discriminating/memory_recall_client_01.json --memory --model openrouter:openai/gpt-4.1-mini
  *   npx tsx scripts/run-one-trial.ts tasks/discriminating/skill_csv_sum_01.json --skill csv_summary --model openrouter:openai/gpt-4.1-mini
  *
- * Config flags (the API reads the same settings from the config document):
- *   --memory                     enable memory_read / memory_write (trial memory starts from task.setup.memory)
+ * Config flags (API configs expose the same knobs):
+ *   --memory                     enable memory tools (seeded from task.setup.memory)
  *   --skill <id>                 enable a skill, e.g. csv_summary (repeatable)
- *   --max-tokens <n>             trial token budget, prompt + completion (default 256)
+ *   --max-tokens <n>             prompt + completion budget (default 256)
  *
- * Model selection (pick one):
- *   --model <provider:modelId>   e.g. openrouter:openai/gpt-4.1-mini (live), mock:any (offline "42")
- *   --script <responses.json>    replay a fixed ModelResponse[] file (offline)
- *   (neither)                    mock model answering "42"
- *
- * Exit codes: 0 PASS, 1 FAIL (agent answered, graders said no) or TIMEOUT, 2 ERROR (infrastructure).
+ * Model (pick one): --model provider:modelId | --script responses.json | neither → mock "42"
+ * Exit: 0 PASS, 1 FAIL/TIMEOUT, 2 ERROR (infra / bad args).
  */
 import { randomUUID } from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';

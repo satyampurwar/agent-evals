@@ -1,6 +1,12 @@
 import { z } from 'zod';
 
 /**
+ * Cost metering helpers for agent-evals trials.
+ *
+ * After a trial (and any `llm_judge` calls), the runner converts token usage into an
+ * `estimatedCostUsd` using list prices. That number is stored on the trial metrics and used in
+ * A/B cost summaries — it is an estimate for comparison, not a provider invoice.
+ *
  * List prices for the models the platform meters, in USD per million tokens. The table lives in prices.json at
  * the repo root (PRICE_TABLE_PATH overrides it). The estimate uses list prices only: it does not apply prompt-cache
  * discounts, so it overstates the provider's bill when cache hits happen (see COST.md).

@@ -1,18 +1,22 @@
 /**
- * Checks the task set in tasks/ against the Phase 8 rules. Exits 1 on any problem.
+ * CLI: static quality gate for the on-disk task catalog (`tasks/`).
+ *
+ * When to run: after adding/editing a task JSON, or in CI before merge. Does not need the
+ * API running — it only reads files and shared packages.
+ *
+ * What it does: loads `tasks/manifest.json`, validates each task, and checks Phase-8 catalog
+ * rules. Exits 1 on any problem, 0 when the set is OK.
  *
  *   npx tsx scripts/validate-task-set.ts
  *
- * Rules:
- * - every task in tasks/manifest.json is valid against the domain TaskSchema
- * - every .json file under tasks/ is listed in the manifest (no orphans)
- * - task ids are unique
- * - at least MIN_TASKS tasks
+ * Rules checked:
+ * - every manifest entry validates against domain TaskSchema
+ * - every .json under tasks/ (except manifest) is listed (no orphans)
+ * - unique task ids; at least MIN_TASKS tasks
  * - every grader type in GRADER_TYPES appears at least once
- * - at least one memory-tagged task and one skill-tagged task exist
- * - memory and skill tasks name what they discriminate on (expectedDiscriminators)
- * - toolsAllowed only names tools that exist
- * - state_check graders have at least one check; unit_test graders have a command
+ * - ≥1 memory-tagged and ≥1 skill-tagged task; discriminators listed
+ * - toolsAllowed only names known tools; grader fields are complete
+ * - every llm_judge model has a price in prices.json
  */
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';

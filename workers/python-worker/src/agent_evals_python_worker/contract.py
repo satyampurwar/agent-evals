@@ -1,4 +1,13 @@
-"""HTTP contract between the Nest/Node side and this worker. Mirrored by `packages/adapters-harness/src/hermes.ts`."""
+"""Pydantic request/response models for POST /run-trial.
+
+This is the shared HTTP contract between TypeScript HermesHarness
+(`packages/adapters-harness/src/hermes.ts`) and this Python worker. Field names
+are camelCase on purpose so both sides serialize the same JSON without renaming.
+
+A "trial" here is one task run: prompt + budgets + allowed tools + sandbox path.
+The worker returns the agent's final answer, stop reason, token usage, and a list
+of trace events the Node side validates against domain TraceEventSchema.
+"""
 
 from typing import Literal
 

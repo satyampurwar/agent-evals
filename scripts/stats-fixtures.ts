@@ -1,11 +1,18 @@
 /**
- * Checkpoint 10 fixtures for the comparison statistics.
+ * CLI: check (or regenerate) the canned A/B comparison fixtures used by `@agent-evals/stats`.
  *
- *   npx tsx scripts/stats-fixtures.ts             check both fixtures (exit 0 when both behave as expected)
- *   npx tsx scripts/stats-fixtures.ts --generate  rewrite fixtures/stats/*.json from the seeds below
+ * When to run: after changing compareConfigs / McNemar / CI math — confirms known synthetic
+ * datasets still produce the expected verdicts. No API or model needed.
  *
- * known_gap: A passes ~90% of trials, B ~40%. The gap is real, so the comparison should call A better.
- * coin_flip: both sides pass ~50% at random. Any difference is noise, so the comparison should say so.
+ * What it does (default): load fixtures/stats/{known_gap,coin_flip}.json, run compareConfigs,
+ * print pass rates / p-values / verdict, exit 0 only if both match expectations.
+ * With --generate: rewrite those JSON files from the seeds below.
+ *
+ *   npx tsx scripts/stats-fixtures.ts             # verify
+ *   npx tsx scripts/stats-fixtures.ts --generate  # rewrite fixtures
+ *
+ * known_gap: A ~90% vs B ~40% → should verdict a_better (real gap).
+ * coin_flip: both ~50% random → should verdict likely_noise.
  */
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';

@@ -1,10 +1,26 @@
+/**
+ * BullMQ queue wrapper for trial jobs.
+ *
+ * BullMQ (built on Redis) = durable job queue:
+ * - Producer: TrialQueue.enqueue (called when an experiment starts)
+ * - Consumer: TrialProcessor (`@Processor(TRIAL_QUEUE)`) in ExecutionModule
+ *
+ * Job payload is tiny (`{ trialId }`); the worker loads task/config from Postgres.
+ * `jobId: trialId` makes enqueue idempotent — adding the same trial twice does not
+ * create a second job. Retries use exponential backoff (see defaultJobOptions).
+ *
+ * This file also exports `TrialQueueModule` so feature modules can import the queue
+ * without duplicating Bull registration.
+ */
 import { Injectable, Module } from '@nestjs/common';
 import { BullModule, InjectQueue } from '@nestjs/bullmq';
 import type { Queue } from 'bullmq';
 
+/** Redis queue name shared by producer and consumer. */
 export const TRIAL_QUEUE = 'trials';
 export const TRIAL_JOB = 'trial';
 
+/** Minimal job payload — look up everything else from the TrialEntity row. */
 export interface TrialJobData {
   trialId: string;
 }

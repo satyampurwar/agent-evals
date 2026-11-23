@@ -1,8 +1,18 @@
+/**
+ * Per-trial filesystem isolation for agent-evals.
+ *
+ * Each trial gets a fresh temp directory so agents cannot see other trials' files, and graders
+ * inspect only that directory. The runner creates the sandbox, materializes `task.setup.files`,
+ * passes `dir` to the harness, grades, then calls `cleanup`. Path traversal prevention lives in
+ * `paths.ts` (`resolveInSandbox`).
+ */
+
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { resolveInSandbox } from './paths.js';
 
+/** Handle for one trial's private working directory. */
 export interface Sandbox {
   /** Absolute path of the trial's private working directory. */
   readonly dir: string;

@@ -1,3 +1,11 @@
+<!--
+  Route: /tasks — read-only catalog of seeded eval tasks.
+
+  Vue notes: `<script setup>` is Composition API sugar (no export default).
+  `ref()` holds reactive state; `onMounted` runs once after the component appears
+  in the DOM (good place for the initial API fetch). Template binds with {{ }}
+  and v-if / v-for.
+-->
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import type { Task } from '@agent-evals/domain';

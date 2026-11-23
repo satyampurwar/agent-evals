@@ -1,12 +1,16 @@
 /**
- * Isolation demo (Phase 4 checkpoint).
+ * CLI: demo that two trials cannot see each other's sandbox files (Phase 4 checkpoint).
  *
- *  Trial A writes secret.txt in its sandbox.
- *  Trial B (fresh sandbox) tries to read it by name, then via a ../ path into A's sandbox.
- *  Both attempts must fail, and B's sandbox must not contain the file.
+ * When to run: after changing sandbox path rules or file tools — proves isolation without
+ * needing the API. Uses a scripted (fake) model so no API key is required.
  *
- * Exits 0 when isolation holds, 1 if B can see A's data.
- * Usage: npx tsx scripts/demo-isolation.ts
+ * What it does:
+ *   1. Trial A writes secret.txt in its sandbox.
+ *   2. Trial B (fresh sandbox) tries to read it by name, then via a ../ path into A's dir.
+ *   3. Both reads must fail; B's sandbox must not contain the file; secret must not leak into B's trace.
+ *
+ * Exit: 0 isolation OK, 1 leak detected, 2 unexpected error.
+ *   npx tsx scripts/demo-isolation.ts
  */
 import { existsSync } from 'node:fs';
 import { join, relative } from 'node:path';

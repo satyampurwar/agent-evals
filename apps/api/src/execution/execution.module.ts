@@ -1,3 +1,14 @@
+/**
+ * Nest module for background trial execution.
+ *
+ * `TypeOrmModule.forFeature([...])` registers repositories for these entities in
+ * *this* module's DI scope (root forRoot already registered the connection).
+ *
+ * Providers:
+ * - TrialExecutor — always registered (needed to run trials)
+ * - TrialProcessor — only if TRIAL_WORKER is not `off`, so the HTTP API can refuse
+ *   to consume jobs while `worker.ts` does
+ */
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { TraceStoreModule } from '../common/trace-store.module.js';

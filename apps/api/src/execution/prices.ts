@@ -1,3 +1,10 @@
+/**
+ * Loads `prices.json` for cost estimates during trial execution.
+ *
+ * Every model a trial might call (agent + llm_judge) must appear in this table or
+ * `runTrial` fails early with `price_missing` — so experiments cannot silently
+ * omit cost. Cached in-process after the first successful parse.
+ */
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { PriceTableSchema } from '@agent-evals/domain';

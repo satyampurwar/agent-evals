@@ -1,3 +1,10 @@
+<!--
+  Route: /trials/:id — single trial detail: outcome, metrics, grader notes, trace timeline.
+
+  Loads trial + optional trace from the API. Local notes are stored in
+  localStorage only (never sent to the server). `timeline()` turns TraceEvent[]
+  into display rows.
+-->
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue';
 import { RouterLink } from 'vue-router';

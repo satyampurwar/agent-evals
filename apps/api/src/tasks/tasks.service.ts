@@ -1,3 +1,14 @@
+/**
+ * Business logic for the task catalog.
+ *
+ * `@InjectRepository(TaskEntity)` is TypeORM+Nest: Nest injects a Repository that can
+ * `find` / `save` / run transactions against the `tasks` table. Services throw Nest
+ * HTTP exceptions (`NotFoundException`, `ConflictException`, …) which controllers
+ * do not catch — Nest turns them into the right status codes automatically.
+ *
+ * Import rule of thumb: same (id, version) + same content = no-op; same version +
+ * different content = conflict (bump the version in the JSON file instead).
+ */
 import { ConflictException, BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import type { Task } from '@agent-evals/domain';

@@ -1,3 +1,12 @@
+/**
+ * OpenRouter model adapter — production LLM client for agent-evals.
+ *
+ * [OpenRouter](https://openrouter.ai) exposes many models behind one OpenAI-compatible Chat
+ * Completions API. We use the official `openai` SDK pointed at OpenRouter's base URL, so tool
+ * calling and JSON mode work the same as with OpenAI. The harness never talks HTTP itself; it
+ * calls `ModelAdapter.complete`, and this class maps our internal message/tool shapes to the wire format.
+ */
+
 import OpenAI from 'openai';
 import type {
   ChatCompletionMessageParam,
@@ -12,8 +21,10 @@ import type {
   ToolSpec,
 } from './types.js';
 
+/** Default OpenRouter Chat Completions endpoint (OpenAI-compatible). */
 export const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
 
+/** Construction options; `apiKey` usually comes from `OPENROUTER_API_KEY` via the registry. */
 export interface OpenRouterOptions {
   apiKey: string;
   baseURL?: string;
@@ -54,6 +65,7 @@ export function toWireMessage(m: ChatMessage): ChatCompletionMessageParam {
   }
 }
 
+/** Maps an internal tool spec to OpenAI `function` tool format. */
 export function toWireTool(t: ToolSpec): ChatCompletionTool {
   return {
     type: 'function',
@@ -78,6 +90,7 @@ export function parseToolArguments(raw: string): Record<string, unknown> {
   }
 }
 
+/** Live `ModelAdapter` that calls OpenRouter (or any OpenAI-compatible base URL). */
 export class OpenRouterAdapter implements ModelAdapter {
   readonly id = 'openrouter';
   private readonly client: OpenAI;

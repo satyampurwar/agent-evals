@@ -1,3 +1,20 @@
+/**
+ * A/B comparison of two agent configs on the same tasks.
+ *
+ * After an experiment finishes, this module turns scored trials into a verdict: is config A better,
+ * B better, or is the difference likely noise? Analysis is **task-first** (macro pass rates and a
+ * paired bootstrap CI over tasks) because multiple trials of one task are not independent. McNemar
+ * supplies a p-value on paired trials; the published verdict follows the delta confidence interval.
+ *
+ * High-level outputs of `compareConfigs`:
+ * - macro pass rate per side + bootstrap CIs / paired delta
+ * - McNemar on paired (task, trialIndex) outcomes
+ * - per-task deltas and a coarse verdict (a_better / b_better / likely_noise / …)
+ * - mean latency, tokens, cost beside the quality numbers
+ *
+ * Infra failures (`failed` / `cancelled` / `pending`) are excluded from pass rates.
+ * Pure functions — ExperimentsService adapts DB rows then calls into this package.
+ */
 import { bootstrapMeanCI, pairedBootstrapDelta, DEFAULT_ALPHA, DEFAULT_RESAMPLES, DEFAULT_SEED } from './bootstrap.js';
 import { mcNemar } from './mcnemar.js';
 import { passRate, type Interval } from './pass-rate.js';

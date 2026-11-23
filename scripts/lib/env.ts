@@ -1,3 +1,13 @@
+/**
+ * Shared helper for CLI scripts under `scripts/`.
+ *
+ * Why it exists: many scripts need secrets (e.g. OPENROUTER_API_KEY) and URLs (API_URL).
+ * Locally those live in the repo-root `.env` file. CI often injects the same keys as real
+ * environment variables instead. This helper loads the file when present, without overriding
+ * anything already set in the shell.
+ *
+ * Not a CLI itself — import `loadDotEnv()` near the top of a script before reading `process.env`.
+ */
 import { existsSync } from 'node:fs';
 
 /**

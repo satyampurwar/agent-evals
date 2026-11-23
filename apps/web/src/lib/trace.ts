@@ -1,3 +1,9 @@
+/**
+ * Turn a trial's raw TraceEvent[] into rows the Trial page can render as a timeline.
+ *
+ * A "trace" is the ordered log of what the agent did (messages, tool calls, memory,
+ * skills, errors). This module only formats for display — it does not fetch or grade.
+ */
 import type { TraceEvent } from '@agent-evals/domain';
 
 export type Tone = 'user' | 'assistant' | 'tool' | 'memory' | 'skill' | 'step' | 'error';

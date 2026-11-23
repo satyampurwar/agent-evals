@@ -1,3 +1,10 @@
+<!--
+  Route: /experiments — list experiments and create a new A×B×N trial matrix.
+
+  An experiment picks task ids × config ids × nTrials. After create, the router
+  navigates to the detail page. `computed` derives planned trial count and the
+  latest-version task picker from reactive form state.
+-->
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
 import { useRouter, RouterLink } from 'vue-router';

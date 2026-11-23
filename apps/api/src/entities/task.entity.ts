@@ -1,3 +1,14 @@
+/**
+ * TypeORM entity = one Postgres table row shape.
+ *
+ * TypeORM maps decorated classes to SQL. `@Entity('tasks')` → table `tasks`.
+ * `@PrimaryColumn` / `@Column` define columns. The full task JSON lives in
+ * `document` (jsonb) so the API can return the Zod-validated Task without
+ * flattening every field into columns.
+ *
+ * Immutability: (id, version) is never rewritten with different content. Experiments
+ * pin a version at create time so re-seeding later cannot change past runs.
+ */
 import { Column, CreateDateColumn, Entity, PrimaryColumn } from 'typeorm';
 import type { Task } from '@agent-evals/domain';
 

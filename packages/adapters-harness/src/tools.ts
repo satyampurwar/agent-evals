@@ -1,3 +1,15 @@
+/**
+ * Tools the baseline agent can call during a trial.
+ *
+ * Tool-calling agents do not run arbitrary code in the model; they request named functions
+ * (`write_file`, `read_file`, `memory_read`, …). This module defines the OpenAI-style tool specs,
+ * resolves which ids a trial may use (config ∩ task), and executes calls against the sandbox.
+ *
+ * **Path safety:** every filesystem tool goes through `resolveInSandbox` so `../` or absolute paths
+ * cannot escape the trial directory. Failures return `{ ok: false }` so the model can recover
+ * instead of crashing the harness.
+ */
+
 import { readFile, readdir, mkdir, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import type { ToolCall, ToolSpec } from '@agent-evals/adapters-model';
@@ -96,6 +108,7 @@ export const TOOL_SPECS: ToolSpec[] = [
   },
 ];
 
+/** Result of one tool execution; `ok: false` means the model gets an error payload, not a thrown exception. */
 export interface ToolOutcome {
   ok: boolean;
   result: unknown;
@@ -106,6 +119,7 @@ export function specsFor(toolIds: readonly string[]): ToolSpec[] {
   return TOOL_SPECS.filter((s) => toolIds.includes(s.name));
 }
 
+/** Config-side tool settings used by `resolveToolIds` before intersecting with `task.toolsAllowed`. */
 export interface ToolSettings {
   tools: readonly string[];
   memoryEnabled: boolean;

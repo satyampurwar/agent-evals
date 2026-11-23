@@ -1,3 +1,9 @@
+/**
+ * Adapts DB trial rows into the shape `@agent-evals/stats` expects for A/B compare.
+ *
+ * Stats package is pure (no Nest/TypeORM). ExperimentsService loads rows, maps each
+ * config through `toSideInput`, then calls `compareConfigs(a, b)`.
+ */
 import type { ScoredTrial, SideInput } from '@agent-evals/stats';
 
 /** The columns of a trial row that the comparison reads. */

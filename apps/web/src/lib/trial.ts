@@ -1,3 +1,10 @@
+/**
+ * Map a trial's raw API status/passed fields into a single UI "outcome" label.
+ *
+ * Important distinction: `failed` here means the agent answered and graders said
+ * no (scored failure). Infrastructure problems use status `failed` on the API
+ * but surface as outcome `infra` so the UI does not mix them up.
+ */
 import type { TrialView } from '../api/endpoints';
 
 export type Outcome = 'passed' | 'failed' | 'timeout' | 'infra' | 'cancelled' | 'pending';

@@ -1,5 +1,9 @@
 /**
- * Rubrics for the LLM judge. A task's `llm_judge` grader names one by `rubricId`.
+ * Built-in rubrics for the LLM judge grader.
+ *
+ * A task's `llm_judge` grader names one by `rubricId` (e.g. `summary_v1`). Each rubric lists
+ * weighted criteria; some are `required` so a single miss fails the task even if the weighted mean
+ * looks high. Edit this catalog carefully — changing weights changes historical grade semantics.
  *
  * Scoring (see llm-judge.ts):
  * - the judge scores each criterion from 0.0 to 1.0
@@ -11,6 +15,7 @@
  * 0.7 threshold would let a missing requirement pass when the other criteria carry enough weight.
  */
 
+/** One scoring dimension the judge fills in (0–1). */
 export interface RubricCriterion {
   name: string;
   description: string;
@@ -18,6 +23,7 @@ export interface RubricCriterion {
   required: boolean;
 }
 
+/** Named rubric referenced by `llm_judge.rubricId`. */
 export interface Rubric {
   id: string;
   description: string;
@@ -193,10 +199,12 @@ const rubrics: Rubric[] = [
 
 const byId = new Map(rubrics.map((r) => [r.id, r]));
 
+/** Looks up a rubric by id; `undefined` if the task names an unknown rubric. */
 export function getRubric(id: string): Rubric | undefined {
   return byId.get(id);
 }
 
+/** Ids of every built-in rubric (for CLIs / validation). */
 export function listRubricIds(): string[] {
   return rubrics.map((r) => r.id);
 }

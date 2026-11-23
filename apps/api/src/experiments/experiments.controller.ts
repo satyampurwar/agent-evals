@@ -1,3 +1,15 @@
+/**
+ * HTTP routes under `/experiments` — the main orchestration surface.
+ *
+ * Lifecycle the UI/scripts follow:
+ * 1. POST /experiments          → create (status=pending); pins task/config versions
+ * 2. POST /experiments/:id/start → expand matrix into trial rows + enqueue BullMQ jobs (202)
+ * 3. GET  /experiments/:id/status → poll counts while workers run
+ * 4. GET  /experiments/:id/compare?a=&b= → stats package compares two configs
+ * 5. GET  /experiments/:id/export → JSON or CSV download of all trials
+ *
+ * `@HttpCode(202)` = Accepted: work continues asynchronously after the response.
+ */
 import {
   BadRequestException,
   Body,
@@ -32,7 +44,10 @@ export class ExperimentsController {
     return this.experiments.toView(experiment);
   }
 
-  /** Queues the trials. Execution is not implemented until the worker phase. */
+  /**
+   * Materializes trial rows and enqueues one BullMQ job per trial.
+   * Returns immediately (202); workers execute trials in the background.
+   */
   @Post(':id/start')
   @HttpCode(202)
   async start(@Param('id', ParseUUIDPipe) id: string) {

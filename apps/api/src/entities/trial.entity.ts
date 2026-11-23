@@ -1,3 +1,18 @@
+/**
+ * One trial = one sandboxed agent run for a single (experiment, task, config, trialIndex).
+ *
+ * Lifecycle statuses (also in domain TrialSchema):
+ *   queued → running → succeeded | failed | timeout | cancelled
+ *
+ * Outcomes live on the row (`passed`, `score`, `grade`, `metrics`, `error`).
+ * The full step-by-step transcript is NOT in Postgres — it is a JSON file; `traceUri`
+ * is the key under the TraceStore root (see common/trace-store.ts).
+ *
+ * TypeORM notes:
+ * - `@ManyToOne` links to ExperimentEntity; CASCADE delete removes trials with the experiment
+ * - `@Unique([...])` enforces one row per matrix cell
+ * - `Relation<>` avoids circular runtime import issues between entity files
+ */
 import {
   Column,
   Entity,

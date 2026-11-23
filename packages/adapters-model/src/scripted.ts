@@ -1,3 +1,11 @@
+/**
+ * Scripted offline model for unit tests of the harness / runner.
+ *
+ * Unlike `MockModelAdapter` (one fixed string), this replays a prepared list of full
+ * `ModelResponse`s — including tool calls — so you can drive a multi-step agent loop without
+ * a live LLM. Every request is recorded on `requests` for assertions.
+ */
+
 import type { ModelAdapter, ModelRequest, ModelResponse } from './types.js';
 
 /**

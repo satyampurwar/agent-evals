@@ -1,3 +1,10 @@
+<!--
+  Route: /experiments/:id/compare — statistical A vs B comparison for two configs.
+
+  Calls GET /experiments/:id/compare?a=&b= and renders pass rates, delta CI,
+  McNemar p-value, and per-task rows. Pick two different config ids from the
+  experiment before running.
+-->
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { RouterLink } from 'vue-router';

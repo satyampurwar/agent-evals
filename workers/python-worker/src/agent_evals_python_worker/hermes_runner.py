@@ -1,7 +1,9 @@
-"""Run one trial with Hermes Agent as the harness.
+"""Run one eval trial by driving the Hermes Agent library (the "harness").
 
-Hermes owns the model call and the tool-calling loop. We own everything around it: the tools (same names,
-sandboxed, see `tools.py`), the memory (seeded per trial), the budgets, and the trace events.
+Called from FastAPI when HermesHarness POSTs /run-trial. Hermes owns the model
+call and tool-calling loop; we own sandboxed tools (`tools.py`), per-trial
+memory, budgets (steps / tokens / timeout), and converting the conversation into
+domain-shaped trace events (`events.py`).
 
 Process-wide state, and why it is safe:
 - Hermes keeps one tool registry per process. We register our six tools once, under the same names the
@@ -175,6 +177,13 @@ def _stop_reason(
 def run_trial(
     req: RunTrialRequest, settings: Settings | None = None
 ) -> RunTrialResponse:
+    """Execute one Hermes trial and return the contract response for Nest.
+
+    Registers trial state, constructs AIAgent with the request's model/budgets/
+    toolset, runs the blocking agent loop, maps the transcript to trace events,
+    then clears trial state. Raises MissingApiKeyError / ValueError for the
+    HTTP layer to turn into 500 / 400.
+    """
     settings = settings or get_settings()
     if not settings.openrouter_api_key:
         raise MissingApiKeyError(

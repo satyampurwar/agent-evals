@@ -1,3 +1,13 @@
+/**
+ * HTTP routes under `/configs` — create/list/get immutable agent configurations.
+ *
+ * `ParseUUIDPipe` rejects non-UUID `:id` values with 400 before the service runs.
+ * `@Res({ passthrough: true })` lets us set status (201 vs 200) while still returning
+ * a body through Nest's normal serialization (without taking over the whole response).
+ *
+ * Note: the web UI's Configs page creates baseline configs; Hermes/memory arms are
+ * usually created via POST /configs (see README / experiment scripts).
+ */
 import {
   Body,
   Controller,

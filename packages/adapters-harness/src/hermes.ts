@@ -1,10 +1,17 @@
-// Hermes Agent harness. Hermes runs in the Python worker (workers/python-worker), which owns the model call and
-// the tool loop. This adapter sends one trial to the worker and turns the reply into trace events. The contract
-// is documented in the worker's README and in `contract.py`.
+/**
+ * Hermes harness — HTTP client to the Python Hermes agent worker.
+ *
+ * Unlike `BaselineHarness` (which runs the tool loop in TypeScript), Hermes owns the model call and
+ * tool loop inside `workers/python-worker`. This adapter POSTs one trial payload to `/run-trial`,
+ * validates the reply, and re-emits the worker's events into the trial trace so A/B comparisons
+ * still share the same event schema. The TypeScript `input.model` is unused; Hermes talks to the
+ * LLM from Python. Contract details live in the worker README and `contract.py`.
+ */
 import { TraceEventSchema } from '@agent-evals/domain';
 import type { Task } from '@agent-evals/domain';
 import type { HarnessAdapter, HarnessRunInput, HarnessRunOutput } from './types.js';
 
+/** Local default when `HERMES_WORKER_URL` is unset. */
 export const DEFAULT_HERMES_WORKER_URL = 'http://127.0.0.1:8001';
 
 const STOP_REASONS: readonly HarnessRunOutput['stoppedReason'][] = [
@@ -20,6 +27,7 @@ export interface HermesHarnessOptions {
   workerUrl?: string;
 }
 
+/** HarnessAdapter that delegates each trial to the Hermes Python worker over HTTP. */
 export class HermesHarness implements HarnessAdapter {
   readonly id = 'hermes';
   readonly displayName = 'Hermes Agent (Python worker)';
@@ -86,10 +94,12 @@ export class HermesHarness implements HarnessAdapter {
   }
 }
 
+/** Memory seed sent to the worker — same source the TypeScript runner uses for baseline. */
 function memorySeedOf(task: Task): Record<string, string> {
   return task.setup?.memory ?? {};
 }
 
+/** Expected JSON body from `POST /run-trial`. */
 interface HermesReply {
   finalAnswer: string;
   stoppedReason: HarnessRunOutput['stoppedReason'];
@@ -110,6 +120,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+/** Validates the worker reply shape (not Zod — keeps this adapter dependency-light). */
 function parseReply(value: unknown): HermesReply {
   if (!isRecord(value)) throw new Error('hermes worker reply is not an object');
   const { finalAnswer, stoppedReason, events, usage, stepCount } = value;

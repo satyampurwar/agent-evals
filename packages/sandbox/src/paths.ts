@@ -1,6 +1,15 @@
+/**
+ * Sandbox path safety — keep agent tool paths inside the trial directory.
+ *
+ * Agents (and task setup files) only supply relative paths. This module resolves them under
+ * `sandboxDir` and refuses absolute paths, `..` escapes, and symlinks. Without this, a tool call
+ * like `read_file("../../etc/passwd")` could leave the trial's isolation boundary.
+ */
+
 import { lstat, realpath } from 'node:fs/promises';
 import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 
+/** Thrown when a user-supplied path is empty, absolute, escapes the root, or hits a symlink. */
 export class SandboxPathError extends Error {
   constructor(message: string) {
     super(message);

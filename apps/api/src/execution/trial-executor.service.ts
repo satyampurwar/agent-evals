@@ -1,3 +1,19 @@
+/**
+ * Glue between the queue and the pure `runTrial` package.
+ *
+ * This is where the Nest/API world meets the evaluation engine:
+ * 1. Load Trial + Config + Task from Postgres
+ * 2. Build harness (`createHarness`) + model (`createModelAdapter`) + tool ids
+ * 3. Call `@agent-evals/runner` `runTrial` (sandbox → agent loop → graders)
+ * 4. Persist the JSON trace to disk (TraceStore), then write outcome columns
+ * 5. Roll up experiment status if all trials are done
+ *
+ * Idempotency: if the trial is already terminal, skip. Finalize uses a row lock so
+ * two workers cannot both mark the same trial finished.
+ *
+ * Retry policy: if `runTrial` reports a retryable error and BullMQ has attempts left,
+ * reset status to `queued` and throw so BullMQ backs off and retries.
+ */
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, Repository } from 'typeorm';
@@ -15,6 +31,7 @@ import { TaskEntity } from '../entities/task.entity.js';
 import { TrialEntity, type TrialStatus } from '../entities/trial.entity.js';
 import { countTrialsByStatus, rollupExperimentStatus } from '../experiments/experiment-status.js';
 
+/** Statuses that mean "do not run again". */
 const TERMINAL: TrialStatus[] = ['succeeded', 'failed', 'timeout', 'cancelled'];
 
 export interface ExecuteOptions {

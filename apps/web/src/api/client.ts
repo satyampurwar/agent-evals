@@ -1,4 +1,14 @@
-/** Thin fetch wrapper. Every call goes through the Vite proxy at /api (see vite.config.ts). */
+/**
+ * Low-level HTTP helper for talking to the Nest API from the browser.
+ *
+ * Browser pages cannot call `http://localhost:3000` directly during Vite dev
+ * without CORS setup. Instead every path is prefixed with `/api`, and Vite's
+ * proxy (vite.config.ts) forwards `/api/*` → the Nest server. Production builds
+ * typically use the same path prefix behind a reverse proxy.
+ *
+ * Prefer the typed helpers in `endpoints.ts` (`api.listTasks()`, …) over calling
+ * `get`/`post` here from pages.
+ */
 
 export class ApiError extends Error {
   readonly status: number;

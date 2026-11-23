@@ -1,7 +1,9 @@
-"""The platform's tools, ported from `packages/adapters-harness/src/{tools,skills,memory}.ts`.
+"""Sandboxed tools Hermes may call during a trial (files, memory, csv_summary skill).
 
-Same names, same schemas, same results, same error strings, so a task means the same thing under the
-baseline and Hermes harnesses. Only the tool-calling loop differs.
+Ported from `packages/adapters-harness/src/{tools,skills,memory}.ts` so a task
+behaves the same under the TypeScript baseline harness and this Hermes worker:
+same tool names, JSON schemas, success payloads, and error strings. Only the
+outer tool-calling loop (Hermes vs baseline) differs.
 """
 
 from __future__ import annotations

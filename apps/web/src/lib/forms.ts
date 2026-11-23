@@ -1,3 +1,10 @@
+/**
+ * Form defaults + client-side validation for Config and Experiment create UIs.
+ *
+ * Vue pages keep form state in `reactive`/`ref` objects; before POSTing, they call
+ * `buildConfigInput` / `buildExperimentInput` to turn that state into the Nest API
+ * payload (or a list of human-readable errors). Keeps validation out of the .vue files.
+ */
 import type { ConfigInput, ExperimentInput } from '@agent-evals/domain';
 
 /** Tools a config can list. These are the base tools; memory and skill tools come from their own switches. */

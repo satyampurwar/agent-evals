@@ -1,3 +1,16 @@
+/**
+ * Create/list/get configs with content-addressed deduplication.
+ *
+ * Flow for POST:
+ * 1. Hash the input (canonical JSON → SHA-256)
+ * 2. If that hash exists, return the existing row (`created: false`)
+ * 3. Else insert a new UUID row, bumping `version` per `name`
+ * 4. On a rare race (two inserts same hash), catch Postgres unique violation 23505
+ *    and return the winner
+ *
+ * Experiments store `configId` + `contentHash` so you always know exactly which
+ * settings a trial used, even if someone later creates a "same name" config.
+ */
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
@@ -6,6 +19,7 @@ import { Repository } from 'typeorm';
 import { contentHash } from '../common/canonical-json.js';
 import { ConfigEntity } from '../entities/config.entity.js';
 
+/** Postgres error code for unique_violation (contentHash UNIQUE constraint). */
 const UNIQUE_VIOLATION = '23505';
 
 export interface ConfigCreateResult {

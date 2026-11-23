@@ -1,8 +1,27 @@
 import { z } from 'zod';
 
 /**
- * Domain shapes from implementation.md §5.
- * Zod is the single source; inferred types match those interfaces.
+ * Shared domain shapes for agent-evals (implementation.md §5).
+ *
+ * **Zod** (https://zod.dev) is a runtime schema library: you declare the shape of data once,
+ * validate untrusted JSON against it, and TypeScript types are inferred with `z.infer<typeof Schema>`.
+ * That keeps API payloads, DB rows, and in-memory objects aligned without hand-written duplicate types.
+ *
+ * agent-evals compares two agent **configs** on the same **tasks**. One **trial** is a single
+ * (task × config × trialIndex) run in a fresh sandbox, then graded. An **experiment** expands the
+ * task×config×nTrials matrix into trial rows that workers execute. After each trial, a **trace**
+ * (append-only event log) and grade metrics land in storage for A/B stats.
+ *
+ * Key schemas in this file:
+ * - **Task** — prompt, optional sandbox setup files/memory, allowed tools, and a list of graders
+ * - **Config** — which harness (baseline / hermes), model provider, budgets, skills, memory
+ * - **Experiment** — named A/B run: which tasks, which configs, how many trials each
+ * - **Trial** — one matrix cell's lifecycle status, scores, token/cost metrics, trace URI
+ * - **TraceEvent** / **Trace** — what the agent said and did (messages, tool calls, memory, errors)
+ * - **GraderSpec** — discriminated union on `type` (`exact_match` | `unit_test` | `state_check` | `llm_judge`)
+ *
+ * A **discriminated union** means Zod picks the correct branch from a shared field (`type` here),
+ * so each grader shape is validated separately while still typing as one `GraderSpec`.
  */
 
 export const TaskIdSchema = z.string();
@@ -15,6 +34,7 @@ export type ConfigId = z.infer<typeof ConfigIdSchema>;
 export type ExperimentId = z.infer<typeof ExperimentIdSchema>;
 export type TrialId = z.infer<typeof TrialIdSchema>;
 
+/** One filesystem assertion used by a `state_check` grader (path relative to the sandbox). */
 export const StateCheckSchema = z.object({
   path: z.string(),
   exists: z.boolean().optional(),
@@ -29,6 +49,13 @@ export const StateCheckSchema = z.object({
 
 export type StateCheck = z.infer<typeof StateCheckSchema>;
 
+/**
+ * How a task decides pass/fail after the agent stops. Discriminated on `type`:
+ * - `exact_match` — compare the agent's final answer string to `expected`
+ * - `unit_test` — run a shell command in the sandbox; exit 0 = pass
+ * - `state_check` — assert files exist / content / JSON paths after the run
+ * - `llm_judge` — ask another model to score the answer against a named rubric
+ */
 export const GraderSpecSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('exact_match'),
@@ -55,6 +82,7 @@ export const GraderSpecSchema = z.discriminatedUnion('type', [
 
 export type GraderSpec = z.infer<typeof GraderSpecSchema>;
 
+/** Optional per-task sandbox priming before the agent starts. */
 export const TaskSetupSchema = z.object({
   files: z.record(z.string(), z.string()).optional(),
   seed: z.number().optional(),
@@ -64,6 +92,10 @@ export const TaskSetupSchema = z.object({
 
 export type TaskSetup = z.infer<typeof TaskSetupSchema>;
 
+/**
+ * A single evaluation problem: what to ask the agent, how to set up the sandbox, and how to grade.
+ * Tasks are shared across configs so A/B comparisons stay fair.
+ */
 export const TaskSchema = z.object({
   id: TaskIdSchema,
   version: z.string(),
@@ -80,6 +112,10 @@ export const TaskSchema = z.object({
 
 export type Task = z.infer<typeof TaskSchema>;
 
+/**
+ * One agent configuration under test: harness settings (tools, skills, memory, budgets) plus model choice.
+ * `contentHash` fingerprints the config body so trials stay tied to the exact settings that ran.
+ */
 export const ConfigSchema = z.object({
   id: ConfigIdSchema,
   name: z.string(),
@@ -111,6 +147,10 @@ export const ConfigSchema = z.object({
 
 export type Config = z.infer<typeof ConfigSchema>;
 
+/**
+ * An A/B (or multi-config) experiment: run `nTrials` of each task×config pair, then compare pass rates.
+ * Status tracks the overall lifecycle once the API expands the matrix into trial rows.
+ */
 export const ExperimentSchema = z.object({
   id: ExperimentIdSchema,
   name: z.string(),
@@ -125,6 +165,7 @@ export const ExperimentSchema = z.object({
 
 export type Experiment = z.infer<typeof ExperimentSchema>;
 
+/** Aggregated grader outcome for one trial (`all_must_pass` today). */
 export const GradeResultSchema = z.object({
   passed: z.boolean(),
   score: z.number(),
@@ -142,6 +183,10 @@ export const GradeResultSchema = z.object({
 
 export type GradeResult = z.infer<typeof GradeResultSchema>;
 
+/**
+ * One (task × config × trialIndex) execution record. Workers dequeue these, run them in isolation,
+ * then write status, metrics, grade, and a pointer to the trace file.
+ */
 export const TrialSchema = z.object({
   id: TrialIdSchema,
   experimentId: ExperimentIdSchema,
@@ -183,6 +228,10 @@ export const TrialSchema = z.object({
 
 export type Trial = z.infer<typeof TrialSchema>;
 
+/**
+ * Append-only events emitted during a trial (messages, tools, memory, skills, step boundaries, errors).
+ * Discriminated on `type` so consumers can switch safely on the event kind.
+ */
 export const TraceEventSchema = z.discriminatedUnion('type', [
   z.object({
     ts: z.string(),
@@ -237,6 +286,7 @@ export const TraceEventSchema = z.discriminatedUnion('type', [
 
 export type TraceEvent = z.infer<typeof TraceEventSchema>;
 
+/** Full trial transcript: events plus optional final answer / memory snapshot for debugging. */
 export const TraceSchema = z.object({
   trialId: TrialIdSchema,
   events: z.array(TraceEventSchema),
@@ -260,6 +310,7 @@ export type TaskImport = z.infer<typeof TaskImportSchema>;
 
 const uniqueIds = (ids: string[]) => new Set(ids).size === ids.length;
 
+/** Client payload to create an experiment; the API expands this into queued trial rows. */
 export const ExperimentInputSchema = z.object({
   name: z.string().min(1),
   hypothesis: z.string().optional(),

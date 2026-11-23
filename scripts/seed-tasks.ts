@@ -1,11 +1,14 @@
 /**
- * Seeds the task catalog into the API.
+ * CLI: seed the Nest API's task catalog from the on-disk `tasks/` folder.
  *
- *   npm run seed:tasks                 # uses API_URL or http://localhost:3000
+ * When to run: after starting the API (`npm run dev:api` or compose), before creating
+ * experiments that reference task ids. Safe to re-run anytime (idempotent import).
+ *
+ * What it does: reads `tasks/manifest.json`, validates each listed JSON file with the
+ * shared domain `TaskSchema`, then POSTs the batch to `POST /tasks/import`.
+ *
+ *   npm run seed:tasks                              # API_URL or http://localhost:3000
  *   API_URL=http://localhost:3001 npx tsx scripts/seed-tasks.ts
- *
- * Reads tasks/manifest.json, validates each task with the domain TaskSchema locally,
- * then POSTs the batch to /tasks/import. Re-running is safe: identical tasks are reported as unchanged.
  */
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';

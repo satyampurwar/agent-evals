@@ -1,3 +1,14 @@
+/**
+ * Experiment row: a planned A/B (or multi-config) comparison.
+ *
+ * An experiment stores:
+ * - `taskRefs` / `configRefs` — pinned ids + content hashes (snapshots at create time)
+ * - `nTrials` — how many repeats per (task, config) cell
+ * - `status` — pending → running → completed | failed | partial
+ *
+ * Starting the experiment expands the matrix into TrialEntity rows and enqueues
+ * BullMQ jobs. `@OneToMany` is the ORM relation back to those trials (lazy/optional load).
+ */
 import {
   Column,
   CreateDateColumn,

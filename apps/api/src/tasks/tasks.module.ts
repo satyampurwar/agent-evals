@@ -1,3 +1,12 @@
+/**
+ * Nest feature module for the task catalog.
+ *
+ * Pattern repeated across features:
+ * - `imports: [TypeOrmModule.forFeature([Entity])]` → inject Repository<Entity>
+ * - `controllers` → HTTP routes
+ * - `providers` → services Nest can inject
+ * - `exports: [TasksService]` → other modules (e.g. ExperimentsModule) can inject TasksService
+ */
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { TaskEntity } from '../entities/task.entity.js';

@@ -1,3 +1,11 @@
+/**
+ * McNemar's test for paired pass/fail outcomes (config A vs B on the same trial index).
+ *
+ * Only **discordant** pairs matter: A passed & B failed, or the reverse. Under the null that both
+ * configs are equally good, those flips are coin tosses — the exact binomial p-value tests that.
+ * Reported alongside the bootstrap CI in `compareConfigs`; the verdict itself uses the CI.
+ */
+
 export interface PairedOutcome {
   a: boolean;
   b: boolean;

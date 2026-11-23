@@ -1,5 +1,15 @@
+/**
+ * Per-trial key-value memory for the baseline harness.
+ *
+ * When a config enables memory tools, the runner seeds this store from `task.setup.memory` and
+ * passes it into the harness. The agent reads/writes via `memory_read` / `memory_write`. The store
+ * is discarded with the trial (unless a future harness persists it — see config
+ * `persistAcrossTrials`, unused by baseline today).
+ */
+
 import type { MemoryStore } from './types.js';
 
+/** One hit returned by `memory_read`. */
 export interface MemoryEntry {
   key: string;
   value: string;

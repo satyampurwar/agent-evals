@@ -1,3 +1,14 @@
+/**
+ * Nest "pipe" that validates request data with Zod.
+ *
+ * Pipes run before the controller method. Nest's `PipeTransform` interface is just
+ * `transform(value)`. Here we call `schema.safeParse`; on failure we throw
+ * `BadRequestException` with Zod's issue list (becomes HTTP 400 JSON).
+ *
+ * Zod (from `@agent-evals/domain`) is the single source of truth for request shapes
+ * like ConfigInput / ExperimentInput / TaskImport — TypeScript types are inferred
+ * from those schemas (`z.infer<typeof Schema>`).
+ */
 import { BadRequestException, Injectable, type PipeTransform } from '@nestjs/common';
 
 /** The subset of a zod schema this pipe needs. Any zod schema satisfies it structurally. */

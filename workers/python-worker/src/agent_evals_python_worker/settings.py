@@ -1,4 +1,9 @@
-"""Worker settings. Read from the environment, then from the repo-root `.env` (the same file the Node side reads)."""
+"""Environment settings for the Hermes worker (API key, OpenRouter URL, HERMES_HOME).
+
+Loaded via pydantic-settings from process env, falling back to the repo-root
+`.env` (same file Node scripts use). Inside Docker, compose injects env vars
+directly — the path to `.env` may not exist, which is fine.
+"""
 
 from functools import lru_cache
 from pathlib import Path

@@ -1,3 +1,9 @@
+/**
+ * Nest feature module for experiments (create, start, compare, export).
+ *
+ * Depends on TasksModule + ConfigsModule (to pin refs) and TrialQueueModule
+ * (to enqueue jobs on start). Does not run trials itself — ExecutionModule does.
+ */
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigsModule } from '../configs/configs.module.js';

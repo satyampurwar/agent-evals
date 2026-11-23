@@ -1,8 +1,13 @@
 /**
- * Phase 5 smoke test: one live call to OpenRouter.
- * Prints the reply, token usage and latency. Reads OPENROUTER_API_KEY from .env.
+ * CLI: one-shot live smoke test of the OpenRouter model adapter.
  *
- * Usage: npx tsx scripts/smoke-model.ts [modelId]
+ * When to run: first time you set OPENROUTER_API_KEY, or when debugging "is the API key /
+ * network / model id working?" — before running full trials.
+ *
+ * What it does: sends a tiny prompt via OpenRouterAdapter, prints reply, token usage, latency.
+ *
+ *   npx tsx scripts/smoke-model.ts              # default openai/gpt-4.1-mini
+ *   npx tsx scripts/smoke-model.ts openai/gpt-4o-mini
  */
 import { OpenRouterAdapter } from '@agent-evals/adapters-model';
 import { loadDotEnv } from './lib/env';

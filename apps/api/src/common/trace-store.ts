@@ -1,3 +1,14 @@
+/**
+ * On-disk storage for trial traces (append-only event logs as JSON files).
+ *
+ * Why not Postgres jsonb for traces?
+ * Traces can be large (every message + tool call). Keeping them as files keeps
+ * the DB row small and makes export/debug as simple as opening a JSON file.
+ *
+ * Security: `resolveKey` rejects paths that escape the root (path traversal via `../`).
+ * Call order in TrialExecutor: write trace → then mark trial finished (so a finished
+ * trial always has a readable traceUri).
+ */
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';

@@ -1,3 +1,12 @@
+/**
+ * Optional "skills" — bundles of extra tools beyond the core filesystem set.
+ *
+ * A config lists skill ids in `harness.settings.skillsEnabled`. Each skill maps to one or more
+ * tool names (today only `csv_summary`). Skill tools are offered to the model only when enabled,
+ * and successful calls emit a `skill_invoke` trace event. Implementations live here; wiring into
+ * the tool registry is in `tools.ts`.
+ */
+
 import { readFile } from 'node:fs/promises';
 import { resolveInSandbox } from '@agent-evals/sandbox';
 

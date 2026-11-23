@@ -1,3 +1,9 @@
+/**
+ * `@agent-evals/domain` — shared Zod schemas and TypeScript types for tasks, configs,
+ * experiments, trials, traces, graders, and cost metering. Other packages import from here
+ * so everyone agrees on the same shapes; this package has no I/O of its own.
+ */
+
 export {
   ConfigIdSchema,
   ConfigInputSchema,

@@ -1,3 +1,9 @@
+/**
+ * Build a CSV download of trial rows (used from the experiment detail page).
+ *
+ * Spreadsheet safety: cells that look like formulas (=, +, -, @) get a leading
+ * apostrophe so Excel/Sheets treat them as text.
+ */
 import type { TrialView } from '../api/endpoints';
 
 /**

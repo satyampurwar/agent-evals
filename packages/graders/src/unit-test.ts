@@ -1,3 +1,11 @@
+/**
+ * Unit-test grader — run a shell command in the sandbox and treat exit 0 as pass.
+ *
+ * Use when the agent should produce code or data that a script can verify (e.g. `python test.py`).
+ * The command runs with `cwd` = sandbox and a minimal env (PATH only), so host API keys are not
+ * leaked into the child process.
+ */
+
 import { execFile } from 'node:child_process';
 import type { GraderOutcome } from './exact-match.js';
 

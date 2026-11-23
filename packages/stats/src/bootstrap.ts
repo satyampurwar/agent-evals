@@ -1,8 +1,20 @@
+/**
+ * Bootstrap confidence intervals for pass-rate means and A−B deltas.
+ *
+ * Bootstrap = resample the observed values many times with replacement, recompute the statistic,
+ * and read percentiles of that distribution as a CI. Used by `compareConfigs` so the uncertainty
+ * around pass rates reflects task-to-task variation without assuming a parametric model. The RNG
+ * is seeded so reports are reproducible.
+ */
+
 import { mulberry32 } from './rng.js';
 import type { Interval } from './pass-rate.js';
 
+/** Default number of bootstrap resamples (higher → stabler CI, slower). */
 export const DEFAULT_RESAMPLES = 5000;
+/** Default significance level: 0.05 → roughly a 95% interval. */
 export const DEFAULT_ALPHA = 0.05;
+/** Default RNG seed for deterministic CIs in tests and CI. */
 export const DEFAULT_SEED = 1;
 
 export interface MeanCI extends Interval {

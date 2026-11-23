@@ -1,3 +1,18 @@
+/**
+ * Baseline harness — the built-in TypeScript tool-calling agent loop.
+ *
+ * This is the default agent under test when a config sets `harness.id: "baseline"`. It implements
+ * the classic LLM agent pattern:
+ *
+ * 1. Send the task prompt (and later tool results) to a `ModelAdapter`
+ * 2. If the model returns **tool calls**, execute them in the trial sandbox and append results
+ * 3. Repeat until the model answers with plain text (no tools), or a budget is exhausted
+ *
+ * Budgets: `maxSteps` = max model calls; `maxTokens` = total tokens across the trial (also sent as
+ * each request's completion cap); `timeoutMs` = wall-clock limit. Every message and tool event is
+ * emitted into the trial trace so graders and humans can replay what happened.
+ */
+
 import type { ChatMessage, ModelResponse, ToolCall } from '@agent-evals/adapters-model';
 import type { TraceEvent } from '@agent-evals/domain';
 import { executeTool, isSkillTool, specsFor } from './tools.js';

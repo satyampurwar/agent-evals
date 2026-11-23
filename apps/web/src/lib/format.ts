@@ -1,3 +1,9 @@
+/**
+ * Tiny display formatters for the Vue UI (percentages, money, ids, verdict labels).
+ *
+ * Missing numbers render as an em dash (—), never as 0, so "not measured" cannot
+ * look like a real zero. Verdict helpers pair human text with a CSS tone class.
+ */
 import type { Verdict } from '@agent-evals/stats';
 
 /** A missing value shows as an em dash, never as 0, so "not measured" cannot read as "zero". */

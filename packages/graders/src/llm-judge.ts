@@ -1,3 +1,12 @@
+/**
+ * LLM-judge grader — ask another model to score the agent's answer against a rubric.
+ *
+ * Use for open-ended tasks where exact string match is too brittle (summaries, tone, structure).
+ * The judge runs at temperature 0 with JSON output; malformed JSON gets one retry. Rubrics live in
+ * `rubrics.ts` and are referenced by `rubricId` on the task's `llm_judge` grader spec. Judge tokens
+ * are costed separately from the agent's tokens in the runner.
+ */
+
 import type { ChatMessage, ModelAdapter } from '@agent-evals/adapters-model';
 import type { GraderOutcome } from './exact-match.js';
 import type { Rubric } from './rubrics.js';
@@ -34,6 +43,7 @@ export function scoreRubric(rubric: Rubric, scores: Record<string, number>, pass
   return { overall, passed, failedRequired };
 }
 
+/** Builds the user message sent to the judge model (task + answer + rubric criteria). */
 export function buildJudgePrompt(rubric: Rubric, taskPrompt: string, answer: string): string {
   const criteria = rubric.criteria
     .map((c) => `- ${c.name}${c.required ? ' (required)' : ''}: ${c.description}`)

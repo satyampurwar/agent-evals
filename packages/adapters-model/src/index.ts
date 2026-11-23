@@ -1,3 +1,8 @@
+/**
+ * `@agent-evals/adapters-model` — LLM provider adapters (`ModelAdapter`) used by harnesses and
+ * the LLM judge. Production code typically uses OpenRouter; tests use mock / scripted adapters.
+ */
+
 export type {
   ChatMessage,
   ModelAdapter,

@@ -1,4 +1,8 @@
-"""Sandbox path confinement. A port of `packages/sandbox/src/paths.ts`: same rules, same failures."""
+"""Keep every file-tool path inside the trial's sandbox directory.
+
+Port of `packages/sandbox/src/paths.ts`: refuse absolute paths, `..` escapes,
+and symlinks — so one trial cannot read another trial's files (see scripts/demo-isolation.ts).
+"""
 
 import os
 import stat

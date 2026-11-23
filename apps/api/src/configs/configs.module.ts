@@ -1,3 +1,7 @@
+/**
+ * Nest feature module for immutable agent configs (harness + model + budgets).
+ * Exports ConfigsService so ExperimentsModule can resolve config ids at create time.
+ */
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigEntity } from '../entities/config.entity.js';

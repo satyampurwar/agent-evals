@@ -1,3 +1,12 @@
+/**
+ * Deterministic JSON hashing used for content-addressed Task/Config rows.
+ *
+ * Problem: `{a:1,b:2}` and `{b:2,a:1}` are the same config but different JSON strings,
+ * so a naive SHA-256 would produce different hashes. `sortKeysDeep` normalizes key order
+ * first; `contentHash` then hashes that canonical string.
+ *
+ * Used by TasksService.import and ConfigsService.create (and expand-matrix seeds).
+ */
 import { createHash } from 'node:crypto';
 
 /**

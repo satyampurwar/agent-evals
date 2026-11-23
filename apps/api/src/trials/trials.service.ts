@@ -1,3 +1,10 @@
+/**
+ * Read path for trial rows and trace files.
+ *
+ * `TrialView` strips the ORM relation object and adds `hasTrace` so the UI knows
+ * whether opening the Trace tab will work, without embedding megabytes of events
+ * in every list response.
+ */
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import type { Trace } from '@agent-evals/domain';

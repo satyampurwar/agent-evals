@@ -1,3 +1,18 @@
+/**
+ * Core orchestration service for experiments.
+ *
+ * Responsibilities:
+ * - create: validate task/config ids, pin versions/hashes, save pending experiment
+ * - start:  lock row → expandMatrix → insert TrialEntity rows → status=running → enqueue jobs
+ * - compare / export / status: read completed (or in-progress) results for the UI
+ *
+ * Why pin versions at create time?
+ * Tasks can be re-imported later with a new version. An experiment must keep grading
+ * the exact prompt/graders it was designed for, so we snapshot taskRefs/configRefs then.
+ *
+ * `DataSource.transaction` + `pessimistic_write` locks prevent double-start races
+ * (two clients hitting POST .../start at once creating duplicate trials).
+ */
 import {
   BadRequestException,
   ConflictException,

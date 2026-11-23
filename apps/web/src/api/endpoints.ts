@@ -1,3 +1,11 @@
+/**
+ * Typed facade over Nest REST routes used by the Vue pages.
+ *
+ * Each method maps to one API path (e.g. `listExperiments` → GET /experiments).
+ * Pages import `api` and never build URLs by hand. Response shapes mirror the
+ * domain packages (`@agent-evals/domain`, `@agent-evals/stats`) plus a few
+ * view-only types defined below for list/status payloads.
+ */
 import type { Config, ConfigInput, Experiment, ExperimentInput, Task, Trace, GradeResult } from '@agent-evals/domain';
 import type { CompareResult } from '@agent-evals/stats';
 import { get, post, type ApiResponse } from './client';

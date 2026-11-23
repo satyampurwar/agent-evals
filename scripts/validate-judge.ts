@@ -1,17 +1,17 @@
 /**
- * Checks the LLM judge against human labels (Phase 9).
+ * CLI: measure how well the LLM judge agrees with human labels (Phase 9).
+ *
+ * When to run: after changing an llm_judge rubric, threshold, or judge model — before trusting
+ * that grader in experiments. Needs a live OpenRouter key (OPENROUTER_API_KEY in .env).
+ *
+ * What it does: for each fixture in fixtures/judge-human-labels/, calls the same llmJudge()
+ * the runner uses (rubric / model / threshold from the task), then prints agreement rate,
+ * Cohen's kappa, confusion matrix, and every disagreement with reasoning.
  *
  *   npx tsx scripts/validate-judge.ts | tee judge-validation.txt
  *
- * For each label in fixtures/judge-human-labels/, runs the same llmJudge() the runner uses, with the judge
- * model, rubric and passThreshold from the task's llm_judge grader. Then prints:
- * - agreement rate, Cohen's kappa (binary, positive = passed) and the confusion matrix
- * - every disagreement, with the judge's reasoning
- *
- * Exit code: 0 when kappa >= 0.6, 1 otherwise (or on a setup error). A judge below 0.6 is not shipped silently:
- * tighten the rubric or change the judge model, then re-run.
- *
- * Needs OPENROUTER_API_KEY in .env. Judge replies are temperature 0 but not guaranteed identical across runs.
+ * Exit: 0 when kappa >= 0.6 and no setup errors; else 1 (do not ship a weak judge silently).
+ * Temperature is 0, but replies are not guaranteed identical across runs.
  */
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';

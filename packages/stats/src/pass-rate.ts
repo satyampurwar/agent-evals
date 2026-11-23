@@ -1,3 +1,13 @@
+/**
+ * Pass-rate helpers for scored trials (0/1 or fractional scores).
+ *
+ * The simplest summary of an experiment side is “what fraction passed?” `passRate` is that mean.
+ * `wilsonInterval` is a better CI for binomial proportions than the normal approximation when
+ * pass counts are near 0 or n. Macro comparisons in `compare.ts` usually bootstrap per-task rates
+ * instead; Wilson is available for single-proportion summaries.
+ */
+
+/** Closed confidence interval. */
 export interface Interval {
   low: number;
   high: number;

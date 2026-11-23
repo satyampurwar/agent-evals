@@ -1,3 +1,12 @@
+/**
+ * Roll up per-trial statuses into one experiment-level status.
+ *
+ * Called after each trial finishes (TrialExecutor.finalize) so the experiment
+ * row moves from `running` to `completed` / `partial` / `failed` without a
+ * separate scheduler. Important nuance: a trial with status `succeeded` but
+ * `passed=false` (agent got the answer wrong) still counts as a successful run
+ * for rollup — only infra failures / timeouts / cancels make an experiment partial.
+ */
 import type { EntityManager } from 'typeorm';
 import { TrialEntity, type TrialStatus } from '../entities/trial.entity.js';
 
