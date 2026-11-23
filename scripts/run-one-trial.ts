@@ -10,7 +10,7 @@
  *   npx tsx scripts/run-one-trial.ts tasks/deterministic/01_add.json
  *   npx tsx scripts/run-one-trial.ts tasks/deterministic/01_add.json --model openrouter:openai/gpt-4.1-mini --harness baseline
  *   npx tsx scripts/run-one-trial.ts tasks/deterministic/02_write_answer.json --script fixtures/scripted/write_answer.json
- *   npx tsx scripts/run-one-trial.ts tasks/discriminating/memory_recall_client_01.json --memory --model openrouter:openai/gpt-4.1-mini
+ *   npx tsx scripts/run-one-trial.ts tasks/discriminating/mem_recall_client_01.json --memory --model openrouter:openai/gpt-4.1-mini
  *   npx tsx scripts/run-one-trial.ts tasks/discriminating/skill_csv_sum_01.json --skill csv_summary --model openrouter:openai/gpt-4.1-mini
  *
  * Config flags (API configs expose the same knobs):
@@ -22,10 +22,12 @@
  * Exit: 0 PASS, 1 FAIL/TIMEOUT, 2 ERROR (infra / bad args).
  */
 import { randomUUID } from 'node:crypto';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
-import { TaskSchema } from '@agent-evals/domain';
+import { PriceTableSchema, TaskSchema } from '@agent-evals/domain';
+import type { PriceTable } from '@agent-evals/domain';
 import {
   MockModelAdapter,
   ScriptedModelAdapter,
@@ -37,6 +39,8 @@ import { createHarness, resolveToolIds, TOOL_NAMES } from '@agent-evals/adapters
 import { runTrial } from '@agent-evals/runner';
 import { serializeTrace } from '@agent-evals/trace';
 import { loadDotEnv } from './lib/env';
+
+const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 interface Args {
   taskPath?: string;
@@ -78,6 +82,40 @@ function chooseModel(args: Args): { model: ModelAdapter; provider: string; model
   return { model: new MockModelAdapter('42'), provider: 'mock', modelId: '42' };
 }
 
+/**
+ * List prices for `runTrial` cost metering. Real models must appear in prices.json (or PRICE_TABLE_PATH).
+ * Mock/scripted CLI runs inject a $0 entry so local dry-runs are not blocked by `price_missing`.
+ */
+function loadPrices(provider: string, modelId: string): PriceTable {
+  const path = process.env.PRICE_TABLE_PATH ?? findUpPrices(process.cwd()) ?? join(repoRoot, 'prices.json');
+  const parsed = PriceTableSchema.safeParse(JSON.parse(readFileSync(path, 'utf8')));
+  if (!parsed.success) {
+    throw new Error(`invalid price table ${path}: ${parsed.error.issues[0]?.message ?? 'unknown format'}`);
+  }
+  const table = parsed.data;
+  if (table.models[modelId]) return table;
+  if (provider === 'mock' || provider === 'scripted') {
+    return {
+      ...table,
+      models: { ...table.models, [modelId]: { inputPerMTok: 0, outputPerMTok: 0 } },
+    };
+  }
+  throw new Error(
+    `no list price for "${modelId}" in ${path}. Add it to prices.json (or set PRICE_TABLE_PATH) before running.`,
+  );
+}
+
+function findUpPrices(start: string): string | undefined {
+  let dir = resolve(start);
+  for (;;) {
+    const candidate = join(dir, 'prices.json');
+    if (existsSync(candidate)) return candidate;
+    const parent = dirname(dir);
+    if (parent === dir) return undefined;
+    dir = parent;
+  }
+}
+
 async function main() {
   loadDotEnv();
   const args = parseArgs(process.argv.slice(2));
@@ -92,9 +130,10 @@ async function main() {
   // 1. load task
   const task = TaskSchema.parse(JSON.parse(readFileSync(resolve(args.taskPath), 'utf8')));
 
-  // 2. model + harness
+  // 2. model + harness + prices (required by runTrial for estimatedCostUsd / preflight)
   const { model, provider, modelId } = chooseModel(args);
   const harness = createHarness(args.harnessId);
+  const prices = loadPrices(provider, modelId);
 
   // 3. run the trial (fresh sandbox, harness, graders, cleanup)
   const trialId = `trial-${randomUUID()}`;
@@ -112,6 +151,7 @@ async function main() {
       task.toolsAllowed,
     ),
     memorySeed: task.setup?.memory,
+    prices,
   });
 
   // 4. persist trace + result
@@ -156,6 +196,7 @@ async function main() {
   console.log(
     `usage:   prompt=${metrics.promptTokens} completion=${metrics.completionTokens} total=${metrics.totalTokens}`,
   );
+  console.log(`cost:    $${metrics.estimatedCostUsd.toFixed(6)} (list price)`);
   console.log(`latency: ${metrics.latencyMs} ms`);
   console.log(`trace:   ${tracePath}`);
   console.log(`result:  ${resultPath}`);
