@@ -3,17 +3,16 @@
   "private": true,
   "workspaces": [
     "apps/*",
-    "packages/*",
-    "workers/node-worker"
+    "packages/*"
   ],
   "scripts": {
     "dev:api": "npm run start:dev -w @agent-evals/api",
     "dev:web": "npm run dev -w @agent-evals/web",
-    "dev:worker:node": "npm run start -w @agent-evals/node-worker",
     "dev:worker:python": "cd workers/python-worker && uv run uvicorn app.main:app --reload --port 8001",
     "postinstall": "npm run build:packages",
     "build:packages": "npm run build -w @agent-evals/domain && npm run build -w @agent-evals/trace && npm run build -w @agent-evals/stats && npm run build -w @agent-evals/sandbox && npm run build -w @agent-evals/adapters-model && npm run build -w @agent-evals/adapters-harness && npm run build -w @agent-evals/graders && npm run build -w @agent-evals/runner",
     "test": "npm run test --workspaces --if-present",
-    "seed:tasks": "npx tsx scripts/seed-tasks.ts"
+    "seed:tasks": "npx tsx scripts/seed-tasks.ts",
+    "experiment": "npx tsx scripts/run-experiment.ts"
   }
 }

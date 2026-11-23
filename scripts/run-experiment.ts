@@ -1,21 +1,13 @@
 /**
- * CLI: drive the pre-registered memory A/B experiment end-to-end via the HTTP API.
+ * CLI: create configs + experiment, start it, poll until done, write results/.
  *
- * When to run: after the API, queue worker, and (if using Hermes) Python worker are up, and
- * tasks are seeded. Use `--dry-run` first to print the plan without creating anything.
- * See EXPERIMENT.md for the scientific pre-registration this script implements.
- *
- * What it does: creates/reuses the two configs (mem-off vs mem-on), creates one experiment
- * over the chosen task groups, starts it, polls until terminal status, then writes
- * compare.json / export.json / export.csv under results/<name>/ and prints a summary.
- *
+ * Default plan (memory on vs off, Hermes, full 21-task catalog):
  *   npx tsx scripts/run-experiment.ts --dry-run
- *   npx tsx scripts/run-experiment.ts --name memory-ab --n 10 --configs mem-off,mem-on --tasks memory,control
- *   npx tsx scripts/run-experiment.ts --resume <experimentId>   # re-collect only; starts no trials
+ *   npx tsx scripts/run-experiment.ts --name full-catalog --n 3 --configs mem-off,mem-on --tasks all
+ *   npx tsx scripts/run-experiment.ts --resume <experimentId>
  *
- * Task groups and arms are fixed on purpose (pre-registration). Change EXPERIMENT.md and
- * this file together. Env: API_URL (default http://localhost:3000). OPENROUTER_API_KEY is
- * not needed here — the API/worker use it. Cost uses OpenRouter's public model price list.
+ * Writes `results/<name>/{compare,export}.{json,csv}`. Needs a running API (`API_URL`, default :3000).
+ * Write-up: deliverables/EXPERIMENT.md.
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -24,23 +16,43 @@ import { loadDotEnv } from './lib/env';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
-/** The subset from EXPERIMENT.md. Keep these in step with the pre-registration. */
+/** Task groups selectable via --tasks (comma-separated). Default: all. */
 export const GROUPS = {
+  all: [
+    'det_add_01',
+    'det_write_answer_01',
+    'det_extract_order_01',
+    'det_letter_count_01',
+    'det_unit_convert_01',
+    'det_weekday_01',
+    'det_state_json_01',
+    'det_state_nested_01',
+    'det_state_multi_01',
+    'det_unit_fizzbuzz_01',
+    'det_unit_slugify_01',
+    'det_unit_roman_01',
+    'judge_summary_01',
+    'judge_explain_01',
+    'judge_email_01',
+    'judge_bugreport_01',
+    'judge_tradeoff_01',
+    'mem_recall_client_01',
+    'mem_deploy_file_01',
+    'skill_csv_sum_01',
+    'skill_csv_mean_01',
+  ],
   memory: ['mem_recall_client_01', 'mem_deploy_file_01'],
   control: ['det_add_01', 'det_letter_count_01', 'det_weekday_01'],
+  judge: ['judge_summary_01', 'judge_explain_01', 'judge_email_01', 'judge_bugreport_01', 'judge_tradeoff_01'],
+  skill: ['skill_csv_sum_01', 'skill_csv_mean_01'],
 } as const;
 type GroupName = keyof typeof GROUPS;
 
-/** The two arms. They differ only in memory.enabled. */
 const MODEL = { provider: 'openrouter', modelId: 'openai/gpt-4.1-mini', temperature: 0 };
-/**
- * Default: no tools (the pre-registered main run). --tools write_file gives both arms that tool (the labelled
- * post-hoc v2 in EXPERIMENT.md). With tools set, config names get a suffix so they never clash with the originals.
- */
-const DEFAULT_TOOLS: string[] = [];
+/** Default tools for a full-catalog run. Override with --tools (comma list) or --tools none. */
+const DEFAULT_TOOLS_ALL = ['read_file', 'write_file', 'list_dir'] as const;
 const SHARED_SETTINGS = {
-  skillsEnabled: [] as string[],
-  maxSteps: 6,
+  maxSteps: 8,
   maxTokens: 8000,
   timeoutMs: 120_000,
 };
@@ -51,7 +63,7 @@ const CONFIGS = {
 type ConfigName = keyof typeof CONFIGS;
 
 export const HYPOTHESIS =
-  'Memory on (Hermes, gpt-4.1-mini) raises the pass rate on memory tasks and leaves control tasks unchanged. See EXPERIMENT.md.';
+  'Memory on (Hermes, gpt-4.1-mini) raises pass rate on memory tasks vs memory off; other tasks should be largely unchanged. See deliverables/EXPERIMENT.md.';
 
 interface Args {
   name: string;
@@ -62,11 +74,15 @@ interface Args {
   dryRun: boolean;
   resume?: string;
   tools: string[];
+  skillsEnabled: string[];
 }
 
-/** The config name for an arm. With tools set, the name carries the tool list, so it cannot clash with the original configs. */
-export function armName(arm: ConfigName, tools: readonly string[]): string {
-  return tools.length ? `${arm}-${[...tools].sort().join('+')}` : arm;
+/** Config name includes tools/skills so content variants do not collide. */
+export function armName(arm: ConfigName, tools: readonly string[], skills: readonly string[] = []): string {
+  const parts = [...tools].sort();
+  const skillPart = skills.length ? `skills-${[...skills].sort().join('+')}` : '';
+  const suffix = [...parts, skillPart].filter(Boolean).join('+');
+  return suffix ? `${arm}-${suffix}` : arm;
 }
 
 interface ConfigView {
@@ -87,8 +103,8 @@ export function parseArgs(argv: string[]): Args {
     const i = argv.indexOf(flag);
     return i >= 0 ? argv[i + 1] : undefined;
   };
-  const name = get('--name') ?? 'memory-ab';
-  const n = Number(get('--n') ?? 10);
+  const name = get('--name') ?? 'full-catalog';
+  const n = Number(get('--n') ?? 3);
   if (!Number.isInteger(n) || n < 1 || n > 50) throw new Error('--n must be a whole number from 1 to 50');
 
   const configs = (get('--configs') ?? 'mem-off,mem-on').split(',').map((s) => s.trim()) as ConfigName[];
@@ -99,7 +115,7 @@ export function parseArgs(argv: string[]): Args {
     throw new Error('--configs must name both mem-off and mem-on (the comparison needs two arms)');
   }
 
-  const groups = (get('--tasks') ?? 'memory,control').split(',').map((s) => s.trim()) as GroupName[];
+  const groups = (get('--tasks') ?? 'all').split(',').map((s) => s.trim()) as GroupName[];
   for (const g of groups) {
     if (!(g in GROUPS)) throw new Error(`unknown task group "${g}" (known: ${Object.keys(GROUPS).join(', ')})`);
   }
@@ -107,21 +123,39 @@ export function parseArgs(argv: string[]): Args {
   const api = (get('--api') ?? process.env.API_URL ?? 'http://localhost:3000').replace(/\/$/, '');
   const resume = get('--resume');
   const toolsArg = get('--tools');
-  const tools = toolsArg === undefined ? [...DEFAULT_TOOLS] : toolsArg.split(',').map((s) => s.trim()).filter(Boolean);
-  return { name, n, configs, groups, api, dryRun: argv.includes('--dry-run'), resume, tools };
+  const useAllDefaults = groups.includes('all') && toolsArg === undefined;
+  const tools =
+    toolsArg === undefined
+      ? useAllDefaults
+        ? [...DEFAULT_TOOLS_ALL]
+        : []
+      : toolsArg === 'none'
+        ? []
+        : toolsArg.split(',').map((s) => s.trim()).filter(Boolean);
+  const skillsArg = get('--skills');
+  const skillsEnabled =
+    skillsArg === undefined
+      ? useAllDefaults || groups.includes('skill')
+        ? ['csv_summary']
+        : []
+      : skillsArg === 'none'
+        ? []
+        : skillsArg.split(',').map((s) => s.trim()).filter(Boolean);
+  return { name, n, configs, groups, api, dryRun: argv.includes('--dry-run'), resume, tools, skillsEnabled };
 }
 
 export function plannedTaskIds(groups: readonly GroupName[]): string[] {
-  return [...new Set(groups.flatMap((g) => GROUPS[g]))];
+  return [...new Set(groups.flatMap((g) => [...GROUPS[g]]))];
 }
 
-function configBody(arm: ConfigName, tools: readonly string[]) {
+function configBody(arm: ConfigName, tools: readonly string[], skillsEnabled: readonly string[]) {
   return {
-    name: armName(arm, tools),
+    name: armName(arm, tools, skillsEnabled),
     harness: {
       id: 'hermes',
       settings: {
         ...SHARED_SETTINGS,
+        skillsEnabled: [...skillsEnabled],
         tools: [...tools],
         memory: { enabled: CONFIGS[arm].memoryEnabled, persistAcrossTrials: false },
       },
@@ -164,8 +198,9 @@ async function main(): Promise<void> {
     name: args.name,
     n: args.n,
     configs: args.configs,
-    groups: Object.fromEntries(args.groups.map((g) => [g, GROUPS[g]])),
+    taskCount: taskIds.length,
     tools: args.tools,
+    skillsEnabled: args.skillsEnabled,
     trials: trialCount,
     api: args.api,
   };
@@ -177,29 +212,24 @@ async function main(): Promise<void> {
 
   let experimentId: string;
   if (args.resume) {
-    // Re-collect results from an experiment that already exists. Starts no trials.
     experimentId = args.resume;
     console.log(`resuming experiment ${experimentId} (no new trials)`);
   } else {
-    // 1. configs (created if new, reused if the same content already exists)
     const created = {} as Record<ConfigName, string>;
     for (const arm of args.configs) {
       const row = await api<ConfigView>(args.api, '/configs', {
         method: 'POST',
-        body: JSON.stringify(configBody(arm, args.tools)),
+        body: JSON.stringify(configBody(arm, args.tools, args.skillsEnabled)),
       });
       created[arm] = row.id;
-      console.log(`config ${armName(arm, args.tools)}: ${row.id}`);
+      console.log(`config ${armName(arm, args.tools, args.skillsEnabled)}: ${row.id}`);
     }
 
-    // 2. experiment over the chosen tasks, one row per cell per trial
     const experiment = await api<ExperimentView>(args.api, '/experiments', {
       method: 'POST',
       body: JSON.stringify({
         name: args.name,
-        hypothesis: args.tools.length
-          ? `${HYPOTHESIS} Post-hoc v2: tools [${args.tools.join(', ')}] in both arms (EXPERIMENT.md).`
-          : HYPOTHESIS,
+        hypothesis: HYPOTHESIS,
         taskIds,
         configIds: args.configs.map((c) => created[c]),
         nTrials: args.n,
@@ -208,7 +238,6 @@ async function main(): Promise<void> {
     experimentId = experiment.id;
     console.log(`experiment ${experimentId} created (${trialCount} trials)`);
 
-    // 3. start
     await api(args.api, `/experiments/${experimentId}/start`, { method: 'POST' });
   }
 
@@ -230,8 +259,9 @@ async function main(): Promise<void> {
   const csv = await csvRes.text();
   const configIds = {} as Record<ConfigName, string>;
   for (const arm of args.configs) {
-    const found = exportJson.configs.find((c) => c.name === armName(arm, args.tools));
-    if (!found) throw new Error(`config ${armName(arm, args.tools)} is not in experiment ${experimentId}`);
+    const want = armName(arm, args.tools, args.skillsEnabled);
+    const found = exportJson.configs.find((c) => c.name === want);
+    if (!found) throw new Error(`config ${want} is not in experiment ${experimentId}`);
     configIds[arm] = found.id;
   }
 
@@ -310,8 +340,8 @@ async function printSummary(input: {
     console.log(`  ${t.taskId.padEnd(24)} on ${pct(t.passRateA).padStart(6)}  off ${pct(t.passRateB).padStart(6)}  delta ${pct(t.delta).padStart(7)}`);
   }
 
-  // Per-arm cost, tokens, latency and stop reasons. Cost is tokens times the OpenRouter list price,
-  // because the API does not record a measured cost (estimatedCostUsd stays null).
+  // Per-arm cost, tokens, latency. Prefer OpenRouter list prices for a quick agent-token total;
+  // compare.json also reports meanCostUsd (agent + judge) from stored trial metrics.
   const prices = await priceList();
   const modelPrice = prices.get(MODEL.modelId);
   console.log('\nper arm (tokens, cost at list price, mean latency, statuses):');

@@ -115,7 +115,7 @@ function main(): void {
     }
   }
 
-  // Phase 15: a judge model without a list price would fail every trial that grades with it (price_missing).
+  // A judge model without a list price fails every trial that grades with it (price_missing).
   const priceTable = loadPriceTableFile();
   for (const t of tasks) {
     for (const g of t.graders) {

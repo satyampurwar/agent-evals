@@ -1,7 +1,7 @@
 /**
- * `@agent-evals/domain` — shared Zod schemas and TypeScript types for tasks, configs,
- * experiments, trials, traces, graders, and cost metering. Other packages import from here
- * so everyone agrees on the same shapes; this package has no I/O of its own.
+ * `@agent-evals/domain` — shared Zod schemas / types for tasks, configs, experiments,
+ * trials, traces, graders, and list-price cost helpers. No I/O: API, runner, graders,
+ * and the UI all import shapes from here. Architecture overview: `deliverables/DESIGN.md`.
  */
 
 export {

@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
+      - name: Install JS workspaces
+        run: npm ci
+
+      - name: Validate task set
+        run: npx tsx scripts/validate-task-set.ts
+
+      - name: Unit tests (workspaces)
+        run: npm test
+        env:
+          OPENROUTER_API_KEY: test-key-not-used
+
+      - name: Python worker tests
+        working-directory: workers/python-worker
+        run: uv sync && uv run pytest -q

@@ -1,9 +1,9 @@
 /**
- * Form defaults + client-side validation for Config and Experiment create UIs.
+ * Config / experiment form defaults and client-side validation for the Vue UI.
  *
- * Vue pages keep form state in `reactive`/`ref` objects; before POSTing, they call
- * `buildConfigInput` / `buildExperimentInput` to turn that state into the Nest API
- * payload (or a list of human-readable errors). Keeps validation out of the .vue files.
+ * Pages hold `reactive` form state; before POST they call `buildConfigInput` /
+ * `buildExperimentInput` to produce the Nest payload or a list of errors.
+ * `MODEL_IDS` / `HARNESS_IDS` / `BASE_TOOLS` / `SKILL_IDS` drive the Configs dropdowns.
  */
 import type { ConfigInput, ExperimentInput } from '@agent-evals/domain';
 
@@ -11,11 +11,23 @@ import type { ConfigInput, ExperimentInput } from '@agent-evals/domain';
 export const BASE_TOOLS = ['read_file', 'write_file', 'list_dir'] as const;
 /** Skill ids the harness knows. A config naming any other id fails at run time. */
 export const SKILL_IDS = ['csv_summary'] as const;
+/** Harnesses registered in `@agent-evals/adapters-harness`. Hermes needs the Python worker. */
+export const HARNESS_IDS = ['baseline', 'hermes'] as const;
+/**
+ * OpenRouter model ids with list prices in repo-root `prices.json`.
+ * Unpriced models fail trials with `price_missing` before any call.
+ */
+export const MODEL_IDS = [
+  'openai/gpt-4.1-mini',
+  'anthropic/claude-haiku-4.5',
+  'google/gemini-2.5-flash',
+] as const;
 export const MAX_PLANNED_TRIALS = 10_000;
 
 export interface ConfigForm {
   name: string;
-  modelId: string;
+  harnessId: (typeof HARNESS_IDS)[number];
+  modelId: (typeof MODEL_IDS)[number] | string;
   temperature: number;
   memoryEnabled: boolean;
   skillsEnabled: string[];
@@ -28,6 +40,7 @@ export interface ConfigForm {
 export function defaultConfigForm(): ConfigForm {
   return {
     name: '',
+    harnessId: 'baseline',
     modelId: 'openai/gpt-4.1-mini',
     temperature: 0,
     memoryEnabled: false,
@@ -50,7 +63,10 @@ export function buildConfigInput(form: ConfigForm): BuildResult<ConfigInput> {
   const name = form.name.trim();
   const modelId = form.modelId.trim();
   if (!name) errors.push('Name is required.');
-  if (!modelId) errors.push('Model id is required.');
+  if (!modelId) errors.push('Model is required.');
+  else if (!(MODEL_IDS as readonly string[]).includes(modelId)) {
+    errors.push(`Model must be one of: ${MODEL_IDS.join(', ')}.`);
+  }
   if (!(form.temperature >= 0 && form.temperature <= 2)) errors.push('Temperature must be between 0 and 2.');
   if (!isInt(form.maxSteps) || form.maxSteps < 1 || form.maxSteps > 50) errors.push('Max steps must be a whole number from 1 to 50.');
   if (!isInt(form.maxTokens) || form.maxTokens < 1 || form.maxTokens > 100_000) {
@@ -59,9 +75,13 @@ export function buildConfigInput(form: ConfigForm): BuildResult<ConfigInput> {
   if (!isInt(form.timeoutMs) || form.timeoutMs < 1000 || form.timeoutMs > 600_000) {
     errors.push('Timeout must be a whole number of milliseconds from 1000 to 600000.');
   }
+  if (!(HARNESS_IDS as readonly string[]).includes(form.harnessId)) {
+    errors.push(`Harness must be one of: ${HARNESS_IDS.join(', ')}.`);
+  }
   for (const skill of form.skillsEnabled) {
     if (!(SKILL_IDS as readonly string[]).includes(skill)) errors.push(`Unknown skill: ${skill}.`);
   }
+  // Hermes ignores skillsEnabled / skillIds; baseline maps them to tools. Warn in the UI, still allow save.
   if (errors.length) return { ok: false, errors };
 
   return {
@@ -69,10 +89,10 @@ export function buildConfigInput(form: ConfigForm): BuildResult<ConfigInput> {
     input: {
       name,
       harness: {
-        id: 'baseline',
+        id: form.harnessId,
         settings: {
           skillsEnabled: [...form.skillsEnabled],
-          // persistAcrossTrials is stored but not implemented yet (see Phase 8), so it is always false here.
+          // persistAcrossTrials is not implemented; always false (API also rejects true).
           memory: { enabled: form.memoryEnabled, persistAcrossTrials: false },
           tools: [...form.tools],
           maxSteps: form.maxSteps,

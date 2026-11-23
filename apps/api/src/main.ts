@@ -1,17 +1,12 @@
 /**
- * HTTP API process entrypoint (NestJS).
+ * HTTP API entrypoint for agent-evals.
  *
- * NestJS is a Node framework built around:
- * - Modules (`@Module`) — group related controllers/providers
- * - Controllers (`@Controller`) — map HTTP routes to methods
- * - Providers (`@Injectable` services) — business logic, injected via the constructor
+ * Serves tasks, configs, experiments, trials, compare, export, and failures.
+ * In Compose, this process runs with `TRIAL_WORKER=off`; the sibling `worker`
+ * process (`worker.ts`) consumes the BullMQ trials queue.
  *
- * This file boots the full Nest app (HTTP + optional BullMQ trial worker). For a
- * worker-only process with no HTTP server, see `worker.ts`.
- *
- * Typical request path after boot:
- *   Vue UI / curl → Controllers → Services → Postgres (TypeORM) / Redis (BullMQ)
- * Trial execution itself is async: ExperimentsService enqueues jobs; TrialProcessor runs them.
+ * Request path: Vue UI / curl → controllers → services → Postgres / Redis.
+ * Trial runs are async: start experiment → enqueue jobs → worker → TraceStore + trial row.
  */
 // Must be the first import: loads the repo-root .env before AppModule reads process.env.
 import './load-env.js';

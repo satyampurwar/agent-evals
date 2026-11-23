@@ -1,5 +1,5 @@
 /**
- * Harness adapter interface for agent-evals (implementation.md §6.2).
+ * Harness adapter interface for agent-evals.
  *
  * A **HarnessAdapter** is the agent loop: it takes a task prompt, a `ModelAdapter`, sandbox path,
  * tools, and budgets, then runs until the model finishes or a limit is hit. The harness uses the

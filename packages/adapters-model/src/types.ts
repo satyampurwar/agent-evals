@@ -1,5 +1,5 @@
 /**
- * LLM provider interface for agent-evals (implementation.md §6.1).
+ * LLM provider interface for agent-evals.
  *
  * A **ModelAdapter** is the thin boundary between the agent loop (harness) and an LLM API.
  * The harness builds a chat history, optionally offers tools (JSON-schema function specs), and

@@ -9,7 +9,7 @@ import { z } from 'zod';
  *
  * List prices for the models the platform meters, in USD per million tokens. The table lives in prices.json at
  * the repo root (PRICE_TABLE_PATH overrides it). The estimate uses list prices only: it does not apply prompt-cache
- * discounts, so it overstates the provider's bill when cache hits happen (see COST.md).
+ * discounts, so it overstates the provider's bill when cache hits happen (see deliverables/COST.md).
  */
 export const PriceEntrySchema = z.object({
   inputPerMTok: z.number().nonnegative(),

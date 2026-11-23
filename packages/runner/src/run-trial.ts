@@ -44,6 +44,8 @@ export interface RunTrialInput {
   budgets: TrialBudgets;
   /** Already resolved by the caller (e.g. config tools intersected with task.toolsAllowed). */
   toolIds: string[];
+  /** Config `skillsEnabled`; recorded on the harness context (baseline skills are also folded into toolIds). */
+  skillIds?: string[];
   /** Model used by llm_judge graders. Defaults to OpenRouter (needs OPENROUTER_API_KEY). Tests inject a scripted one. */
   judge?: ModelAdapter;
   /** Facts the trial's memory starts with (`task.setup.memory`). Unreachable unless a memory tool is in `toolIds`. */
@@ -56,7 +58,7 @@ export interface RunTrialInput {
 }
 
 /**
- * Trial status (implementation.md §11.3):
+ * Trial status:
  * - succeeded: the agent finished and graders ran. `passed` says whether the agent got it right.
  * - failed: infrastructure problem (model error, sandbox error, unsupported grader). Not the agent's fault.
  * - timeout: the trial exceeded its wall-clock budget.
@@ -85,9 +87,12 @@ export interface RunTrialResult {
     promptTokens: number;
     completionTokens: number;
     totalTokens: number;
+    judgePromptTokens: number;
+    judgeCompletionTokens: number;
     /** Agent tokens at list price, plus each llm_judge call at its judge model's list price. */
     estimatedCostUsd: number;
     stepCount: number;
+    stoppedReason: HarnessRunOutput['stoppedReason'] | null;
   };
   error: TrialError | null;
   trace: Trace;
@@ -147,7 +152,7 @@ export async function runTrial(input: RunTrialInput): Promise<RunTrialResult> {
           sandboxDir: sandbox.dir,
           budgets: input.budgets,
           memory: createTrialMemory(input.memorySeed),
-          skillIds: [],
+          skillIds: input.skillIds ?? [],
           toolIds: input.toolIds,
           emit: trace.emit,
         },
@@ -188,23 +193,31 @@ export async function runTrial(input: RunTrialInput): Promise<RunTrialResult> {
   const passed = status === 'succeeded' && grade?.passed === true;
   const promptTokens = output?.usage.promptTokens ?? 0;
   const completionTokens = output?.usage.completionTokens ?? 0;
-  // Judge tokens are priced but not added to the token counts: those count the agent's own calls only.
+  const judgePromptTokens = judgeCalls.reduce((n, c) => n + c.usage.promptTokens, 0);
+  const judgeCompletionTokens = judgeCalls.reduce((n, c) => n + c.usage.completionTokens, 0);
+  // Agent token totals stay agent-only; judge tokens are stored separately and priced into estimatedCostUsd.
   const estimatedCostUsd = estimateCost(input.prices, input.modelId, { promptTokens, completionTokens }, judgeCalls);
+  // Outer wall-clock timeout has no harness output; still record stoppedReason so exports can count it.
+  const stoppedReason =
+    output?.stoppedReason ?? (status === 'timeout' ? ('timeout' as const) : null);
 
   return {
     status,
     passed,
     score: status === 'succeeded' && grade ? grade.score : 0,
     grade,
-    stoppedReason: output?.stoppedReason ?? null,
+    stoppedReason,
     finalAnswer: output?.finalAnswer ?? '',
     metrics: {
       latencyMs: Date.now() - startedAt,
       promptTokens,
       completionTokens,
       totalTokens: promptTokens + completionTokens,
+      judgePromptTokens,
+      judgeCompletionTokens,
       estimatedCostUsd,
       stepCount: output?.stepCount ?? 0,
+      stoppedReason,
     },
     error,
     trace: {
@@ -242,20 +255,27 @@ function priceMissingResult(trialId: string, unpriced: string[], latencyMs: numb
     grade: null,
     stoppedReason: null,
     finalAnswer: '',
-    metrics: {
-      latencyMs,
-      promptTokens: 0,
-      completionTokens: 0,
-      totalTokens: 0,
-      estimatedCostUsd: 0,
-      stepCount: 0,
-    },
+    metrics: emptyMetrics(latencyMs),
     error: {
       code: 'price_missing',
       message: `no list price for: ${unpriced.join(', ')}. Add it to prices.json before running.`,
       retryable: false,
     },
     trace: { trialId, events: [] },
+  };
+}
+
+function emptyMetrics(latencyMs = 0): RunTrialResult['metrics'] {
+  return {
+    latencyMs,
+    promptTokens: 0,
+    completionTokens: 0,
+    totalTokens: 0,
+    judgePromptTokens: 0,
+    judgeCompletionTokens: 0,
+    estimatedCostUsd: 0,
+    stepCount: 0,
+    stoppedReason: null,
   };
 }
 

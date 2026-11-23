@@ -1,9 +1,8 @@
 <!--
-  Route: /trials/:id — single trial detail: outcome, metrics, grader notes, trace timeline.
+  Route: /trials/:id — outcome, stop reason, metrics/cost, grader results, trace timeline.
 
-  Loads trial + optional trace from the API. Local notes are stored in
-  localStorage only (never sent to the server). `timeline()` turns TraceEvent[]
-  into display rows.
+  Data: GET /trials/:id and GET /trials/:id/trace (JSON from data/traces/).
+  Inspector notes stay in localStorage only. `timeline()` maps TraceEvent[] to rows.
 -->
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue';
@@ -87,6 +86,11 @@ watch(() => props.id, load);
           <dd>
             <span class="badge" :class="outcomeOf(trial)">{{ OUTCOME_TEXT[outcomeOf(trial)] }}</span>
           </dd>
+          <dt>Stop reason</dt>
+          <dd>
+            <code v-if="trial.metrics.stoppedReason">{{ trial.metrics.stoppedReason }}</code>
+            <span v-else class="muted">—</span>
+          </dd>
           <dt>Passed</dt>
           <dd>{{ trial.passed === null ? '—' : String(trial.passed) }}</dd>
           <dt>Score</dt>
@@ -115,12 +119,18 @@ watch(() => props.id, load);
           <dd>{{ count(trial.metrics.promptTokens) }}</dd>
           <dt>Completion tokens</dt>
           <dd>{{ count(trial.metrics.completionTokens) }}</dd>
-          <dt>Total tokens</dt>
+          <dt>Total tokens (agent)</dt>
           <dd>{{ count(trial.metrics.totalTokens) }}</dd>
+          <dt>Judge prompt tokens</dt>
+          <dd>{{ count(trial.metrics.judgePromptTokens) }}</dd>
+          <dt>Judge completion tokens</dt>
+          <dd>{{ count(trial.metrics.judgeCompletionTokens) }}</dd>
+          <dt>Est. cost (USD)</dt>
+          <dd>{{ trial.metrics.estimatedCostUsd == null ? '—' : trial.metrics.estimatedCostUsd.toFixed(6) }}</dd>
           <dt>Steps</dt>
           <dd>{{ count(trial.metrics.stepCount) }}</dd>
         </dl>
-        <p class="muted">Judge tokens are not included here. They appear under the grader details below.</p>
+        <p class="muted">Agent totals exclude judge tokens; both are priced into estimated cost.</p>
       </section>
     </div>
 

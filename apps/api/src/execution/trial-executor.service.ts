@@ -79,7 +79,7 @@ export class TrialExecutor {
       throw new Error(`trial ${trialId} hit a retryable failure: ${outcome.error.code}: ${outcome.error.message}`);
     }
 
-    // Trace first, then the trial row (implementation.md §11.4), so a finished trial always has its trace.
+    // Trace first, then the trial row, so a finished trial always has its trace.
     const traceUri = await this.traceStore.write(trial.experimentId, trialId, serializeTrace(outcome.trace));
     const recorded = await this.finalize(trialId, outcome, traceUri);
     return recorded ? 'finished' : 'skipped';
@@ -121,6 +121,7 @@ export class TrialExecutor {
           timeoutMs: settings.timeoutMs,
         },
         toolIds,
+        skillIds: settings.skillsEnabled,
         memorySeed: taskDoc.setup?.memory,
       });
     } catch (err) {
@@ -180,7 +181,17 @@ function setupFailure(trialId: string, err: unknown): RunTrialResult {
     grade: null,
     stoppedReason: null,
     finalAnswer: '',
-    metrics: { latencyMs: 0, promptTokens: 0, completionTokens: 0, totalTokens: 0, estimatedCostUsd: 0, stepCount: 0 },
+    metrics: {
+      latencyMs: 0,
+      promptTokens: 0,
+      completionTokens: 0,
+      totalTokens: 0,
+      judgePromptTokens: 0,
+      judgeCompletionTokens: 0,
+      estimatedCostUsd: 0,
+      stepCount: 0,
+      stoppedReason: null,
+    },
     error: {
       code: 'setup_error',
       message: err instanceof Error ? err.message : String(err),

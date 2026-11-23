@@ -53,7 +53,8 @@ describe('toCsv and trialCsvRows', () => {
     } as unknown as TrialView;
     const [row] = trialCsvRows([trial]);
     const line = toCsv(TRIAL_CSV_COLUMNS, [row!]).split('\n')[1];
-    expect(line).toBe('e,t,1.0.0,c,0,succeeded,false,0,120,40,,,,,');
+    // status, stoppedReason, passed, score, latency, tokens, judgePrompt, judgeCompletion, cost, errorCode, errorMessage, started, finished
+    expect(line).toBe('e,t,1.0.0,c,0,succeeded,,false,0,120,40,,,,,,,');
   });
 });
 

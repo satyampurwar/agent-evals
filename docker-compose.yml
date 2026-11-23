@@ -50,7 +50,8 @@ services:
       TRACE_DIR: /data/traces
       PORT: "3000"
     ports: ["${API_HOST_PORT:-3000}:3000"]
-    volumes: ["traces:/data/traces"]
+    # Bind-mount so traces always appear under repo data/traces/ (gitignored).
+    volumes: ["./data/traces:/data/traces"]
     depends_on:
       db:
         condition: service_healthy
@@ -78,7 +79,7 @@ services:
       # Trial sandboxes are created under TMPDIR. The Hermes worker reads and writes them by the same absolute
       # path, so both services mount the same volume at /sandboxes.
       TMPDIR: /sandboxes
-    volumes: ["traces:/data/traces", "sandboxes:/sandboxes"]
+    volumes: ["./data/traces:/data/traces", "sandboxes:/sandboxes"]
     depends_on:
       api:
         condition: service_healthy
@@ -125,6 +126,5 @@ services:
 
 volumes:
   pgdata:
-  traces:
   hermes:
   sandboxes:

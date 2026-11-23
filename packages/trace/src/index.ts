@@ -1,10 +1,9 @@
 /**
- * Append-only trial event log for agent-evals.
+ * `@agent-evals/trace` — in-memory append-only event buffer for one trial.
  *
- * During a trial the harness emits `TraceEvent`s (messages, tool calls, memory, errors) into a
- * buffer. After the run, the worker serializes the `Trace` (events + optional final answer) and
- * stores it for debugging and audit. Events are never edited in place — only appended — so the
- * log is a faithful replay of what the agent did.
+ * Harnesses emit `TraceEvent`s (messages, tool calls, memory, errors) via
+ * `TrialContext.emit`. After the run, the Nest worker serializes a `Trace` and
+ * writes it under `data/traces/<experimentId>/<trialId>.json` (see TraceStore).
  */
 
 import { TraceSchema } from '@agent-evals/domain';

@@ -1,9 +1,6 @@
 <!--
-  Root Vue shell: top nav + the active page.
-
-  `<RouterLink>` = client-side navigation (no full page reload).
-  `<RouterView>` = placeholder where the matched route component renders
-  (see router.ts). Pages under pages/ swap in here.
+  App shell: brand + nav (Experiments · Configs · Tasks) and `<RouterView />`.
+  Routes live in router.ts; pages under pages/ render here without full reloads.
 -->
 <script setup lang="ts">
 import { RouterLink, RouterView } from 'vue-router';

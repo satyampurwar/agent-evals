@@ -1,5 +1,5 @@
 /**
- * CLI: demo that two trials cannot see each other's sandbox files (Phase 4 checkpoint).
+ * CLI: demo that two trials cannot see each other's sandbox files.
  *
  * When to run: after changing sandbox path rules or file tools — proves isolation without
  * needing the API. Uses a scripted (fake) model so no API key is required.

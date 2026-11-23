@@ -5,8 +5,8 @@
  *   queued → running → succeeded | failed | timeout | cancelled
  *
  * Outcomes live on the row (`passed`, `score`, `grade`, `metrics`, `error`).
- * The full step-by-step transcript is NOT in Postgres — it is a JSON file; `traceUri`
- * is the key under the TraceStore root (see common/trace-store.ts).
+ * The transcript is a JSON file under `data/traces/` (`traceUri` relative to
+ * TraceStore); see `common/trace-store.ts`.
  *
  * TypeORM notes:
  * - `@ManyToOne` links to ExperimentEntity; CASCADE delete removes trials with the experiment

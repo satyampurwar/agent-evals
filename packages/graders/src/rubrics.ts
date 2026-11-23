@@ -3,7 +3,7 @@
  *
  * A task's `llm_judge` grader names one by `rubricId` (e.g. `summary_v1`). Each rubric lists
  * weighted criteria; some are `required` so a single miss fails the task even if the weighted mean
- * looks high. Edit this catalog carefully — changing weights changes historical grade semantics.
+ * looks high. Edit this catalog carefully — changing weights changes prior grade semantics.
  *
  * Scoring (see llm-judge.ts):
  * - the judge scores each criterion from 0.0 to 1.0

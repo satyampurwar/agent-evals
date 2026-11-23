@@ -103,4 +103,10 @@ export class ExperimentsController {
       trials: await this.experiments.countTrials(experiment.id),
     };
   }
+
+  /** Stretch: coarse failure categories for non-passing trials (status + stop reason + graders). */
+  @Get(':id/failures')
+  async failures(@Param('id', ParseUUIDPipe) id: string) {
+    return this.experiments.failureAnalysis(id);
+  }
 }

@@ -1,11 +1,9 @@
 /**
- * Hermes harness — HTTP client to the Python Hermes agent worker.
+ * `hermes` harness — thin HTTP client to `workers/python-worker`.
  *
- * Unlike `BaselineHarness` (which runs the tool loop in TypeScript), Hermes owns the model call and
- * tool loop inside `workers/python-worker`. This adapter POSTs one trial payload to `/run-trial`,
- * validates the reply, and re-emits the worker's events into the trial trace so A/B comparisons
- * still share the same event schema. The TypeScript `input.model` is unused; Hermes talks to the
- * LLM from Python. Contract details live in the worker README and `contract.py`.
+ * POSTs one trial to `/run-trial`, validates the reply, and re-emits worker events
+ * into the shared `TraceEvent` schema. Hermes (Python) owns the model call and tool
+ * loop; TypeScript `input.model` is unused here. See worker README + `contract.py`.
  */
 import { TraceEventSchema } from '@agent-evals/domain';
 import type { Task } from '@agent-evals/domain';

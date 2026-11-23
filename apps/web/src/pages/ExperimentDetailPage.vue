@@ -9,7 +9,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { RouterLink } from 'vue-router';
 import type { Config, Experiment } from '@agent-evals/domain';
-import { api, type ExperimentStatus, type TrialView } from '../api/endpoints';
+import { api, type ExperimentStatus, type FailuresView, type TrialView } from '../api/endpoints';
 import { errorMessage } from '../api/client';
 import { TRIAL_CSV_COLUMNS, toCsv, trialCsvRows } from '../lib/csv';
 import { count, ms, shortId, when } from '../lib/format';
@@ -23,6 +23,7 @@ const experiment = ref<Experiment | null>(null);
 const status = ref<ExperimentStatus | null>(null);
 const trials = ref<TrialView[]>([]);
 const configs = ref<Config[]>([]);
+const failures = ref<FailuresView | null>(null);
 const error = ref<string | null>(null);
 const starting = ref(false);
 const startNotice = ref<string | null>(null);
@@ -40,14 +41,16 @@ const compareLink = computed(() => (experiment.value?.configIds.length ?? 0) >= 
 
 async function refresh() {
   try {
-    const [exp, st, list] = await Promise.all([
+    const [exp, st, list, fail] = await Promise.all([
       api.getExperiment(props.id),
       api.experimentStatus(props.id),
       api.listTrials(props.id),
+      api.failures(props.id),
     ]);
     experiment.value = exp;
     status.value = st;
     trials.value = list;
+    failures.value = fail;
     error.value = null;
   } catch (err) {
     error.value = errorMessage(err);
@@ -145,6 +148,39 @@ onBeforeUnmount(stopPolling);
       </div>
     </div>
 
+    <template v-if="failures && failures.totalFailed > 0">
+      <h2>Failure analysis</h2>
+      <div class="panel">
+        <p class="muted">{{ failures.totalFailed }} non-passing trial(s), grouped by coarse cause.</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th class="num">Count</th>
+              <th>Example trials</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="row in failures.byCategory" :key="row.category">
+              <td><code>{{ row.category }}</code></td>
+              <td class="num">{{ row.count }}</td>
+              <td>
+                <RouterLink
+                  v-for="tid in row.examples"
+                  :key="tid"
+                  :to="{ name: 'trial', params: { id: tid } }"
+                  style="margin-right: 0.5rem"
+                >
+                  <code>{{ shortId(tid) }}</code>
+                </RouterLink>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p v-for="note in failures.notes" :key="note" class="muted">{{ note }}</p>
+      </div>
+    </template>
+
     <h2>Trials</h2>
     <div class="panel">
       <table>
@@ -154,6 +190,7 @@ onBeforeUnmount(stopPolling);
             <th>Config</th>
             <th class="num">#</th>
             <th>Outcome</th>
+            <th>Stop</th>
             <th class="num">Latency</th>
             <th class="num">Tokens</th>
             <th>Error</th>
@@ -169,6 +206,10 @@ onBeforeUnmount(stopPolling);
             <td class="num">{{ t.trialIndex }}</td>
             <td>
               <span class="badge" :class="outcomeOf(t)">{{ OUTCOME_TEXT[outcomeOf(t)] }}</span>
+            </td>
+            <td>
+              <code v-if="t.metrics.stoppedReason" class="muted">{{ t.metrics.stoppedReason }}</code>
+              <span v-else class="muted">—</span>
             </td>
             <td class="num">{{ ms(t.metrics.latencyMs) }}</td>
             <td class="num">{{ count(t.metrics.totalTokens) }}</td>

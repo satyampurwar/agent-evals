@@ -1,16 +1,17 @@
 <!--
-  Route: /configs — list existing agent configs and create a new one.
+  Route: /configs — create and list immutable agent configs.
 
-  A "config" is harness + model settings (memory on/off, tools, budgets) reused
-  across experiments. Form state uses `reactive()`; `buildConfigInput` validates
-  before POST /configs.
+  A config is the treatment arm: harness (baseline | hermes), OpenRouter model
+  (dropdown from priced MODEL_IDS), temperature, memory, tools/skills, budgets.
+  Identical content returns the existing row (content hash); any change is a new
+  version. Validation: `buildConfigInput` in lib/forms.ts → POST /configs.
 -->
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue';
 import type { Config } from '@agent-evals/domain';
 import { api } from '../api/endpoints';
 import { errorMessage } from '../api/client';
-import { BASE_TOOLS, SKILL_IDS, buildConfigInput, defaultConfigForm } from '../lib/forms';
+import { BASE_TOOLS, HARNESS_IDS, MODEL_IDS, SKILL_IDS, buildConfigInput, defaultConfigForm } from '../lib/forms';
 import { shortId } from '../lib/format';
 
 const configs = ref<Config[]>([]);
@@ -81,8 +82,19 @@ onMounted(load);
       <label for="cfg-name">Name</label>
       <input id="cfg-name" v-model="form.name" type="text" placeholder="baseline-gpt-mini" />
 
-      <label for="cfg-model">Model id (OpenRouter)</label>
-      <input id="cfg-model" v-model="form.modelId" type="text" />
+      <label for="cfg-harness">Harness</label>
+      <select id="cfg-harness" v-model="form.harnessId">
+        <option v-for="id in HARNESS_IDS" :key="id" :value="id">{{ id }}</option>
+      </select>
+      <p v-if="form.harnessId === 'hermes'" class="muted">
+        Hermes runs in the Python worker. Skills below are mapped to tools for baseline only; Hermes ignores skill ids.
+      </p>
+
+      <label for="cfg-model">Model (OpenRouter)</label>
+      <select id="cfg-model" v-model="form.modelId">
+        <option v-for="id in MODEL_IDS" :key="id" :value="id">{{ id }}</option>
+      </select>
+      <p class="muted">Priced models from <code>prices.json</code>. Add a price entry before offering a new id.</p>
 
       <label for="cfg-temp">Temperature (0 to 2)</label>
       <input id="cfg-temp" v-model.number="form.temperature" type="number" min="0" max="2" step="0.1" />
@@ -90,7 +102,7 @@ onMounted(load);
       <h2>Memory and skills</h2>
       <label class="inline"><input v-model="form.memoryEnabled" type="checkbox" /> Memory on (adds memory_read and memory_write)</label>
       <div>
-        <span class="muted">Skills</span>
+        <span class="muted">Skills (baseline maps these to tools; Hermes ignores them)</span>
         <div>
           <label v-for="skill in SKILL_IDS" :key="skill" class="inline">
             <input
@@ -144,6 +156,7 @@ onMounted(load);
             <tr>
               <th>Name</th>
               <th>Version</th>
+              <th>Harness</th>
               <th>Model</th>
               <th class="num">Temp</th>
               <th>Memory</th>
@@ -159,6 +172,7 @@ onMounted(load);
             <tr v-for="c in configs" :key="c.id">
               <td>{{ c.name }}</td>
               <td>{{ c.version }}</td>
+              <td><code>{{ c.harness.id }}</code></td>
               <td><code>{{ c.model.modelId }}</code></td>
               <td class="num">{{ c.model.temperature }}</td>
               <td>

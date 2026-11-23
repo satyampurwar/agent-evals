@@ -33,6 +33,20 @@ describe('ConfigInputSchema', () => {
     const { model: _model, ...noModel } = validConfigInput;
     expect(() => ConfigInputSchema.parse(noModel)).toThrow();
   });
+
+  it('rejects persistAcrossTrials true (not implemented)', () => {
+    const body = {
+      ...validConfigInput,
+      harness: {
+        ...validConfigInput.harness,
+        settings: {
+          ...validConfigInput.harness.settings,
+          memory: { enabled: true, persistAcrossTrials: true },
+        },
+      },
+    };
+    expect(() => ConfigInputSchema.parse(body)).toThrow(/persistAcrossTrials/);
+  });
 });
 
 describe('ExperimentInputSchema', () => {

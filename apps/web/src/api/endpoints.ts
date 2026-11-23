@@ -7,7 +7,7 @@
  * view-only types defined below for list/status payloads.
  */
 import type { Config, ConfigInput, Experiment, ExperimentInput, Task, Trace, GradeResult } from '@agent-evals/domain';
-import type { CompareResult } from '@agent-evals/stats';
+import type { CompareResult, FailureAnalysis } from '@agent-evals/stats';
 import { get, post, type ApiResponse } from './client';
 
 /** One row of GET /tasks. A task id can have several versions, each a separate row. */
@@ -37,8 +37,11 @@ export interface TrialView {
     promptTokens: number;
     completionTokens: number;
     totalTokens: number;
+    judgePromptTokens: number;
+    judgeCompletionTokens: number;
     estimatedCostUsd: number;
     stepCount: number;
+    stoppedReason: 'completed' | 'max_steps' | 'max_tokens' | 'timeout' | 'error' | null;
   }>;
   grade: GradeResult | null;
   error: { code: string; message: string; retryable: boolean } | null;
@@ -69,6 +72,7 @@ export interface StartResult extends Experiment {
 }
 
 export type CompareView = CompareResult & { experimentId: string };
+export type FailuresView = FailureAnalysis & { experimentId: string };
 
 export const api = {
   listTasks: () => get<TaskRow[]>('/tasks'),
@@ -84,6 +88,7 @@ export const api = {
   experimentStatus: (id: string) => get<ExperimentStatus>(`/experiments/${id}/status`),
   compare: (id: string, a: string, b: string) =>
     get<CompareView>(`/experiments/${id}/compare?a=${encodeURIComponent(a)}&b=${encodeURIComponent(b)}`),
+  failures: (id: string) => get<FailuresView>(`/experiments/${id}/failures`),
 
   listTrials: (experimentId: string) => get<TrialView[]>(`/trials?experimentId=${encodeURIComponent(experimentId)}`),
   getTrial: (id: string) => get<TrialView>(`/trials/${id}`),

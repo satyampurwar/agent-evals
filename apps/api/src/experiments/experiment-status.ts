@@ -37,7 +37,7 @@ export async function countTrialsByStatus(manager: EntityManager, experimentId: 
 }
 
 /**
- * Experiment status from its trials (implementation.md §11.3–11.4):
+ * Experiment status from its trials:
  * - running:   some trial is still queued or running
  * - failed:    every trial hit an infrastructure failure
  * - partial:   finished, but some trials failed or timed out or were cancelled

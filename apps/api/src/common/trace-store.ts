@@ -1,19 +1,20 @@
 /**
- * On-disk storage for trial traces (append-only event logs as JSON files).
+ * On-disk storage for trial traces (append-only JSON event logs).
  *
- * Why not Postgres jsonb for traces?
- * Traces can be large (every message + tool call). Keeping them as files keeps
- * the DB row small and makes export/debug as simple as opening a JSON file.
+ * Layout: `<TRACE_DIR>/<experimentId>/<trialId>.json`. Default root is
+ * `data/traces/` in the repo (gitignored). Docker Compose bind-mounts that
+ * directory to `/data/traces` for both `api` and `worker`, so host and
+ * containers see the same files.
  *
- * Security: `resolveKey` rejects paths that escape the root (path traversal via `../`).
- * Call order in TrialExecutor: write trace → then mark trial finished (so a finished
- * trial always has a readable traceUri).
+ * Traces stay out of Postgres so rows stay small and a failed trial is still
+ * inspectable as a plain JSON file. `resolveKey` rejects `../` escapes.
+ * TrialExecutor writes the file before marking the trial finished.
  */
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-/** Default trace root: <repo>/data/traces (gitignored). Override with TRACE_DIR. */
+/** Default: `<repo>/data/traces`. Override with `TRACE_DIR` (Compose sets `/data/traces`). */
 export const DEFAULT_TRACE_DIR = fileURLToPath(new URL('../../../../data/traces', import.meta.url));
 
 /**

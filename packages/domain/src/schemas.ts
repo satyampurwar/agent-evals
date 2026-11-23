@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 /**
- * Shared domain shapes for agent-evals (implementation.md §5).
+ * Shared domain shapes for agent-evals.
  *
  * **Zod** (https://zod.dev) is a runtime schema library: you declare the shape of data once,
  * validate untrusted JSON against it, and TypeScript types are inferred with `z.infer<typeof Schema>`.
@@ -219,8 +219,18 @@ export const TrialSchema = z.object({
     promptTokens: z.number(),
     completionTokens: z.number(),
     totalTokens: z.number(),
+    /** Judge (llm_judge) tokens; priced into estimatedCostUsd, kept separate from agent totals. */
+    judgePromptTokens: z.number(),
+    judgeCompletionTokens: z.number(),
     estimatedCostUsd: z.number(),
     stepCount: z.number(),
+    /**
+     * Why the harness stopped. Null when the trial never reached the harness (setup/price errors).
+     * Budget stops (`max_steps` / `max_tokens`) still have status `succeeded` and are graded.
+     */
+    stoppedReason: z
+      .enum(['completed', 'max_steps', 'max_tokens', 'timeout', 'error'])
+      .nullable(),
   }),
   grade: GradeResultSchema.optional(),
   traceUri: z.string(),
@@ -300,7 +310,21 @@ export type Trace = z.infer<typeof TraceSchema>;
  * Request bodies for the API. Server-assigned fields (id, version, contentHash, createdAt)
  * are not accepted from clients.
  */
-export const ConfigInputSchema = ConfigSchema.pick({ name: true, harness: true, model: true });
+/**
+ * Create-config body. `persistAcrossTrials: true` is rejected: memory never crosses trial
+ * boundaries in this platform (deliverables/LIMITS.md §4).
+ */
+export const ConfigInputSchema = ConfigSchema.pick({ name: true, harness: true, model: true }).superRefine(
+  (value, ctx) => {
+    if (value.harness.settings.memory.persistAcrossTrials) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'persistAcrossTrials is not implemented; must be false',
+        path: ['harness', 'settings', 'memory', 'persistAcrossTrials'],
+      });
+    }
+  },
+);
 export type ConfigInput = z.infer<typeof ConfigInputSchema>;
 
 export const TaskImportSchema = z.object({

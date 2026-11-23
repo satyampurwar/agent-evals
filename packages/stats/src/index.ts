@@ -1,9 +1,9 @@
 /**
- * `@agent-evals/stats` — A/B statistics over scored trials after an experiment completes.
+ * `@agent-evals/stats` — compare two configs after an experiment finishes.
  *
- * `compareConfigs` is the main entry: macro pass rates, bootstrap CIs, McNemar p-value, and a
- * verdict (`a_better` | `b_better` | `likely_noise` | `insufficient_data`). Lower-level helpers
- * (pass rate, bootstrap, McNemar) are exported for tests and custom reports.
+ * Main entry: `compareConfigs` → macro pass rates, paired bootstrap CI, McNemar,
+ * per-task deltas, verdict (`a_better` | `b_better` | `likely_noise` | `insufficient_data`).
+ * Also `analyzeFailures` for coarse failure buckets. Used by the API compare/failures routes.
  */
 
 export { passRate, wilsonInterval, Z_95 } from './pass-rate.js';
@@ -23,4 +23,11 @@ export type {
   TaskComparison,
   Verdict,
 } from './compare.js';
+export { analyzeFailures, classifyFailure } from './failures.js';
+export type {
+  FailureAnalysis,
+  FailureCategory,
+  FailureCategoryCount,
+  FailureTrialInput,
+} from './failures.js';
 export { mulberry32 } from './rng.js';

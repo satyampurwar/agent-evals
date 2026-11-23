@@ -1,5 +1,5 @@
 /**
- * CLI: measure how well the LLM judge agrees with human labels (Phase 9).
+ * CLI: measure how well the LLM judge agrees with human labels.
  *
  * When to run: after changing an llm_judge rubric, threshold, or judge model — before trusting
  * that grader in experiments. Needs a live OpenRouter key (OPENROUTER_API_KEY in .env).

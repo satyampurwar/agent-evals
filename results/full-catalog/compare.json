@@ -1,0 +1,226 @@
+{
+  "experimentId": "48e5c41f-87ce-4ff8-a786-c95d56d22992",
+  "commonTasks": 21,
+  "pairedTrials": 63,
+  "a": {
+    "configId": "e355cd4f-375c-41d9-a66a-3271561ccfeb",
+    "scoredTrials": 63,
+    "passRate": 0.8730158730158729,
+    "passRateCI": {
+      "mean": 0.8730158730158729,
+      "low": 0.7301587301587301,
+      "high": 1
+    },
+    "meanLatencyMs": 3509.3174603174602,
+    "meanTotalTokens": 5106.015873015873,
+    "meanCostUsd": 0.002240238095238095,
+    "excluded": {
+      "failed": 0,
+      "cancelled": 0,
+      "pending": 0
+    }
+  },
+  "b": {
+    "configId": "374ed4d8-fbf1-4acb-961b-23bad403839d",
+    "scoredTrials": 63,
+    "passRate": 0.7301587301587301,
+    "passRateCI": {
+      "mean": 0.7301587301587301,
+      "low": 0.5396825396825397,
+      "high": 0.9047619047619048
+    },
+    "meanLatencyMs": 3520.3015873015875,
+    "meanTotalTokens": 5065.3015873015875,
+    "meanCostUsd": 0.0022296523809523807,
+    "excluded": {
+      "failed": 0,
+      "cancelled": 0,
+      "pending": 0
+    }
+  },
+  "delta": {
+    "value": 0.1428571428571428,
+    "ci": {
+      "low": 0,
+      "high": 0.3333333333333333
+    },
+    "pValue": 0.011718749999999981,
+    "discordant": {
+      "aOnly": 10,
+      "bOnly": 1
+    }
+  },
+  "noise": true,
+  "verdict": "likely_noise",
+  "perTask": [
+    {
+      "taskId": "det_add_01",
+      "trialsA": 3,
+      "trialsB": 3,
+      "passRateA": 0.3333333333333333,
+      "passRateB": 0.3333333333333333,
+      "delta": 0
+    },
+    {
+      "taskId": "det_extract_order_01",
+      "trialsA": 3,
+      "trialsB": 3,
+      "passRateA": 1,
+      "passRateB": 1,
+      "delta": 0
+    },
+    {
+      "taskId": "det_letter_count_01",
+      "trialsA": 3,
+      "trialsB": 3,
+      "passRateA": 1,
+      "passRateB": 0,
+      "delta": 1
+    },
+    {
+      "taskId": "det_state_json_01",
+      "trialsA": 3,
+      "trialsB": 3,
+      "passRateA": 1,
+      "passRateB": 1,
+      "delta": 0
+    },
+    {
+      "taskId": "det_state_multi_01",
+      "trialsA": 3,
+      "trialsB": 3,
+      "passRateA": 1,
+      "passRateB": 1,
+      "delta": 0
+    },
+    {
+      "taskId": "det_state_nested_01",
+      "trialsA": 3,
+      "trialsB": 3,
+      "passRateA": 1,
+      "passRateB": 1,
+      "delta": 0
+    },
+    {
+      "taskId": "det_unit_convert_01",
+      "trialsA": 3,
+      "trialsB": 3,
+      "passRateA": 1,
+      "passRateB": 1,
+      "delta": 0
+    },
+    {
+      "taskId": "det_unit_fizzbuzz_01",
+      "trialsA": 3,
+      "trialsB": 3,
+      "passRateA": 1,
+      "passRateB": 1,
+      "delta": 0
+    },
+    {
+      "taskId": "det_unit_roman_01",
+      "trialsA": 3,
+      "trialsB": 3,
+      "passRateA": 1,
+      "passRateB": 1,
+      "delta": 0
+    },
+    {
+      "taskId": "det_unit_slugify_01",
+      "trialsA": 3,
+      "trialsB": 3,
+      "passRateA": 1,
+      "passRateB": 1,
+      "delta": 0
+    },
+    {
+      "taskId": "det_weekday_01",
+      "trialsA": 3,
+      "trialsB": 3,
+      "passRateA": 0,
+      "passRateB": 0,
+      "delta": 0
+    },
+    {
+      "taskId": "det_write_answer_01",
+      "trialsA": 3,
+      "trialsB": 3,
+      "passRateA": 1,
+      "passRateB": 1,
+      "delta": 0
+    },
+    {
+      "taskId": "judge_bugreport_01",
+      "trialsA": 3,
+      "trialsB": 3,
+      "passRateA": 1,
+      "passRateB": 1,
+      "delta": 0
+    },
+    {
+      "taskId": "judge_email_01",
+      "trialsA": 3,
+      "trialsB": 3,
+      "passRateA": 1,
+      "passRateB": 1,
+      "delta": 0
+    },
+    {
+      "taskId": "judge_explain_01",
+      "trialsA": 3,
+      "trialsB": 3,
+      "passRateA": 1,
+      "passRateB": 1,
+      "delta": 0
+    },
+    {
+      "taskId": "judge_summary_01",
+      "trialsA": 3,
+      "trialsB": 3,
+      "passRateA": 1,
+      "passRateB": 1,
+      "delta": 0
+    },
+    {
+      "taskId": "judge_tradeoff_01",
+      "trialsA": 3,
+      "trialsB": 3,
+      "passRateA": 1,
+      "passRateB": 1,
+      "delta": 0
+    },
+    {
+      "taskId": "mem_deploy_file_01",
+      "trialsA": 3,
+      "trialsB": 3,
+      "passRateA": 1,
+      "passRateB": 0,
+      "delta": 1
+    },
+    {
+      "taskId": "mem_recall_client_01",
+      "trialsA": 3,
+      "trialsB": 3,
+      "passRateA": 1,
+      "passRateB": 0,
+      "delta": 1
+    },
+    {
+      "taskId": "skill_csv_mean_01",
+      "trialsA": 3,
+      "trialsB": 3,
+      "passRateA": 1,
+      "passRateB": 1,
+      "delta": 0
+    },
+    {
+      "taskId": "skill_csv_sum_01",
+      "trialsA": 3,
+      "trialsB": 3,
+      "passRateA": 0,
+      "passRateB": 0,
+      "delta": 0
+    }
+  ],
+  "notes": []
+}

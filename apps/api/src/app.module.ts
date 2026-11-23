@@ -1,20 +1,10 @@
 /**
- * Root NestJS module — the wiring diagram for the whole API.
+ * Root Nest module for agent-evals (shared by `main.ts` HTTP and `worker.ts`).
  *
- * NestJS mental model:
- * - `@Module({ imports, controllers, providers })` declares what this slice of the
- *   app exposes and depends on. Nest builds a dependency-injection container from it.
- * - Feature modules (`TasksModule`, `ConfigsModule`, …) own their controllers + services.
- * - `TypeOrmModule.forRoot` = Postgres connection; entity classes map to tables.
- * - `BullModule.forRoot` = Redis connection for the trial job queue.
- *
- * Domain objects this API manages:
- *   Task  → what the agent is asked to do (+ graders)
- *   Config → immutable harness/model/settings (identified by contentHash)
- *   Experiment → matrix of (tasks × configs × nTrials)
- *   Trial → one cell of that matrix, executed asynchronously by ExecutionModule
- *
- * Both `main.ts` (HTTP) and `worker.ts` (queue-only) import this same module.
+ * Feature modules: tasks, configs, experiments, trials, execution (queue consumer).
+ * Infra: TypeORM → Postgres, BullMQ → Redis. Domain nouns:
+ *   Task → prompt + graders · Config → immutable harness/model/settings (contentHash)
+ *   Experiment → tasks × configs × N · Trial → one matrix cell (async via ExecutionModule)
  */
 import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';

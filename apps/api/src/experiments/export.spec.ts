@@ -44,7 +44,17 @@ function trial(overrides: Partial<TrialView> = {}): TrialView {
     seed: 1,
     score: 1,
     passed: true,
-    metrics: { latencyMs: 1200, promptTokens: 148, completionTokens: 3, totalTokens: 151, stepCount: 1 },
+    metrics: {
+      latencyMs: 1200,
+      promptTokens: 148,
+      completionTokens: 3,
+      totalTokens: 151,
+      judgePromptTokens: 0,
+      judgeCompletionTokens: 0,
+      estimatedCostUsd: 0.001,
+      stepCount: 1,
+      stoppedReason: 'completed',
+    },
     grade: null,
     error: null,
     traceUri: 'exp-1/t1.json',
@@ -120,8 +130,17 @@ describe('trialExportRows', () => {
     expect(row.modelId).toBeUndefined();
   });
 
-  it('leaves cost blank when the runner did not measure it', () => {
+  it('exports stop reason and cost when present on metrics', () => {
     const [row] = trialExportRows([trial()], [CONFIG_A]);
+    expect(row.stoppedReason).toBe('completed');
+    expect(row.estimatedCostUsd).toBe(0.001);
+  });
+
+  it('leaves cost blank when the runner did not measure it', () => {
+    const [row] = trialExportRows(
+      [trial({ metrics: { latencyMs: 1, promptTokens: 0, completionTokens: 0, totalTokens: 0, stepCount: 0 } as TrialView['metrics'] })],
+      [CONFIG_A],
+    );
     expect(row.estimatedCostUsd).toBeUndefined();
   });
 

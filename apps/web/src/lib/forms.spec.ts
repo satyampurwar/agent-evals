@@ -21,6 +21,14 @@ describe('buildConfigInput', () => {
     expect(r.input.model).toEqual({ provider: 'openrouter', modelId: 'openai/gpt-4.1-mini', temperature: 0 });
   });
 
+  it('can create a Hermes config from the form', () => {
+    const r = buildConfigInput({ ...defaultConfigForm(), name: 'hermes-mem', harnessId: 'hermes', memoryEnabled: true });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.input.harness.id).toBe('hermes');
+    expect(r.input.harness.settings.memory.enabled).toBe(true);
+  });
+
   it('never sends persistAcrossTrials as true, since that is not implemented', () => {
     const r = buildConfigInput({ ...defaultConfigForm(), name: 'x', memoryEnabled: true });
     expect(r.ok && r.input.harness.settings.memory).toEqual({ enabled: true, persistAcrossTrials: false });
@@ -46,6 +54,12 @@ describe('buildConfigInput', () => {
   it('accepts the boundary values', () => {
     const r = buildConfigInput({ ...defaultConfigForm(), name: 'edge', temperature: 2, maxSteps: 50, timeoutMs: 1000 });
     expect(r.ok).toBe(true);
+  });
+
+  it('rejects a model that is not in the priced list', () => {
+    const r = buildConfigInput({ ...defaultConfigForm(), name: 'x', modelId: 'openai/gpt-nope' });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors.join(' ')).toMatch(/Model must be one of/);
   });
 });
 

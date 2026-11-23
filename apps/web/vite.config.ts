@@ -1,11 +1,13 @@
+/**
+ * Vite config for the Vue UI.
+ * Dev: browser calls `/api/...`; proxy strips `/api` and forwards to the Nest API
+ * (no CORS). Production nginx image does the same (see apps/web/Dockerfile).
+ */
 import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vite'
 
-// The API has no CORS. In dev, the browser calls /api/... and Vite forwards it to the Nest API,
-// so the API's paths (/tasks, /configs, ...) never collide with the UI's own routes.
 const apiTarget = process.env.API_URL ?? 'http://localhost:3000'
 
-// https://vite.dev/config/
 export default defineConfig({
   plugins: [vue()],
   server: {

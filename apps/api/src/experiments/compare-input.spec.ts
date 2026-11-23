@@ -39,7 +39,7 @@ describe('toSideInput', () => {
     expect(side.excluded).toEqual({ failed: 1, cancelled: 1, pending: 2 });
   });
 
-  it('keeps latency and tokens for a trial with no cost, as trials recorded before Phase 15 have', () => {
+  it('keeps latency and tokens for a trial with no cost', () => {
     const side = toSideInput('A', [row({ metrics: { latencyMs: 80, totalTokens: 12 } })]);
     expect(side.trials[0]!.metrics).toEqual({ latencyMs: 80, totalTokens: 12 });
   });

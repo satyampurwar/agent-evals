@@ -22,7 +22,13 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
 import type { Experiment, ExperimentInput } from '@agent-evals/domain';
-import { compareConfigs, NothingToCompareError, type CompareResult } from '@agent-evals/stats';
+import {
+  analyzeFailures,
+  compareConfigs,
+  NothingToCompareError,
+  type CompareResult,
+  type FailureAnalysis,
+} from '@agent-evals/stats';
 import { DataSource, In, Repository } from 'typeorm';
 import { isUuid } from '../common/uuid.js';
 import { ConfigsService } from '../configs/configs.service.js';
@@ -245,6 +251,37 @@ export class ExperimentsService {
       }
       throw err;
     }
+  }
+
+  /**
+   * Groups non-passing trials into coarse failure categories (stop reason, status, grader).
+   * Does not load full traces; tool-level categories need optional enrichments later.
+   */
+  async failureAnalysis(experimentId: string): Promise<FailureAnalysis & { experimentId: string }> {
+    await this.findOne(experimentId);
+    const rows = await this.dataSource.manager.find(TrialEntity, {
+      where: { experimentId },
+      order: { taskId: 'ASC', configId: 'ASC', trialIndex: 'ASC' },
+    });
+    const analysis = analyzeFailures(
+      rows.map((t) => {
+        const graders = t.grade?.graderResults ?? [];
+        const graderDisagreement =
+          graders.length > 1 && graders.some((g) => g.passed) && graders.some((g) => !g.passed);
+        return {
+          trialId: t.id,
+          taskId: t.taskId,
+          configId: t.configId,
+          trialIndex: t.trialIndex,
+          status: t.status,
+          passed: t.passed,
+          stoppedReason: t.metrics?.stoppedReason ?? null,
+          errorCode: t.error?.code ?? null,
+          graderDisagreement,
+        };
+      }),
+    );
+    return { experimentId, ...analysis };
   }
 
   /** Maps the stored row to the public Experiment shape from the domain package. */

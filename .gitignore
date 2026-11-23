@@ -1,13 +1,30 @@
 .env
 node_modules
 dist
+*.tsbuildinfo
 .venv/
 **/__pycache__/
 .pytest_cache/
 .ruff_cache/
 *.egg-info/
 pgdata/
+
+# Local trial traces (Docker bind-mounts ./data/traces → /data/traces). Never push.
 data/
+
+# CLI poll logs; keep compare/export JSON+CSV under results/ if you want them in git
+results/**/run.log
+
+# Removed Nest/Vite scaffold + unused placeholders (do not re-add)
+apps/api/.agents/
+apps/api/.claude/
+apps/api/AGENTS.md
+apps/api/CLAUDE.md
+apps/api/README.md
+apps/web/README.md
 
 # Hermes Agent state for the Python worker (sessions, logs, skill sync)
 workers/python-worker/.hermes-home/
+
+# Deliverables
+deliverables/video.md

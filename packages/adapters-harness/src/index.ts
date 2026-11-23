@@ -1,15 +1,10 @@
 /**
- * `@agent-evals/adapters-harness` — agent "harnesses" (how the model is looped with tools).
+ * `@agent-evals/adapters-harness` — agent loops (`HarnessAdapter`) + tools.
  *
- * A harness implements `HarnessAdapter.run`: given a task + model + sandbox context,
- * drive the agent until it answers or hits a budget, emitting TraceEvents along the way.
- * The runner calls `createHarness` then `harness.run`; graders live in `@agent-evals/graders`.
- *
- * Built-in harnesses:
- * - `baseline` — TypeScript tool-calling loop in this package
- * - `hermes` — HTTP client to the Python worker that runs Hermes Agent
- *
- * Also exports tools (read/write/list, memory, CSV skill), memory store, and `createHarness`.
+ * `createHarness(id)` → `baseline` (TS tool-calling loop) or `hermes` (HTTP client to
+ * `workers/python-worker`). Runner calls `harness.run` with task, model, sandbox, budgets;
+ * harnesses emit `TraceEvent`s. Also: file tools, memory store, `csv_summary` skill.
+ * Graders live in `@agent-evals/graders`.
  */
 export type {
   HarnessAdapter,

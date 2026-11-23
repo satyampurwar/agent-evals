@@ -27,7 +27,7 @@ export interface ScoredTrial {
   metrics?: {
     latencyMs: number;
     totalTokens: number;
-    /** Optional: absent for trials recorded before cost metering (Phase 15). Estimated at list price, see COST.md. */
+    /** Optional when a trial has no priced usage. Estimated at list price; see deliverables/COST.md. */
     estimatedCostUsd?: number;
   };
 }

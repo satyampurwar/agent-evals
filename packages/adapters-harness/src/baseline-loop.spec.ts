@@ -87,7 +87,7 @@ describe('BaselineHarness tool loop', () => {
     expect(model.requests[0].tools?.map((t) => t.name)).toEqual(['read_file']);
   });
 
-  it('omits tools entirely when none are allowed (Phase 3 behavior)', async () => {
+  it('omits tools entirely when none are allowed', async () => {
     const { model, out } = await run([reply('42')], { toolIds: [] });
     expect(model.requests[0].tools).toBeUndefined();
     expect(out).toMatchObject({ finalAnswer: '42', stoppedReason: 'completed', stepCount: 1 });
