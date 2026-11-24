@@ -11,7 +11,7 @@ import { useRouter, RouterLink } from 'vue-router';
 import type { Config, Experiment } from '@agent-evals/domain';
 import { api, type TaskRow } from '../api/endpoints';
 import { errorMessage } from '../api/client';
-import { buildExperimentInput, MAX_PLANNED_TRIALS } from '../lib/forms';
+import { buildExperimentInput, MAX_PLANNED_TRIALS, selectionState, toggleAll } from '../lib/forms';
 import { when } from '../lib/format';
 
 const router = useRouter();
@@ -38,6 +38,21 @@ const taskChoices = computed(() => {
 });
 
 const planned = computed(() => form.taskIds.length * form.configIds.length * form.nTrials);
+
+/** "Select all" reflects the task list: unchecked, partly checked (dash), or checked. */
+const taskSelection = computed(() =>
+  selectionState(
+    form.taskIds,
+    taskChoices.value.map((t) => t.id),
+  ),
+);
+
+function toggleAllTasks() {
+  form.taskIds = toggleAll(
+    form.taskIds,
+    taskChoices.value.map((t) => t.id),
+  );
+}
 
 async function load() {
   loading.value = true;
@@ -130,6 +145,16 @@ onMounted(load);
 
         <label>Tasks</label>
         <div class="checklist">
+          <label v-if="taskChoices.length" class="select-all">
+            <input
+              type="checkbox"
+              :checked="taskSelection === 'all'"
+              :indeterminate="taskSelection === 'some'"
+              @change="toggleAllTasks"
+            />
+            <strong>Select all</strong>
+            <span class="muted">({{ form.taskIds.length }} of {{ taskChoices.length }} selected)</span>
+          </label>
           <label v-for="t in taskChoices" :key="t.id">
             <input type="checkbox" :checked="form.taskIds.includes(t.id)" @change="toggle(form.taskIds, t.id)" />
             <code>{{ t.id }}</code>

@@ -117,6 +117,23 @@ export interface ExperimentForm {
   nTrials: number;
 }
 
+/** How much of a list is selected. Drives the "Select all" checkbox: empty, partly checked, or checked. */
+export type SelectionState = 'none' | 'some' | 'all';
+
+export function selectionState(selected: readonly string[], all: readonly string[]): SelectionState {
+  const chosen = all.filter((id) => selected.includes(id)).length;
+  if (chosen === 0) return 'none';
+  return chosen === all.length ? 'all' : 'some';
+}
+
+/**
+ * The selection after "Select all" is clicked: everything, unless everything is already selected,
+ * in which case nothing. Ids that are not in `all` (for example a task that was removed) are dropped.
+ */
+export function toggleAll(selected: readonly string[], all: readonly string[]): string[] {
+  return selectionState(selected, all) === 'all' ? [] : [...all];
+}
+
 export function buildExperimentInput(form: ExperimentForm): BuildResult<ExperimentInput> {
   const errors: string[] = [];
   const name = form.name.trim();

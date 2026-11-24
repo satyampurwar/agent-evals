@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { buildConfigInput, buildExperimentInput, defaultConfigForm, MAX_PLANNED_TRIALS } from './forms';
+import {
+  buildConfigInput,
+  buildExperimentInput,
+  defaultConfigForm,
+  MAX_PLANNED_TRIALS,
+  selectionState,
+  toggleAll,
+} from './forms';
 
 describe('buildConfigInput', () => {
   it('builds the same shape the API expects, with the base tools and memory off by default', () => {
@@ -95,5 +102,33 @@ describe('buildExperimentInput', () => {
     const r = buildExperimentInput({ ...base, taskIds, configIds: ['b'], nTrials: 1000 });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.errors).toEqual([`This would create 11000 trials; the limit is ${MAX_PLANNED_TRIALS}.`]);
+  });
+});
+
+describe('select all', () => {
+  const all = ['a', 'b', 'c'];
+
+  it('reports none, some, or all of the list as selected', () => {
+    expect(selectionState([], all)).toBe('none');
+    expect(selectionState(['b'], all)).toBe('some');
+    expect(selectionState(['c', 'a', 'b'], all)).toBe('all');
+  });
+
+  it('reports none for an empty list, so the control is not shown as checked', () => {
+    expect(selectionState([], [])).toBe('none');
+  });
+
+  it('selects everything from none or from a partial selection', () => {
+    expect(toggleAll([], all)).toEqual(['a', 'b', 'c']);
+    expect(toggleAll(['b'], all)).toEqual(['a', 'b', 'c']);
+  });
+
+  it('clears the selection when everything is already selected', () => {
+    expect(toggleAll(['a', 'b', 'c'], all)).toEqual([]);
+  });
+
+  it('ignores ids that are no longer in the list', () => {
+    expect(selectionState(['gone'], all)).toBe('none');
+    expect(toggleAll(['gone', 'a'], all)).toEqual(['a', 'b', 'c']);
   });
 });

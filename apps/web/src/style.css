@@ -327,6 +327,16 @@ pre {
   align-items: center;
 }
 
+/* "Select all" stays at the top of a scrolling list, with a rule under it. */
+.checklist label.select-all {
+  position: sticky;
+  top: 0;
+  background: #fff;
+  margin: 0 0 0.3rem;
+  padding: 0.2rem 0 0.35rem;
+  border-bottom: 1px solid var(--border);
+}
+
 @media (max-width: 800px) {
   .grid-2 {
     grid-template-columns: 1fr;
