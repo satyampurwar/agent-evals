@@ -218,28 +218,45 @@ Useful commands. `\` commands are psql meta-commands; type them at the `evals=#`
 Columns are camelCase, so quote them in SQL (for example `"taskId"`). Unquoted, Postgres folds them to lowercase and the query fails.
 
 ```sql
--- latest trials and their outcome
-SELECT id, "taskId", status, passed, score, "startedAt", "finishedAt"
-FROM trials
-ORDER BY "startedAt" DESC NULLS LAST
-LIMIT 10;
+-- 1. find experiment IDs
+-- just the latest experiment ID
+SELECT id FROM experiments ORDER BY "createdAt" DESC LIMIT 1;
 
--- experiments, newest first
+-- all experiments, newest first: copy an id into the '<experiment-id>' placeholder in step 2
 SELECT id, name, status, "nTrials", "createdAt"
 FROM experiments
 ORDER BY "createdAt" DESC;
 
--- trial count per status for one experiment (replace the id)
-SELECT status, count(*)
+-- 2. one experiment, grouped by status: trial count, passes, average score, total cost (replace the id)
+SELECT status,
+       count(*)                                                 AS trials,
+       sum(CASE WHEN passed THEN 1 ELSE 0 END)                  AS passed,
+       round(avg(score)::numeric, 3)                            AS avg_score,
+       round(sum((metrics->>'estimatedCostUsd')::numeric), 4)   AS total_cost_usd
 FROM trials
 WHERE "experimentId" = '<experiment-id>'
 GROUP BY status;
 
--- configs in the database
+-- 3. latest trials: outcome, score, cost and error
+SELECT id, status, passed, score,
+       metrics->>'estimatedCostUsd' AS cost_usd,
+       metrics->>'totalTokens'      AS tokens,
+       error->>'code'               AS error_code
+FROM trials
+ORDER BY "finishedAt" DESC NULLS LAST
+LIMIT 10;
+
+-- 4. total estimated cost across all trials
+SELECT round(sum((metrics->>'estimatedCostUsd')::numeric), 4) AS total_cost_usd
+FROM trials;
+
+-- 5. configs in the database
 SELECT id, name, version, "contentHash" FROM configs;
 ```
 
 `trials.status` is one of `queued`, `running`, `succeeded`, `failed`, `timeout` or `cancelled`. `trials."traceUri"` is the trace file's key under `data/traces/`.
+
+Cost is not a column. It lives in the `metrics` JSON as `estimatedCostUsd`, computed from `prices.json`, so it is an estimate rather than a billed amount. It includes judge tokens. Trials that fail during setup record `0`, and `metrics` stays `{}` until a trial finishes, so queued and running trials have no cost yet.
 
 ### Inspect the queue
 
