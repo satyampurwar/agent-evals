@@ -1,7 +1,7 @@
 /**
  * CLI: create configs + experiment, start it, poll until done, write results/.
  *
- * Default plan (memory on vs off, Hermes, full 21-task catalog):
+ * Default plan (memory on vs off, Hermes, full 22-task catalog):
  *   npx tsx scripts/run-experiment.ts --dry-run
  *   npx tsx scripts/run-experiment.ts --name full-catalog --n 3 --configs mem-off,mem-on --tasks all
  *   npx tsx scripts/run-experiment.ts --resume <experimentId>
@@ -31,6 +31,7 @@ export const GROUPS = {
     'det_unit_fizzbuzz_01',
     'det_unit_slugify_01',
     'det_unit_roman_01',
+    'det_unit_chunk_01',
     'judge_summary_01',
     'judge_explain_01',
     'judge_email_01',

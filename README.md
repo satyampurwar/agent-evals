@@ -88,14 +88,18 @@ Interface details: [DESIGN.md](deliverables/DESIGN.md) §2.
 
 ## Sample experiment
 
-With the stack up (`docker compose up -d`) and `npm install` on the host:
+The experiment compares two configs on the same tasks: memory on vs memory off, both on the Hermes harness. The CLI, [`scripts/run-experiment.ts`](scripts/run-experiment.ts), creates the configs and the experiment through the API, starts it, and waits for it to finish.
 
-```bash
-npx tsx scripts/run-experiment.ts --dry-run
-npx tsx scripts/run-experiment.ts --name full-catalog --n 3 --configs mem-off,mem-on --tasks all
-```
-
-Defaults are full catalog, N = 3, memory on vs off (Hermes). Writes `results/<name>/`. Analysis: [EXPERIMENT.md](deliverables/EXPERIMENT.md).
+1. **Start the stack**: `docker compose up --build -d`. The `worker` runs the trials and needs the Python worker that Hermes uses. Check that everything is up with `docker compose ps`.
+2. **Load the tasks**: `docker compose up --build seed`. Skip this if the catalog is already loaded, and rerun it after changing anything under [`tasks/`](tasks/).
+3. **Check the plan**: `npx tsx scripts/run-experiment.ts --dry-run`. It prints the task count and trial total, and sends nothing to the API.
+4. **Run it**:
+   ```bash
+   npx tsx scripts/run-experiment.ts --name full-catalog --n 3 --configs mem-off,mem-on --tasks all
+   ```
+   Defaults are the full catalog, N = 3, and memory on vs off. Each `--tasks` value is a group: `all`, `memory`, `control`, `judge`, or `skill`.
+5. **Resume if it stops**: `npx tsx scripts/run-experiment.ts --resume <experimentId>`. This starts no new trials; it only waits for the existing ones and exports the results.
+6. **Read the results**: the run writes `results/<name>/` with `compare.json`, `export.json` and `export.csv`. The write-up and analysis are in [EXPERIMENT.md](deliverables/EXPERIMENT.md).
 
 ---
 
