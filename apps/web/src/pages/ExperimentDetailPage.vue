@@ -186,6 +186,7 @@ onBeforeUnmount(stopPolling);
       <table>
         <thead>
           <tr>
+            <th>Trial</th>
             <th>Task</th>
             <th>Config</th>
             <th class="num">#</th>
@@ -198,6 +199,9 @@ onBeforeUnmount(stopPolling);
         </thead>
         <tbody>
           <tr v-for="t in trials" :key="t.id">
+            <td>
+              <RouterLink :to="{ name: 'trial', params: { id: t.id } }"><code :title="t.id">{{ shortId(t.id) }}</code></RouterLink>
+            </td>
             <td>
               <RouterLink :to="{ name: 'trial', params: { id: t.id } }"><code>{{ t.taskId }}</code></RouterLink>
               <span class="muted"> v{{ t.taskVersion }}</span>

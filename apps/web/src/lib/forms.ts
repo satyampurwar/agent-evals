@@ -85,7 +85,7 @@ export function buildConfigInput(form: ConfigForm): BuildResult<ConfigInput> {
   for (const skill of form.skillsEnabled) {
     if (!(SKILL_IDS as readonly string[]).includes(skill)) errors.push(`Unknown skill: ${skill}.`);
   }
-  // Hermes ignores skillsEnabled / skillIds; baseline maps them to tools. Warn in the UI, still allow save.
+  // Skills are expanded into tool names for every harness (resolveToolIds on the API). Hermes gets those tool names, never skill ids.
   if (errors.length) return { ok: false, errors };
 
   return {

@@ -44,7 +44,7 @@ export interface RunTrialInput {
   budgets: TrialBudgets;
   /** Already resolved by the caller (e.g. config tools intersected with task.toolsAllowed). */
   toolIds: string[];
-  /** Config `skillsEnabled`; recorded on the harness context (baseline skills are also folded into toolIds). */
+  /** Config `skillsEnabled`; recorded on the harness context (skills are also folded into toolIds for every harness). */
   skillIds?: string[];
   /** Model used by llm_judge graders. Defaults to OpenRouter (needs OPENROUTER_API_KEY). Tests inject a scripted one. */
   judge?: ModelAdapter;

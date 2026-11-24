@@ -337,8 +337,41 @@ pre {
   border-bottom: 1px solid var(--border);
 }
 
+/* Configs page: form on top, saved configs full width below. */
+.configs-stack {
+  display: grid;
+  gap: 1rem;
+}
+
+.config-form {
+  max-width: 760px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+/* Wide tables scroll inside their panel instead of overflowing the page. */
+.table-scroll {
+  overflow-x: auto;
+}
+
+.table-scroll table {
+  min-width: 900px;
+}
+
+.table-scroll td {
+  overflow-wrap: anywhere;
+}
+
 @media (max-width: 800px) {
   .grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .form-row {
     grid-template-columns: 1fr;
   }
 }

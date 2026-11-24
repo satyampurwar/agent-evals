@@ -75,39 +75,45 @@ onMounted(load);
     returns the existing version.
   </p>
 
-  <div class="grid-2">
-    <section class="panel">
+  <div class="configs-stack">
+    <section class="panel config-form">
       <h2 style="margin-top: 0">New config</h2>
 
       <label for="cfg-name">Name</label>
       <input id="cfg-name" v-model="form.name" type="text" placeholder="baseline-gpt-mini" />
 
-      <label for="cfg-harness">Harness</label>
-      <select id="cfg-harness" v-model="form.harnessId">
-        <option v-for="id in HARNESS_IDS" :key="id" :value="id">{{ id }}</option>
-      </select>
+      <div class="form-row">
+        <div>
+          <label for="cfg-harness">Harness</label>
+          <select id="cfg-harness" v-model="form.harnessId">
+            <option v-for="id in HARNESS_IDS" :key="id" :value="id">{{ id }}</option>
+          </select>
+        </div>
+        <div>
+          <label for="cfg-model">Model (OpenRouter)</label>
+          <select id="cfg-model" v-model="form.modelId">
+            <option v-for="id in MODEL_IDS" :key="id" :value="id">{{ id }}</option>
+          </select>
+        </div>
+        <div>
+          <label for="cfg-temp">Temperature (0 to 2)</label>
+          <input id="cfg-temp" v-model.number="form.temperature" type="number" min="0" max="2" step="0.1" />
+        </div>
+      </div>
       <p v-if="form.harnessId === 'hermes'" class="muted">
-        Hermes runs in the Python worker. Skills below are mapped to tools for baseline only; Hermes ignores skill ids.
+        Hermes runs in the Python worker. Skills below are expanded into tool names before the run, the same way for every harness. Hermes receives those tool names, not skill ids.
       </p>
       <p v-if="form.harnessId === 'claude-agent'" class="muted">
         Claude Agent SDK runs Claude Code through OpenRouter. It is only dependable with Anthropic models, and only on
         Anthropic's own provider. Other models are best effort: tool calling may behave differently, so a lower score
         may reflect the harness and not the model. Use baseline or hermes to compare models.
       </p>
-
-      <label for="cfg-model">Model (OpenRouter)</label>
-      <select id="cfg-model" v-model="form.modelId">
-        <option v-for="id in MODEL_IDS" :key="id" :value="id">{{ id }}</option>
-      </select>
       <p class="muted">Priced models from <code>prices.json</code>. Add a price entry before offering a new id.</p>
-
-      <label for="cfg-temp">Temperature (0 to 2)</label>
-      <input id="cfg-temp" v-model.number="form.temperature" type="number" min="0" max="2" step="0.1" />
 
       <h2>Memory and skills</h2>
       <label class="inline"><input v-model="form.memoryEnabled" type="checkbox" /> Memory on (adds memory_read and memory_write)</label>
       <div>
-        <span class="muted">Skills (baseline maps these to tools; Hermes ignores them)</span>
+        <span class="muted">Skills (each adds its tools for every harness; Hermes gets the tool names)</span>
         <div>
           <label v-for="skill in SKILL_IDS" :key="skill" class="inline">
             <input
@@ -155,7 +161,7 @@ onMounted(load);
       <h2 style="margin-top: 0">Saved configs</h2>
       <p v-if="loading" class="muted">Loading…</p>
       <p v-if="loadError" class="error">{{ loadError }}</p>
-      <div v-if="!loading && !loadError" class="panel">
+      <div v-if="!loading && !loadError" class="panel table-scroll">
         <table>
           <thead>
             <tr>

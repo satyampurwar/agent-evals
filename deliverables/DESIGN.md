@@ -124,7 +124,7 @@ Experiment status is rolled up from trials (`rollupExperimentStatus`): `running`
 
 - **Per-trial sandbox.** `createSandbox(trialId)` creates a fresh directory under `TMPDIR`. Tools and graders resolve paths inside it; absolute paths, `..` escapes, and outbound symlinks are refused (`packages/sandbox`).
 - **Per-trial memory.** Starts from `task.setup.memory` only. `persistAcrossTrials: true` is rejected; no trial sees another trial’s writes.
-- **Hermes.** `HERMES_HOME` is pinned per worker (not `~/.hermes`). Hermes’s own memory store is off; the toolset is exactly `toolIds`. Hermes ignores skill ids; baseline maps them into tools via `resolveToolIds`.
+- **Hermes.** `HERMES_HOME` is pinned per worker (not `~/.hermes`). Hermes’s own memory store is off; the toolset is exactly `toolIds`. Skills are expanded into tool names by `resolveToolIds` for every harness, so Hermes receives the tool names in `toolIds`, never skill ids.
 - **Deterministic seed.** `seed = first 8 hex digits of sha256("experimentId|taskId|configId|trialIndex") >>> 1`, stored on the trial and passed to the harness. This does not make the model deterministic; it makes the request record reproducible.
 - **Immutable configs.** Configs are never edited in place. A change is a new row with a new content hash; each trial stores the hash it ran with.
 - **Idempotent trials.** The executor records an outcome once; a re-delivered BullMQ job skips a finished trial.
