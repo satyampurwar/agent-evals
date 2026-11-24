@@ -13,8 +13,14 @@
  * **Budgets:** `maxSteps` → SDK `maxTurns`; `timeoutMs` → an abort timer; `maxTokens` is checked
  * against streamed usage after each model call (the SDK has no per-request token cap).
  *
+ * **Model access:** through OpenRouter, like the other harnesses. Claude Code is pointed at OpenRouter's
+ * Anthropic-compatible endpoint (`ANTHROPIC_BASE_URL`) and authenticates with `OPENROUTER_API_KEY`
+ * (sent as `ANTHROPIC_AUTH_TOKEN`; `ANTHROPIC_API_KEY` is blanked on purpose). The config's OpenRouter
+ * model id (e.g. `anthropic/claude-haiku-4.5`) is used as is, and every Claude Code model role is pinned to
+ * it so no helper call goes to another model. OpenRouter only guarantees this for Anthropic models; other
+ * models are best effort (tool calling may behave differently).
+ *
  * **Not honoured:** `temperature` / `topP` (the Agent SDK exposes no sampling controls).
- * **Models:** only `anthropic/*` ids (e.g. `anthropic/claude-haiku-4.5`); needs `ANTHROPIC_API_KEY`.
  * **Usage:** `promptTokens` counts input + cache-creation + cache-read tokens, all at list input price.
  */
 import type { Options, SDKMessage, SDKResultMessage } from '@anthropic-ai/claude-agent-sdk';
@@ -31,14 +37,14 @@ const MCP_PREFIX = `mcp__${MCP_SERVER}__`;
 const SYSTEM_PROMPT =
   'You are an agent working in a sandboxed directory. Use the provided tools to complete the task you are given.';
 
-/** Environment the Claude Code child process gets. It replaces `process.env`, so secrets for other services stay out. */
+/** OpenRouter's Anthropic Messages-compatible endpoint (no trailing `/v1`; Claude Code adds the path). */
+const OPENROUTER_ANTHROPIC_URL = 'https://openrouter.ai/api';
+
+/** Variables copied from `process.env` into the Claude Code child process. Everything else stays out. */
 const PASSTHROUGH_ENV = [
   'PATH',
   'HOME',
   'TMPDIR',
-  'ANTHROPIC_API_KEY',
-  'ANTHROPIC_AUTH_TOKEN',
-  'ANTHROPIC_BASE_URL',
   'HTTP_PROXY',
   'HTTPS_PROXY',
   'NO_PROXY',
@@ -70,7 +76,7 @@ type StopReason = HarnessRunOutput['stoppedReason'];
 export type ClaudeAgentQuery = (params: { prompt: string; options: Options }) => AsyncIterable<SDKMessage>;
 
 export interface ClaudeAgentHarnessOptions {
-  /** Replaces the SDK's `query()`. Skips the `ANTHROPIC_API_KEY` check. */
+  /** Replaces the SDK's `query()`. Skips the `OPENROUTER_API_KEY` check. */
   query?: ClaudeAgentQuery;
 }
 
@@ -89,9 +95,9 @@ export class ClaudeAgentHarness implements HarnessAdapter {
     const { budgets, emit } = context;
     const now = () => new Date().toISOString();
 
-    const model = toClaudeModel(modelId);
-    if (!this.injectedQuery && !process.env.ANTHROPIC_API_KEY) {
-      throw new Error('ANTHROPIC_API_KEY is not set (the claude-agent harness calls the Anthropic API directly)');
+    const apiKey = process.env.OPENROUTER_API_KEY ?? '';
+    if (!this.injectedQuery && !apiKey) {
+      throw new Error('OPENROUTER_API_KEY is not set (the claude-agent harness reaches its model through OpenRouter)');
     }
 
     // Loaded here, not at module top, so a broken SDK install cannot break the other harnesses.
@@ -102,7 +108,7 @@ export class ClaudeAgentHarness implements HarnessAdapter {
     const abort = new AbortController();
     const options: Options = {
       cwd: context.sandboxDir,
-      model,
+      model: modelId,
       maxTurns: budgets.maxSteps,
       abortController: abort,
       systemPrompt: SYSTEM_PROMPT,
@@ -113,7 +119,7 @@ export class ClaudeAgentHarness implements HarnessAdapter {
       settingSources: [],
       persistSession: false,
       strictMcpConfig: true,
-      env: passthroughEnv(),
+      env: openRouterEnv(modelId, apiKey),
       ...(toolNames.length > 0
         ? {
             mcpServers: {
@@ -237,22 +243,30 @@ export class ClaudeAgentHarness implements HarnessAdapter {
   }
 }
 
-/** `anthropic/claude-haiku-4.5` (the platform id) → `claude-haiku-4-5` (the Anthropic API id). */
-function toClaudeModel(modelId: string): string {
-  const match = /^anthropic\/(.+)$/.exec(modelId);
-  if (!match) {
-    throw new Error(`claude-agent harness only runs Anthropic models (anthropic/<model>), got "${modelId}"`);
-  }
-  return match[1]!.replaceAll('.', '-');
-}
-
-function passthroughEnv(): Record<string, string> {
+/**
+ * Environment for the Claude Code child process (it replaces `process.env`, so other secrets stay out).
+ * Points Claude Code at OpenRouter and pins every model role to `modelId`: Claude Code makes small helper
+ * calls with a Haiku-class model, and without the pins those would go to a different, unpriced model.
+ */
+function openRouterEnv(modelId: string, apiKey: string): Record<string, string> {
   const env: Record<string, string> = {};
   for (const key of PASSTHROUGH_ENV) {
     const value = process.env[key];
     if (value !== undefined) env[key] = value;
   }
-  return env;
+  return {
+    ...env,
+    ANTHROPIC_BASE_URL: OPENROUTER_ANTHROPIC_URL,
+    ANTHROPIC_AUTH_TOKEN: apiKey,
+    // Must be explicitly empty, or Claude Code may authenticate against Anthropic directly.
+    ANTHROPIC_API_KEY: '',
+    ANTHROPIC_DEFAULT_OPUS_MODEL: modelId,
+    ANTHROPIC_DEFAULT_SONNET_MODEL: modelId,
+    ANTHROPIC_DEFAULT_HAIKU_MODEL: modelId,
+    ANTHROPIC_DEFAULT_FABLE_MODEL: modelId,
+    CLAUDE_CODE_SUBAGENT_MODEL: modelId,
+    CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '1',
+  };
 }
 
 type SdkModule = typeof import('@anthropic-ai/claude-agent-sdk');

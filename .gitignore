@@ -26,5 +26,8 @@ apps/web/README.md
 # Hermes Agent state for the Python worker (sessions, logs, skill sync)
 workers/python-worker/.hermes-home/
 
+# Machine-specific root CA for Docker builds behind a TLS-inspecting proxy (see the Dockerfiles)
+certs/
+
 # Deliverables
 deliverables/video.md

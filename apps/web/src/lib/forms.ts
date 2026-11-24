@@ -13,7 +13,7 @@ export const BASE_TOOLS = ['read_file', 'write_file', 'list_dir'] as const;
 export const SKILL_IDS = ['csv_summary'] as const;
 /**
  * Harnesses registered in `@agent-evals/adapters-harness`. Hermes needs the Python worker;
- * claude-agent needs `ANTHROPIC_API_KEY` and an `anthropic/*` model.
+ * claude-agent reaches its model through OpenRouter and works best with `anthropic/*` models.
  */
 export const HARNESS_IDS = ['baseline', 'hermes', 'claude-agent'] as const;
 /**

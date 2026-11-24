@@ -76,13 +76,13 @@ Interface details: [DESIGN.md](deliverables/DESIGN.md) §2.
 
 ## Add a model
 
-- **OpenRouter model:** add a list price in [`prices.json`](prices.json):
-  `"<provider>/<model>": { "inputPerMTok": …, "outputPerMTok": … }`.  
-  Unpriced models fail trials before any call (`price_missing`).
-- **Configs UI:** also add the id to `MODEL_IDS` in [`apps/web/src/lib/forms.ts`](apps/web/src/lib/forms.ts) so it appears in the model dropdown.
-- **New provider:** implement `ModelAdapter` in `packages/adapters-model/src/<provider>.ts`, register in `createModelAdapter` ([`registry.ts`](packages/adapters-model/src/registry.ts)), and add prices.
+A model is the LLM a config calls. Models are reached through OpenRouter, so adding one needs only a price and a UI entry.
 
-Interface details: [DESIGN.md](deliverables/DESIGN.md) §3.
+1. **Price it** in [`prices.json`](prices.json): `"<provider>/<model>": { "inputPerMTok": …, "outputPerMTok": … }`. Unpriced models fail trials before any call (`price_missing`).
+2. **Show it in the UI** by adding the id to `MODEL_IDS` in [`apps/web/src/lib/forms.ts`](apps/web/src/lib/forms.ts). This feeds the Configs model dropdown.
+3. **Use it**: rebuild the stack with `docker compose up --build -d api worker web`. Then create a config with that model in the Configs page of the web app, or with `POST /configs` on the API.
+
+Interface details: [DESIGN.md](deliverables/DESIGN.md) §2.
 
 ---
 

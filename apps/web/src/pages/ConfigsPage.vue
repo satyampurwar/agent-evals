@@ -89,6 +89,11 @@ onMounted(load);
       <p v-if="form.harnessId === 'hermes'" class="muted">
         Hermes runs in the Python worker. Skills below are mapped to tools for baseline only; Hermes ignores skill ids.
       </p>
+      <p v-if="form.harnessId === 'claude-agent'" class="muted">
+        Claude Agent SDK runs Claude Code through OpenRouter. It is only dependable with Anthropic models, and only on
+        Anthropic's own provider. Other models are best effort: tool calling may behave differently, so a lower score
+        may reflect the harness and not the model. Use baseline or hermes to compare models.
+      </p>
 
       <label for="cfg-model">Model (OpenRouter)</label>
       <select id="cfg-model" v-model="form.modelId">
