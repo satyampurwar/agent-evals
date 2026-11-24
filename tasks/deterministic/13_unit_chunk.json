@@ -1,0 +1,28 @@
+{
+  "id": "det_unit_chunk_01",
+  "version": "1.0.0",
+  "name": "Chunk array",
+  "description": "Splitting an array into fixed-size consecutive subarrays verified by unit test. Edge cases: short last chunk, empty input, size larger than length",
+  "prompt": "Write solution.js in the sandbox. It must use CommonJS and export a function chunk(array, size) that splits array into consecutive subarrays of length size. The last subarray may be shorter if the array length is not a multiple of size. An empty array returns an empty array. The tests are in test_chunk.js; read them first. Use write_file. Then reply with the word done.",
+  "setup": {
+    "files": {
+      "test_chunk.js": "const assert = require('node:assert/strict');\nconst { chunk } = require('./solution.js');\nassert.deepEqual(chunk([1, 2, 3, 4, 5], 2), [[1, 2], [3, 4], [5]]);\nassert.deepEqual(chunk(['a', 'b', 'c'], 3), [['a', 'b', 'c']]);\nassert.deepEqual(chunk([], 4), []);\nassert.deepEqual(chunk([1, 2], 5), [[1, 2]]);\nassert.deepEqual(chunk([1, 2, 3, 4], 1), [[1], [2], [3], [4]]);\nconsole.log('chunk ok');\n"
+    }
+  },
+  "toolsAllowed": [
+    "write_file",
+    "read_file"
+  ],
+  "graders": [
+    {
+      "type": "unit_test",
+      "command": "node test_chunk.js",
+      "timeoutMs": 5000
+    }
+  ],
+  "tags": [
+    "deterministic",
+    "unit_test",
+    "code"
+  ]
+}

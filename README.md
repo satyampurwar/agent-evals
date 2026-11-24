@@ -45,18 +45,30 @@ Do not delete `tasks/`, `fixtures/`, `prices.json`, or `.env`.
 
 ## Add a task
 
-1. Write `tasks/<group>/<name>.json` using `TaskSchema` in [`packages/domain/src/schemas.ts`](packages/domain/src/schemas.ts) (`id`, `version`, `name`, `description`, `prompt`, `graders`, `tags`; optional `setup`, `toolsAllowed`, `expectedDiscriminators`). Copy a peer task and edit.
+1. Write [`tasks/<group>/<name>.json`](tasks/) using `TaskSchema` in [`packages/domain/src/schemas.ts`](packages/domain/src/schemas.ts) (`id`, `version`, `name`, `description`, `prompt`, `graders`, `tags`; optional `setup`, `toolsAllowed`, `expectedDiscriminators`). Copy a peer task and edit.
 2. Add the path to [`tasks/manifest.json`](tasks/manifest.json).
-3. Validate: `npx tsx scripts/validate-task-set.ts` (min 20 tasks, grader coverage, rubrics, priced judge models).
-4. Load: `npm run seed:tasks` (or `docker compose up seed`).
+3. Validate: `npx tsx` [`scripts/validate-task-set.ts`](scripts/validate-task-set.ts) (min 20 tasks, grader coverage, rubrics, priced judge models).
+4. Load: `npm run seed:tasks` (or `docker compose up --build seed`). Use `--build` after changing anything under [`tasks/`](tasks/), because the seed container reads the task files baked into the image at build time.
 
 ---
 
 ## Add a harness
 
-1. Implement `HarnessAdapter` in `packages/adapters-harness/src/<id>.ts`: `run(input)` emits via `context.emit`, respects `maxSteps` / `maxTokens` / `timeoutMs`, returns `HarnessRunOutput`.
-2. Register in [`packages/adapters-harness/src/registry.ts`](packages/adapters-harness/src/registry.ts): add the id to `HARNESS_IDS` and a `case` in `createHarness`.
-3. Add a unit spec; create configs with `harness.id` set to the new id (Configs UI or `POST /configs`).
+A harness is the agent loop under test. The runner calls `harness.run(input)` and grades what it returns.
+
+1. **Implement it** in [`packages/adapters-harness/src/<id>.ts`](packages/adapters-harness/src/): a class with `id`, `displayName` and `run(input)`, implementing `HarnessAdapter` from [`types.ts`](packages/adapters-harness/src/types.ts). In `run`:
+   - Send every trace event through `input.context.emit`. Event shapes are `TraceEventSchema` in [`schemas.ts`](packages/domain/src/schemas.ts).
+   - Stop at the limits in `input.context.budgets`: `maxSteps` (model calls), `maxTokens` (total tokens), `timeoutMs` (wall clock). Return the matching `stoppedReason`.
+   - Return `{ finalAnswer, stoppedReason, usage, stepCount }` (`HarnessRunOutput`).
+
+   Start from a working harness: [`baseline.ts`](packages/adapters-harness/src/baseline.ts) runs the loop in-process using `input.model`; [`hermes.ts`](packages/adapters-harness/src/hermes.ts) delegates to a separate runtime over HTTP and re-emits its events; [`claude-agent.ts`](packages/adapters-harness/src/claude-agent.ts) wraps the Claude Agent SDK, which owns the loop, and maps its messages to trace events.
+2. **Register it** in [`registry.ts`](packages/adapters-harness/src/registry.ts): add the id to `HARNESS_IDS` and a `case` in `createHarness`.
+3. **Show it in the UI** by adding the id to `HARNESS_IDS` in [`apps/web/src/lib/forms.ts`](apps/web/src/lib/forms.ts). This is a separate list that feeds the Configs dropdown.
+4. **Test it**: add [`<id>.spec.ts`](packages/adapters-harness/src/) (model it on [`baseline.spec.ts`](packages/adapters-harness/src/baseline.spec.ts)) and update the id list asserted in [`registry.spec.ts`](packages/adapters-harness/src/registry.spec.ts). Then run the registry test:
+   ```bash
+   npx vitest run packages/adapters-harness/src/registry.spec.ts
+   ```
+5. **Use it**: rebuild the stack with `docker compose up --build -d api worker web`. Then create a config whose `harness.id` is the new id, so experiments can run it. You can do this in the Configs page of the web app, or with `POST /configs` on the API.
 
 Interface details: [DESIGN.md](deliverables/DESIGN.md) §2.
 

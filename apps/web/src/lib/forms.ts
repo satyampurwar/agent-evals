@@ -11,8 +11,11 @@ import type { ConfigInput, ExperimentInput } from '@agent-evals/domain';
 export const BASE_TOOLS = ['read_file', 'write_file', 'list_dir'] as const;
 /** Skill ids the harness knows. A config naming any other id fails at run time. */
 export const SKILL_IDS = ['csv_summary'] as const;
-/** Harnesses registered in `@agent-evals/adapters-harness`. Hermes needs the Python worker. */
-export const HARNESS_IDS = ['baseline', 'hermes'] as const;
+/**
+ * Harnesses registered in `@agent-evals/adapters-harness`. Hermes needs the Python worker;
+ * claude-agent needs `ANTHROPIC_API_KEY` and an `anthropic/*` model.
+ */
+export const HARNESS_IDS = ['baseline', 'hermes', 'claude-agent'] as const;
 /**
  * OpenRouter model ids with list prices in repo-root `prices.json`.
  * Unpriced models fail trials with `price_missing` before any call.

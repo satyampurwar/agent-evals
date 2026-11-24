@@ -12,6 +12,7 @@
     "deterministic/10_unit_fizzbuzz.json",
     "deterministic/11_unit_slugify.json",
     "deterministic/12_unit_roman.json",
+    "deterministic/13_unit_chunk.json",
     "judge/judge_summary_01.json",
     "judge/judge_explain_01.json",
     "judge/judge_email_01.json",
