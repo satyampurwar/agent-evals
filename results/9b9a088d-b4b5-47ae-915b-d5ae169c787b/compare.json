@@ -1,0 +1,234 @@
+{
+  "experimentId": "9b9a088d-b4b5-47ae-915b-d5ae169c787b",
+  "commonTasks": 22,
+  "pairedTrials": 110,
+  "a": {
+    "configId": "84491ef7-78b7-4a6d-b834-ec65a7b9d188",
+    "scoredTrials": 110,
+    "passRate": 0.7454545454545454,
+    "passRateCI": {
+      "mean": 0.7454545454545454,
+      "low": 0.5636363636363636,
+      "high": 0.9090909090909091
+    },
+    "meanLatencyMs": 3204.3818181818183,
+    "meanTotalTokens": 5093.590909090909,
+    "meanCostUsd": 0.0022368627272727273,
+    "excluded": {
+      "failed": 0,
+      "cancelled": 0,
+      "pending": 0
+    }
+  },
+  "b": {
+    "configId": "cc7b3cd6-7bc7-42fa-a086-8addff6a70f5",
+    "scoredTrials": 110,
+    "passRate": 0.8636363636363636,
+    "passRateCI": {
+      "mean": 0.8636363636363636,
+      "low": 0.7272727272727273,
+      "high": 1
+    },
+    "meanLatencyMs": 3230.809090909091,
+    "meanTotalTokens": 5257.381818181818,
+    "meanCostUsd": 0.002302244545454545,
+    "excluded": {
+      "failed": 0,
+      "cancelled": 0,
+      "pending": 0
+    }
+  },
+  "delta": {
+    "value": -0.11818181818181828,
+    "ci": {
+      "low": -0.2545454545454545,
+      "high": 0
+    },
+    "pValue": 0.00024414062500000016,
+    "discordant": {
+      "aOnly": 0,
+      "bOnly": 13
+    }
+  },
+  "noise": true,
+  "verdict": "likely_noise",
+  "perTask": [
+    {
+      "taskId": "det_add_01",
+      "trialsA": 5,
+      "trialsB": 5,
+      "passRateA": 0,
+      "passRateB": 0,
+      "delta": 0
+    },
+    {
+      "taskId": "det_extract_order_01",
+      "trialsA": 5,
+      "trialsB": 5,
+      "passRateA": 1,
+      "passRateB": 1,
+      "delta": 0
+    },
+    {
+      "taskId": "det_letter_count_01",
+      "trialsA": 5,
+      "trialsB": 5,
+      "passRateA": 0.4,
+      "passRateB": 1,
+      "delta": -0.6
+    },
+    {
+      "taskId": "det_state_json_01",
+      "trialsA": 5,
+      "trialsB": 5,
+      "passRateA": 1,
+      "passRateB": 1,
+      "delta": 0
+    },
+    {
+      "taskId": "det_state_multi_01",
+      "trialsA": 5,
+      "trialsB": 5,
+      "passRateA": 1,
+      "passRateB": 1,
+      "delta": 0
+    },
+    {
+      "taskId": "det_state_nested_01",
+      "trialsA": 5,
+      "trialsB": 5,
+      "passRateA": 1,
+      "passRateB": 1,
+      "delta": 0
+    },
+    {
+      "taskId": "det_unit_chunk_01",
+      "trialsA": 5,
+      "trialsB": 5,
+      "passRateA": 1,
+      "passRateB": 1,
+      "delta": 0
+    },
+    {
+      "taskId": "det_unit_convert_01",
+      "trialsA": 5,
+      "trialsB": 5,
+      "passRateA": 1,
+      "passRateB": 1,
+      "delta": 0
+    },
+    {
+      "taskId": "det_unit_fizzbuzz_01",
+      "trialsA": 5,
+      "trialsB": 5,
+      "passRateA": 1,
+      "passRateB": 1,
+      "delta": 0
+    },
+    {
+      "taskId": "det_unit_roman_01",
+      "trialsA": 5,
+      "trialsB": 5,
+      "passRateA": 1,
+      "passRateB": 1,
+      "delta": 0
+    },
+    {
+      "taskId": "det_unit_slugify_01",
+      "trialsA": 5,
+      "trialsB": 5,
+      "passRateA": 1,
+      "passRateB": 1,
+      "delta": 0
+    },
+    {
+      "taskId": "det_weekday_01",
+      "trialsA": 5,
+      "trialsB": 5,
+      "passRateA": 0,
+      "passRateB": 0,
+      "delta": 0
+    },
+    {
+      "taskId": "det_write_answer_01",
+      "trialsA": 5,
+      "trialsB": 5,
+      "passRateA": 1,
+      "passRateB": 1,
+      "delta": 0
+    },
+    {
+      "taskId": "judge_bugreport_01",
+      "trialsA": 5,
+      "trialsB": 5,
+      "passRateA": 1,
+      "passRateB": 1,
+      "delta": 0
+    },
+    {
+      "taskId": "judge_email_01",
+      "trialsA": 5,
+      "trialsB": 5,
+      "passRateA": 1,
+      "passRateB": 1,
+      "delta": 0
+    },
+    {
+      "taskId": "judge_explain_01",
+      "trialsA": 5,
+      "trialsB": 5,
+      "passRateA": 1,
+      "passRateB": 1,
+      "delta": 0
+    },
+    {
+      "taskId": "judge_summary_01",
+      "trialsA": 5,
+      "trialsB": 5,
+      "passRateA": 1,
+      "passRateB": 1,
+      "delta": 0
+    },
+    {
+      "taskId": "judge_tradeoff_01",
+      "trialsA": 5,
+      "trialsB": 5,
+      "passRateA": 1,
+      "passRateB": 1,
+      "delta": 0
+    },
+    {
+      "taskId": "mem_deploy_file_01",
+      "trialsA": 5,
+      "trialsB": 5,
+      "passRateA": 0,
+      "passRateB": 1,
+      "delta": -1
+    },
+    {
+      "taskId": "mem_recall_client_01",
+      "trialsA": 5,
+      "trialsB": 5,
+      "passRateA": 0,
+      "passRateB": 1,
+      "delta": -1
+    },
+    {
+      "taskId": "skill_csv_mean_01",
+      "trialsA": 5,
+      "trialsB": 5,
+      "passRateA": 1,
+      "passRateB": 1,
+      "delta": 0
+    },
+    {
+      "taskId": "skill_csv_sum_01",
+      "trialsA": 5,
+      "trialsB": 5,
+      "passRateA": 0,
+      "passRateB": 0,
+      "delta": 0
+    }
+  ],
+  "notes": []
+}

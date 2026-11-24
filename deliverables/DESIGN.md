@@ -170,7 +170,7 @@ Disagreements were kept; rubrics were not edited to fit the validation set. Labe
 Compare configs A and B on shared tasks:
 
 1. **Macro pass rate** — mean of per-task pass rates over common tasks (each task counts once).
-2. **Delta** = macro(A) − macro(B), where A is the first config in the experiment (the CLI lists `mem-on` first). Interval: **paired bootstrap over tasks** (5,000 resamples, seed 1, α = 0.05); 2.5% / 97.5% quantiles. The resample unit is the task because trials of one task are not independent.
+2. **Delta** = macro(A) − macro(B), where A is the first config in the experiment. Interval: **paired bootstrap over tasks** (5,000 resamples, seed 1, α = 0.05); 2.5% / 97.5% quantiles. The resample unit is the task because trials of one task are not independent. On the scored full-catalog run A was `mem-off` (see [EXPERIMENT.md](EXPERIMENT.md) for the on − off framing).
 3. **McNemar** — exact two-sided test on discordant `(task, trialIndex)` pairs scored on both sides. Optimistic if trials cluster by task; the published verdict does not use the p-value.
 4. **Verdict** — interval contains 0 → `likely_noise`; else `a_better` / `b_better`. Fewer than two common scored tasks → `insufficient_data` (no interval).
 5. **Per-task deltas** — reported unadjusted (exploratory).
@@ -190,6 +190,6 @@ For one task, N trials per arm, pass rates near 0.5, SE of the difference ≈ �
 | 20 | 0.16 | 44 pts |
 | 30 | 0.13 | 36 pts |
 
-**N = 10** is a reasonable default when hunting large (~60 pt) per-task effects on a small discriminating subset. **N = 3** is enough to show a full pass-to-fail swing on memory tasks but weak for aggregate claims: the full-catalog memory A/B (21 tasks × N = 3) still produced a Δ CI that includes 0 ([EXPERIMENT.md](EXPERIMENT.md)). N = 30 lowers MDD further at ~10× the N = 3 trial cost. The bootstrap interval is also limited by task count and ceiling effects when most tasks pass under both arms.
+**N = 10** is a reasonable default when hunting large (~60 pt) per-task effects on a small discriminating subset. **N = 5** is enough to show a full pass-to-fail swing on memory tasks but weak for aggregate claims: the full-catalog memory A/B (22 tasks × N = 5) still produced a Δ CI that includes 0 ([EXPERIMENT.md](EXPERIMENT.md)). N = 30 lowers MDD further at ~6× the N = 5 trial cost. The bootstrap interval is also limited by task count and ceiling effects when most tasks pass under both arms.
 
 Today one `nTrials` applies to every task in an experiment. Choosing N by task type (high for discriminating tasks, low for deterministic ones) is a plan, not implemented; see [COST.md](COST.md) §3.

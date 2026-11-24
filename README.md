@@ -95,13 +95,13 @@ The experiment compares two configs on the same tasks: memory on vs memory off, 
 3. **Check the plan**: `npx tsx scripts/run-experiment.ts --dry-run`. It prints the task count and trial total, and sends nothing to the API.
 4. **Run it**:
    ```bash
-   npx tsx scripts/run-experiment.ts --name full-catalog --n 3 --configs mem-off,mem-on --tasks all
+   npx tsx scripts/run-experiment.ts --name full-catalog --n 5 --configs mem-off,mem-on --tasks all
    ```
-   Defaults are the full catalog, N = 3, and memory on vs off. Each `--tasks` value is a group: `all`, `memory`, `control`, `judge`, or `skill`.
+   The scored write-up used the full catalog at N = 5 (220 trials). CLI default without `--n` is still 3. Each `--tasks` value is a group: `all`, `memory`, `control`, `judge`, or `skill`.
 5. **Resume if it stops**: `npx tsx scripts/run-experiment.ts --resume <experimentId>`. This starts no new trials; it only waits for the existing ones and exports the results.
-6. **Read the results**: the run writes `results/<experimentId>/` with `compare.json`, `export.json` and `export.csv`. The worker writes the same folder for experiments started from the UI. The write-up and analysis are in [EXPERIMENT.md](deliverables/EXPERIMENT.md).
+6. **Read the results**: the run writes `results/<experimentId>/` with `compare.json`, `export.json` and `export.csv`. The worker writes the same folder for experiments started from the UI. Latest scored artifacts: `results/9b9a088d-b4b5-47ae-915b-d5ae169c787b/`. The write-up and analysis are in [EXPERIMENT.md](deliverables/EXPERIMENT.md).
 
-   In `compare.json`, `delta` is config A's pass rate minus config B's, so its sign depends on which config is A. A is the first config in the experiment. The CLI lists `mem-on` first, so its delta is memory on minus memory off. The UI compare page takes A from the same first-config order, so the sign can flip if the configs were created in the other order.
+   In `compare.json`, `delta` is config A's pass rate minus config B's, so its sign depends on which config is A. A is the first config in the experiment. On the scored full-catalog run A is `mem-off`, so the file delta is off − on; [EXPERIMENT.md](deliverables/EXPERIMENT.md) reports on − off for the hypothesis. The UI compare page uses the same first-config order.
 
 ---
 

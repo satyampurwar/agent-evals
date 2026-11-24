@@ -24,24 +24,24 @@ Prices used here ([`prices.json`](../prices.json), `asOf` 2026-11-21): `openai/g
 
 ## 2. Actual spend (full-catalog memory A/B)
 
-Scored assignment run: **21 tasks × 2 configs × N = 3 = 126 trials**, Hermes × `gpt-4.1-mini`, tools `read_file`/`write_file`/`list_dir`, skill `csv_summary`. Five judge tasks × 3 × 2 = **30** judge calls (`J = 30`). Artifacts: `results/full-catalog/` was removed from the working tree; the committed copy is in git history at `e7081c0`. Experiment id `48e5c41f-87ce-4ff8-a786-c95d56d22992` (not present in the current database or `results/`).
+Scored assignment run: **22 tasks × 2 configs × N = 5 = 220 trials**, Hermes × `gpt-4.1-mini`, tools `read_file`/`write_file`/`list_dir`, skill `csv_summary`. Five judge tasks × 5 × 2 = **50** judge calls (`J = 50`). Artifacts: `results/9b9a088d-b4b5-47ae-915b-d5ae169c787b/`. Experiment id `9b9a088d-b4b5-47ae-915b-d5ae169c787b`.
 
 | Arm | Trials | Avg prompt | Avg completion | Judge prompt / completion (sum) | List cost (compare) |
 |---|---:|---:|---:|---:|---:|
-| mem-on | 63 | 5,031 | 75 | 6,339 / 1,961 | ≈ **$0.141** |
-| mem-off | 63 | 4,988 | 77 | 6,313 / 2,042 | ≈ **$0.141** |
-| **All** | **126** | ≈ 5,010 | ≈ 76 | | **≈ $0.28** |
+| mem-on | 110 | 5,180 | 78 | 10,704 / 3,389 | ≈ **$0.253** |
+| mem-off | 110 | 5,014 | 80 | 10,559 / 3,312 | ≈ **$0.246** |
+| **All** | **220** | ≈ 5,097 | ≈ 79 | | **≈ $0.50** |
 
 Example plug-in (agent tokens only, both arms):  
-`(316963 + 314261) × 0.40 / 1e6 + (4716 + 4853) × 1.60 / 1e6 ≈ $0.268`.  
-Judge (Gemini Flash list): `(12652 × 0.30 + 4003 × 2.50) / 1e6 ≈ $0.014`.  
-**Total list ≈ $0.28**, matching compare `meanCostUsd × scoredTrials`.
+`(569780 + 551554) × 0.40 / 1e6 + (8532 + 8741) × 1.60 / 1e6 ≈ $0.476`.  
+Judge (Gemini Flash list): `(21263 × 0.30 + 6701 × 2.50) / 1e6 ≈ $0.023`.  
+**Total list ≈ $0.50**, matching compare `meanCostUsd × scoredTrials`.
 
 | Measure | Value |
 |---|---|
-| List-price estimate (exports / compare) | **≈ $0.28** |
-| Wall clock at `TRIAL_CONCURRENCY=1` | **≈ 7.5 minutes** |
-| Per completed trial (list) | ≈ **$0.0022** |
+| List-price estimate (exports / compare) | **≈ $0.50** |
+| Wall clock at `TRIAL_CONCURRENCY=1` | **≈ 12 minutes** |
+| Per completed trial (list) | ≈ **$0.0023** |
 
 OpenRouter billed spend for this run was not re-checked against the provider dashboard at write-up time. Prior OpenRouter usage on this stack billed roughly **half** of list because of **provider prompt caching**. The adapter does not persist cached-token fields, so the discount shows on the bill, not per trial.
 
@@ -53,7 +53,7 @@ Judge validation (25 labels, separate from the experiment): ≈ **$0.011** at li
 |---|---|
 | **Caching** | Plan, not implemented. Reuse identical model requests with a response cache on `(modelId, messagesHash)`. Use it for smoke and debug runs only. A cache makes repeat trials identical, so the variance between trials disappears and the confidence intervals come out falsely tight. Keep it off for any scored run. Provider prompt caching already cuts billed cost on repeated prefixes. |
 | **Early stopping** | Plan, not implemented. Send the planned trials in two batches: the first half, then the rest. Decide the stopping rule before the run starts. At the midpoint look, stop the config on the task only if the difference is significant at p < 0.005 (O'Brien-Fleming boundary for two looks). Otherwise run the second half and test at the final alpha (≈ 0.05). If the rule doesn't stop early, every planned trial runs. The same test (paired bootstrap over tasks, `packages/stats`) is used for both looks. Add an experiment spend ceiling as a separate hard cap. |
-| **Sampling** | Plan, not implemented. Set `N` by task type instead of one value for the whole experiment. Proposed: `N = 5` for discriminating tasks, `N = 3` for LLM-judged tasks, and `N = 1` for deterministic smoke checks. Today `nTrials` is one value per experiment (`packages/domain/src/schemas.ts`, line 160), so this needs code changes to `expandMatrix` or separate experiments per group. This run used the full 21-task catalog at N = 3 (126 trials, ≈ $0.28). Prefer cheap models for harness debug; reserve the target model for the scored run. Only 5/21 tasks call an LLM judge, so most spend is on agent calls. |
+| **Sampling** | Plan, not implemented. Set `N` by task type instead of one value for the whole experiment. Proposed: `N = 5` for discriminating tasks, `N = 3` for LLM-judged tasks, and `N = 1` for deterministic smoke checks. Today `nTrials` is one value per experiment (`packages/domain/src/schemas.ts`, line 160), so this needs code changes to `expandMatrix` or separate experiments per group. This run used the full 22-task catalog at N = 5 (220 trials, ≈ $0.50). Prefer cheap models for harness debug; reserve the target model for the scored run. Only 5/22 tasks call an LLM judge, so most spend is on agent calls. |
 | **Tool/skill set** | Enabling `csv_summary` on every trial adds prompt tokens and can burn steps on non-skill tasks (see [EXPERIMENT.md](EXPERIMENT.md)). Scope skills to skill-tagged tasks when cost or noise matters. |
 
 Per-trial caps (`maxSteps`, `maxTokens`, `timeoutMs`) already bound the worst case; they do not replace experiment-level early stop or sampling.

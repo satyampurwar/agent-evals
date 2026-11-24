@@ -144,6 +144,11 @@ Ordered build steps for **agent-evals**. Setup and how-tos: [README.md](README.m
 - Experiment detail: trial table shows a Trial column (first 8 characters of the id, full id on hover) (`de6ce87`)
 - Configs page: form stacked above a scrollable saved-configs table; skill copy says Hermes receives tool names, not skill ids (`de6ce87`)
 
+## Phase 22 — Full-catalog re-run (22 tasks, N = 5)
+
+- Scored memory A/B re-run on the 22-task catalog at N = 5 (220 trials); artifacts under `results/9b9a088d-b4b5-47ae-915b-d5ae169c787b/`
+- `deliverables/` (EXPERIMENT, COST, LIMITS, DESIGN) and README sample-experiment numbers updated to that run (Δ ≈ +11.8 pts, CI touches 0, list cost ≈ $0.50, ~12 min wall clock)
+
 ---
 
 ## Layout
