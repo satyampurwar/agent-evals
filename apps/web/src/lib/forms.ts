@@ -22,6 +22,7 @@ export const HARNESS_IDS = ['baseline', 'hermes', 'claude-agent'] as const;
  */
 export const MODEL_IDS = [
   'openai/gpt-4.1-mini',
+  'openai/gpt-6.1-terra',
   'anthropic/claude-haiku-4.5',
   'google/gemini-2.5-flash',
 ] as const;
