@@ -24,7 +24,7 @@ Prices used here ([`prices.json`](../prices.json), `asOf` 2026-11-21): `openai/g
 
 ## 2. Actual spend (full-catalog memory A/B)
 
-Scored assignment run: **21 tasks × 2 configs × N = 3 = 126 trials**, Hermes × `gpt-4.1-mini`, tools `read_file`/`write_file`/`list_dir`, skill `csv_summary`. Five judge tasks × 3 × 2 = **30** judge calls (`J = 30`). Artifacts: [`results/full-catalog/`](../results/full-catalog/). Experiment id `48e5c41f-87ce-4ff8-a786-c95d56d22992`.
+Scored assignment run: **21 tasks × 2 configs × N = 3 = 126 trials**, Hermes × `gpt-4.1-mini`, tools `read_file`/`write_file`/`list_dir`, skill `csv_summary`. Five judge tasks × 3 × 2 = **30** judge calls (`J = 30`). Artifacts: `results/full-catalog/` was removed from the working tree; the committed copy is in git history at `e7081c0`. Experiment id `48e5c41f-87ce-4ff8-a786-c95d56d22992` (not present in the current database or `results/`).
 
 | Arm | Trials | Avg prompt | Avg completion | Judge prompt / completion (sum) | List cost (compare) |
 |---|---:|---:|---:|---:|---:|

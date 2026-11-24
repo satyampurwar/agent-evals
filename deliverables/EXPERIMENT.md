@@ -1,6 +1,6 @@
 # Experiment: Hermes memory on vs off (full catalog)
 
-One real experiment along a **single axis**: `memory.enabled` (on vs off). Same harness (Hermes), same model (`openai/gpt-4.1-mini`), same tools and skills. Artifacts: [`results/full-catalog/`](../results/full-catalog/) (`compare.json`, `export.json`, `export.csv`). Re-run:
+One real experiment along a **single axis**: `memory.enabled` (on vs off). Same harness (Hermes), same model (`openai/gpt-4.1-mini`), same tools and skills. Artifacts: `results/full-catalog/` (`compare.json`, `export.json`, `export.csv`) were removed from the working tree. The committed copy is in git history at `e7081c0`. Re-run:
 
 ```bash
 npx tsx scripts/run-experiment.ts --name full-catalog --n 3 --configs mem-off,mem-on --tasks all

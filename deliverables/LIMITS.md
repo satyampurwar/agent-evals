@@ -4,9 +4,9 @@ Where the platform’s conclusions should **not** be trusted. Each point is tied
 
 ## 1. Task-set size
 
-The catalog has **21 tasks** (12 deterministic, 5 LLM-judged, 4 discriminating). That is enough to exercise graders and adapters. It is not a representative production suite and cannot rank agents in general.
+The catalog has **22 tasks** (13 deterministic, 5 LLM-judged, 4 discriminating). That is enough to exercise graders and adapters. It is not a representative production suite and cannot rank agents in general.
 
-The scored experiment used the **full 21-task catalog** at **N = 3**. Macro pass rates were high on both arms, so the bootstrap CI on Δ still touched **0** (`likely_noise`) even though McNemar on discordant pairs was small.
+The scored experiment used the **full 21-task catalog** (before a 22nd, deterministic task was added) at **N = 3**. Macro pass rates were high on both arms, so the bootstrap CI on Δ still touched **0** (`likely_noise`) even though McNemar on discordant pairs was small.
 
 **Statistical power.** With N = 3 per arm, only very large per-task effects (~full pass/fail swings) are clear in the per-task table. A `likely_noise` verdict means “not distinguishable from zero under this design,” not “there is no effect.”
 

@@ -2,7 +2,7 @@
 
 Platform for comparing agent configs (harness × model × settings) on a shared task set: N trials per cell, sandboxed runs, deterministic and LLM graders, bootstrap/McNemar compare, full traces, JSON/CSV export.
 
-Harnesses: `baseline` (TypeScript tool loop) and `hermes` (Python worker). Models go through OpenRouter (or your own adapter).
+Harnesses: `baseline` (TypeScript tool loop), `hermes` (Python worker) and `claude-agent` (Claude Agent SDK, through OpenRouter). Models go through OpenRouter (or your own adapter).
 
 ---
 
@@ -19,7 +19,7 @@ docker compose up --build
 
 - Web UI: http://localhost:5173  
 - API: http://localhost:3000  
-- `seed` loads the 21-task catalog once and exits.
+- `seed` loads the 22-task catalog once and exits.
 
 Useful `.env` knobs: `TRIAL_CONCURRENCY=1` on a small balance; `*_HOST_PORT` if a port is taken; `PRICE_TABLE_PATH` for a custom price table. `.env` is never committed.
 
@@ -100,6 +100,19 @@ The experiment compares two configs on the same tasks: memory on vs memory off, 
    Defaults are the full catalog, N = 3, and memory on vs off. Each `--tasks` value is a group: `all`, `memory`, `control`, `judge`, or `skill`.
 5. **Resume if it stops**: `npx tsx scripts/run-experiment.ts --resume <experimentId>`. This starts no new trials; it only waits for the existing ones and exports the results.
 6. **Read the results**: the run writes `results/<experimentId>/` with `compare.json`, `export.json` and `export.csv`. The worker writes the same folder for experiments started from the UI. The write-up and analysis are in [EXPERIMENT.md](deliverables/EXPERIMENT.md).
+
+   In `compare.json`, `delta` is config A's pass rate minus config B's, so its sign depends on which config is A. A is the first config in the experiment. The CLI lists `mem-on` first, so its delta is memory on minus memory off. The UI compare page takes A from the same first-config order, so the sign can flip if the configs were created in the other order.
+
+---
+
+## Skills
+
+A skill is a named bundle of tools that a config turns on. Today there is one, `csv_summary`, which adds the `csv_summary` tool. Skill ids are listed in `SKILL_IDS` in [`apps/web/src/lib/forms.ts`](apps/web/src/lib/forms.ts), and each id maps to its tools in [`packages/adapters-harness/src/skills.ts`](packages/adapters-harness/src/skills.ts).
+
+- The API expands each enabled skill into tool names before any harness runs (`resolveToolIds` in [`tools.ts`](packages/adapters-harness/src/tools.ts)). This applies to every harness.
+- Hermes receives those tool names in `toolIds`, never the skill ids. Its worker keeps its own copy of the skill-to-tool map in [`tools.py`](workers/python-worker/src/agent_evals_python_worker/tools.py).
+
+To add a skill, add its tool to `skills.ts`, add its id to `SKILL_IDS` in `forms.ts`, then mirror the tool in `tools.py` so Hermes can call it. Rebuild with `docker compose up --build -d api worker python-worker web`.
 
 ---
 

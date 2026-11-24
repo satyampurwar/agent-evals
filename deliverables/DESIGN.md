@@ -15,29 +15,32 @@ flowchart LR
   Redis -->|consume| Worker["worker (Node)<br/>TrialExecutor → runTrial()"]
   Worker <-->|trial row| Pg
   Worker -->|trace JSON| Traces["data/traces/"]
+  Traces -->|trial inspector| Api
+  Worker -->|export.json, export.csv, compare.json| Results["results/<br/>(one folder per experiment id)"]
 
-  Worker -->|HarnessAdapter| Harness["baseline (TS)<br/>hermes → python-worker"]
+  Worker -->|HarnessAdapter| Harness["baseline (TS)<br/>claude-agent (TS, Claude Agent SDK)<br/>hermes → python-worker"]
   Worker -->|ModelAdapter| Model["OpenRouter<br/>(or mock)"]
-  Harness -->|HTTP /run-trial| Py["python-worker<br/>(Hermes / FastAPI)"]
-  Harness -.->|baseline only| Model
+  Harness -->|hermes only: HTTP /run-trial| Py["python-worker<br/>(Hermes / FastAPI)"]
+  Harness -.->|baseline and claude-agent| Model
   Py -->|provider calls| Model
 ```
 
 | Component | Responsibility |
 |---|---|
 | `apps/api` | HTTP API, persistence (TypeORM), queue producer. `TRIAL_WORKER=off` in the API container. |
-| `apps/api` worker | Consumes the trials queue. `TrialExecutor` creates the sandbox, runs the trial, writes the trace and the trial row in one transaction, and rolls the experiment status up. |
-| `apps/web` | Pages for tasks, configs (harness + priced-model dropdowns), experiments, compare, failures summary, and the trial inspector. Calls the API only. |
+| `apps/api` worker | Consumes the trials queue. `TrialExecutor` creates the sandbox, runs the trial, writes the trace and the trial row in one transaction, and rolls the experiment status up. When the last trial of an experiment is recorded, `ExperimentResultsWriter` writes `results/<experimentId>/` (only if `RESULTS_DIR` is set). |
+| `apps/web` | Pages for tasks, configs (harness + priced-model dropdowns), experiments (task select-all, trials table with trial ids), compare, failures summary, and the trial inspector. Calls the API only. |
 | `packages/domain` | Zod schemas and types (Task, Config, Experiment, Trial, TraceEvent, PriceTable) and `costUsd`. No I/O. |
 | `packages/runner` | `runTrial`: one trial from sandbox to graded result. Enforces the timeout and the infra-versus-scored split. Imports no harness or provider. |
-| `packages/adapters-harness` | `HarnessAdapter` interface, baseline TypeScript loop, Hermes client, registry. |
+| `packages/adapters-harness` | `HarnessAdapter` interface, baseline TypeScript loop, Hermes client, Claude Agent SDK harness, tools, memory, skills, registry. |
 | `packages/adapters-model` | `ModelAdapter` interface, OpenRouter and mock adapters, registry. |
 | `packages/graders` | `exact_match`, `state_check`, `unit_test`, `llm_judge`, rubric registry. |
 | `packages/sandbox` | Per-trial directories and path-safe file operations. |
-| `packages/trace` | Trace writer and reader. |
+| `packages/trace` | In-memory per-trial event buffer and trace (de)serialization. The worker writes the JSON file. |
 | `packages/stats` | Macro pass rate, paired bootstrap, exact McNemar, per-task deltas, verdict, failure categories. |
 | `workers/python-worker` | FastAPI service that runs Hermes Agent for one trial at a time. |
 | `data/traces/` | Bind-mounted trial JSON (`TRACE_DIR`); gitignored. |
+| `results/` | Bind-mounted at `/results` in the worker (`RESULTS_DIR`). One folder per experiment id with `export.json`, `export.csv` and, for two configs, `compare.json`. |
 
 Dependency direction: `domain` ← everything. `runner` receives a `HarnessAdapter` and builds the model via `createModelAdapter`; it names no concrete harness. Adding a harness or model is a registry change (§2), not a core change.
 
@@ -74,8 +77,9 @@ The harness must emit every step through `context.emit`, stop when budgets (`max
 
 - `baseline` — TypeScript tool-calling loop; calls the model through `ModelAdapter`.
 - `hermes` — Hermes Agent in the Python worker. `HermesHarness` posts one trial (`POST /run-trial`) and maps the reply into trace events. Hermes makes its own model calls; the worker reports usage.
+- `claude-agent` — wraps the Claude Agent SDK, which owns the loop. It runs in the worker, calls models through OpenRouter, and maps SDK messages to trace events. It is only dependable with Anthropic models; see [LIMITS.md](LIMITS.md).
 
-**To add a harness:** implement `HarnessAdapter` in `packages/adapters-harness/src/<id>.ts`, register in `registry.ts` (`HARNESS_IDS` + `createHarness`), add a spec. A config selects it with `harness.id`. Separate runtimes (like Hermes) stay behind an HTTP contract; the adapter is a thin client.
+**To add a harness:** implement `HarnessAdapter` in `packages/adapters-harness/src/<id>.ts`, register in `registry.ts` (`HARNESS_IDS` + `createHarness`), add the id to `HARNESS_IDS` in `apps/web/src/lib/forms.ts` so the Configs dropdown offers it, and add a spec. A config selects it with `harness.id`. Separate runtimes (like Hermes) stay behind an HTTP contract; the adapter is a thin client.
 
 ### Model
 
@@ -101,7 +105,7 @@ interface ModelResponse {
 }
 ```
 
-A config names `{ provider, modelId, temperature }`. The provider picks the adapter (`parseModelSpec("openrouter:openai/gpt-4.1-mini")`). `OpenRouterAdapter` covers any OpenRouter `modelId`. The Configs UI offers a dropdown of priced ids (`MODEL_IDS` in `apps/web/src/lib/forms.ts`, kept in sync with `prices.json`).
+A config names `{ provider, modelId, temperature, topP? }`. The provider picks the adapter (`parseModelSpec("openrouter:openai/gpt-4.1-mini")`). `OpenRouterAdapter` covers any OpenRouter `modelId`. The Configs UI offers a dropdown of priced ids (`MODEL_IDS` in `apps/web/src/lib/forms.ts`, kept in sync with `prices.json`).
 
 **To add a model:** OpenRouter → add a `prices.json` entry and the same id to `MODEL_IDS`. New provider → implement `ModelAdapter`, register in `createModelAdapter`, env key + prices. Unpriced models fail before the first call (`price_missing`).
 
@@ -120,10 +124,13 @@ A config names `{ provider, modelId, temperature }`. The provider picks the adap
 
 Experiment status is rolled up from trials (`rollupExperimentStatus`): `running` while any trial is queued/running; `failed` if every trial is infra-failed; `partial` if some failed/timed out/cancelled; `completed` when every trial was scored. An agent’s graded fail does not make the experiment `partial`. Trial row and trace are written together so a finished trial always has a readable trace.
 
+**Results files.** When an experiment reaches `completed`, `partial` or `failed`, the worker writes `results/<experimentId>/` with `export.json`, `export.csv` and, only for experiments with exactly two configs, `compare.json` (A is the first config). Writes are atomic (temp file, then rename), failures are logged and never fail the trial, and nothing is written if `RESULTS_DIR` is unset. `scripts/run-experiment.ts` writes the same folder.
+
 ## 4. How runs are isolated and reproduced
 
 - **Per-trial sandbox.** `createSandbox(trialId)` creates a fresh directory under `TMPDIR`. Tools and graders resolve paths inside it; absolute paths, `..` escapes, and outbound symlinks are refused (`packages/sandbox`).
 - **Per-trial memory.** Starts from `task.setup.memory` only. `persistAcrossTrials: true` is rejected; no trial sees another trial’s writes.
+- **Skills.** A skill is a named bundle of tools (`csv_summary` today). `resolveToolIds` expands enabled skills into tool names for every harness. The Python worker keeps its own copy of the skill-to-tool map in `tools.py`.
 - **Hermes.** `HERMES_HOME` is pinned per worker (not `~/.hermes`). Hermes’s own memory store is off; the toolset is exactly `toolIds`. Skills are expanded into tool names by `resolveToolIds` for every harness, so Hermes receives the tool names in `toolIds`, never skill ids.
 - **Deterministic seed.** `seed = first 8 hex digits of sha256("experimentId|taskId|configId|trialIndex") >>> 1`, stored on the trial and passed to the harness. This does not make the model deterministic; it makes the request record reproducible.
 - **Immutable configs.** Configs are never edited in place. A change is a new row with a new content hash; each trial stores the hash it ran with.
@@ -133,11 +140,11 @@ Experiment status is rolled up from trials (`rollupExperimentStatus`): `running`
 
 ## 5. Grader design and how graders were validated
 
-| Grader | Scores | Tasks (of 21) |
+| Grader | Scores | Tasks (of 22) |
 |---|---|---:|
 | `exact_match` | Normalized equality with the expected string | 8 |
 | `state_check` | JSON or file value in the sandbox after the run | 5 |
-| `unit_test` | Exit code of a command in the sandbox against the agent’s file | 3 |
+| `unit_test` | Exit code of a command in the sandbox against the agent’s file | 4 |
 | `llm_judge` | Rubric criteria scored 0–1 by a judge model | 5 |
 
 Aggregation is `all_must_pass`. Each grader returns score, pass flag, and reasoning, stored on the trial.
@@ -163,7 +170,7 @@ Disagreements were kept; rubrics were not edited to fit the validation set. Labe
 Compare configs A and B on shared tasks:
 
 1. **Macro pass rate** — mean of per-task pass rates over common tasks (each task counts once).
-2. **Delta** = macro(A) − macro(B). Interval: **paired bootstrap over tasks** (5,000 resamples, seed 1, α = 0.05); 2.5% / 97.5% quantiles. The resample unit is the task because trials of one task are not independent.
+2. **Delta** = macro(A) − macro(B), where A is the first config in the experiment (the CLI lists `mem-on` first). Interval: **paired bootstrap over tasks** (5,000 resamples, seed 1, α = 0.05); 2.5% / 97.5% quantiles. The resample unit is the task because trials of one task are not independent.
 3. **McNemar** — exact two-sided test on discordant `(task, trialIndex)` pairs scored on both sides. Optimistic if trials cluster by task; the published verdict does not use the p-value.
 4. **Verdict** — interval contains 0 → `likely_noise`; else `a_better` / `b_better`. Fewer than two common scored tasks → `insufficient_data` (no interval).
 5. **Per-task deltas** — reported unadjusted (exploratory).
@@ -184,3 +191,5 @@ For one task, N trials per arm, pass rates near 0.5, SE of the difference ≈ �
 | 30 | 0.13 | 36 pts |
 
 **N = 10** is a reasonable default when hunting large (~60 pt) per-task effects on a small discriminating subset. **N = 3** is enough to show a full pass-to-fail swing on memory tasks but weak for aggregate claims: the full-catalog memory A/B (21 tasks × N = 3) still produced a Δ CI that includes 0 ([EXPERIMENT.md](EXPERIMENT.md)). N = 30 lowers MDD further at ~10× the N = 3 trial cost. The bootstrap interval is also limited by task count and ceiling effects when most tasks pass under both arms.
+
+Today one `nTrials` applies to every task in an experiment. Choosing N by task type (high for discriminating tasks, low for deterministic ones) is a plan, not implemented; see [COST.md](COST.md) §3.

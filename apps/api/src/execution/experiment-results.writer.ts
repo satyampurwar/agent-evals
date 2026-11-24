@@ -6,7 +6,7 @@
  * - `export.json` and `export.csv`: every trial, as `GET /experiments/:id/export` returns them
  * - `compare.json`: only when the experiment has exactly two configs (the first two, in matrix order)
  *
- * This gives UI-started experiments the same files that `scripts/run-experiment.ts` writes to `results/<name>/`.
+ * This gives UI-started experiments the same files that `scripts/run-experiment.ts` writes to `results/<experimentId>/`.
  * It is opt-in: nothing is written unless `RESULTS_DIR` is set (docker-compose sets it for the worker).
  *
  * It never throws. The trial is already recorded when this runs, so a failed write is logged and skipped.
