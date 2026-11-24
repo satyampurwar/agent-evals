@@ -79,7 +79,9 @@ services:
       # Trial sandboxes are created under TMPDIR. The Hermes worker reads and writes them by the same absolute
       # path, so both services mount the same volume at /sandboxes.
       TMPDIR: /sandboxes
-    volumes: ["./data/traces:/data/traces", "sandboxes:/sandboxes"]
+      # When an experiment finishes, the worker writes results/<experimentId>/ here (export + compare files).
+      RESULTS_DIR: /results
+    volumes: ["./data/traces:/data/traces", "./results:/results", "sandboxes:/sandboxes"]
     depends_on:
       api:
         condition: service_healthy

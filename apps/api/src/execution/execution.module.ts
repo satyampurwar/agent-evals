@@ -16,7 +16,9 @@ import { ConfigEntity } from '../entities/config.entity.js';
 import { ExperimentEntity } from '../entities/experiment.entity.js';
 import { TaskEntity } from '../entities/task.entity.js';
 import { TrialEntity } from '../entities/trial.entity.js';
+import { ExperimentsModule } from '../experiments/experiments.module.js';
 import { TrialQueueModule } from '../queue/trial-queue.js';
+import { ExperimentResultsWriter } from './experiment-results.writer.js';
 import { TrialExecutor } from './trial-executor.service.js';
 import { TrialProcessor } from './trial.processor.js';
 
@@ -28,7 +30,8 @@ const workerEnabled = process.env.TRIAL_WORKER !== 'off';
     TypeOrmModule.forFeature([TrialEntity, ConfigEntity, TaskEntity, ExperimentEntity]),
     TrialQueueModule,
     TraceStoreModule,
+    ExperimentsModule,
   ],
-  providers: [TrialExecutor, ...(workerEnabled ? [TrialProcessor] : [])],
+  providers: [TrialExecutor, ExperimentResultsWriter, ...(workerEnabled ? [TrialProcessor] : [])],
 })
 export class ExecutionModule {}

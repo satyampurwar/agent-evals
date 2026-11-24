@@ -6,7 +6,8 @@
  *   npx tsx scripts/run-experiment.ts --name full-catalog --n 3 --configs mem-off,mem-on --tasks all
  *   npx tsx scripts/run-experiment.ts --resume <experimentId>
  *
- * Writes `results/<name>/{compare,export}.{json,csv}`. Needs a running API (`API_URL`, default :3000).
+ * Writes `results/<experimentId>/{compare,export}.{json,csv}`. Needs a running API (`API_URL`, default :3000).
+ * The folder is named by experiment id, so two experiments with the same --name never overwrite each other.
  * Write-up: deliverables/EXPERIMENT.md.
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -232,7 +233,8 @@ async function main(): Promise<void> {
         name: args.name,
         hypothesis: HYPOTHESIS,
         taskIds,
-        configIds: args.configs.map((c) => created[c]),
+        // mem-on first: the API's compare.json treats the first config as A, so its delta matches this CLI's
+        configIds: (['mem-on', 'mem-off'] as const).map((c) => created[c]),
         nTrials: args.n,
       }),
     });
@@ -272,7 +274,7 @@ async function main(): Promise<void> {
     `/experiments/${experimentId}/compare?a=${configIds['mem-on']}&b=${configIds['mem-off']}`,
   );
 
-  const outDir = resolve(repoRoot, 'results', args.name);
+  const outDir = resolve(repoRoot, 'results', experimentId);
   mkdirSync(outDir, { recursive: true });
   writeFileSync(resolve(outDir, 'compare.json'), JSON.stringify(compare, null, 2));
   writeFileSync(resolve(outDir, 'export.json'), JSON.stringify(exportJson, null, 2));

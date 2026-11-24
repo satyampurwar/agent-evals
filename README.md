@@ -99,7 +99,7 @@ The experiment compares two configs on the same tasks: memory on vs memory off, 
    ```
    Defaults are the full catalog, N = 3, and memory on vs off. Each `--tasks` value is a group: `all`, `memory`, `control`, `judge`, or `skill`.
 5. **Resume if it stops**: `npx tsx scripts/run-experiment.ts --resume <experimentId>`. This starts no new trials; it only waits for the existing ones and exports the results.
-6. **Read the results**: the run writes `results/<name>/` with `compare.json`, `export.json` and `export.csv`. The write-up and analysis are in [EXPERIMENT.md](deliverables/EXPERIMENT.md).
+6. **Read the results**: the run writes `results/<experimentId>/` with `compare.json`, `export.json` and `export.csv`. The worker writes the same folder for experiments started from the UI. The write-up and analysis are in [EXPERIMENT.md](deliverables/EXPERIMENT.md).
 
 ---
 
@@ -170,6 +170,7 @@ Where a task uses `llm_judge`, check the judge against a small set of human-labe
 
 - `sandboxes` volume, mounted at `/sandboxes` in `worker` and `python-worker`. Trial sandboxes are created under it (`TMPDIR=/sandboxes`), and the Hermes harness reads and writes them by the same absolute path.
 - `./data/traces`, bind-mounted into `api` and `worker`. The worker writes each trial’s JSON trace; the API reads it back for the trial inspector.
+- `./results`, bind-mounted into `worker`. When an experiment finishes, the worker writes `results/<experimentId>/` with `export.json`, `export.csv`, and `compare.json` (only when the experiment has two configs). Set by `RESULTS_DIR`; unset means no files are written.
 - `pgdata` and `hermes` volumes keep Postgres data and the Hermes home between restarts.
 
 ### How a task gets fulfilled
@@ -196,7 +197,7 @@ flowchart LR
    - `baseline` and `claude-agent` run inside the `worker` and call the model through OpenRouter.
    - `hermes` makes the `worker` POST the trial to `python-worker`, which runs the Hermes agent in the same sandbox path, calls OpenRouter, and returns the events and final answer.
 6. **Grade it**: still in the `worker`, the graders score the sandbox and answer. `llm_judge` graders call OpenRouter again.
-7. **Record it**: the `worker` writes the trace to `data/traces/`, then the outcome, score and cost to `db`, and updates the experiment status once all its trials are done. A retryable failure puts the trial back in `redis` for another attempt with backoff.
+7. **Record it**: the `worker` writes the trace to `data/traces/`, then the outcome, score and cost to `db`, and updates the experiment status once all its trials are done. When that last trial is recorded, the `worker` also writes the result files to `results/<experimentId>/`. A retryable failure puts the trial back in `redis` for another attempt with backoff.
 8. **Read the results**: the `web` UI (or `GET /experiments/:id/compare` and `/export`) reads trial rows from `db` and traces from `data/traces/`. Comparison statistics are computed by the `api`.
 
 ### Inspect the database

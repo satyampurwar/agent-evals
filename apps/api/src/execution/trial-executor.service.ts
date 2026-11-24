@@ -24,6 +24,7 @@ import { runTrial } from '@agent-evals/runner';
 import type { RunTrialResult } from '@agent-evals/runner';
 import { serializeTrace } from '@agent-evals/trace';
 import { TraceStore } from '../common/trace-store.js';
+import { ExperimentResultsWriter } from './experiment-results.writer.js';
 import { loadPriceTable } from './prices.js';
 import { ConfigEntity } from '../entities/config.entity.js';
 import { ExperimentEntity } from '../entities/experiment.entity.js';
@@ -53,6 +54,7 @@ export class TrialExecutor {
     @InjectRepository(TaskEntity) private readonly tasks: Repository<TaskEntity>,
     private readonly dataSource: DataSource,
     private readonly traceStore: TraceStore,
+    private readonly results: ExperimentResultsWriter,
   ) {}
 
   /** Returns 'finished' when this call recorded the outcome, 'skipped' otherwise. Throws to request a BullMQ retry. */
@@ -82,6 +84,10 @@ export class TrialExecutor {
     // Trace first, then the trial row, so a finished trial always has its trace.
     const traceUri = await this.traceStore.write(trial.experimentId, trialId, serializeTrace(outcome.trace));
     const recorded = await this.finalize(trialId, outcome, traceUri);
+    if (recorded) {
+      // Writes the experiment's result files if this was its last trial. Never throws.
+      await this.results.writeIfFinished(trial.experimentId);
+    }
     return recorded ? 'finished' : 'skipped';
   }
 
