@@ -176,16 +176,16 @@ Where a task uses `llm_judge`, check the judge against a small set of human-labe
 
 ```mermaid
 flowchart LR
-  UI[web] -->|/api/| API[api]
-  API -->|rows| DB[(db)]
+  UI[web] <-->|/api/ requests and responses| API[api]
+  API <-->|read and write rows| DB[(db)]
   API -->|enqueue jobs| R[(redis)]
-  R -->|next job| W[worker]
-  W -->|load trial, config, task| DB
-  W -->|hermes only| PW[python-worker]
-  W -->|baseline, claude-agent, llm_judge| OR[OpenRouter]
-  PW --> OR
-  W -->|trace JSON| T[data/traces]
-  W -->|outcome, score, cost| DB
+  R <-->|deliver job, report done or retry| W[worker]
+  W <-->|load trial, config and task, write outcome| DB
+  W <-->|hermes only: POST trial, events back| PW[python-worker]
+  W <-->|model and judge calls| OR[OpenRouter]
+  PW <-->|model calls| OR
+  W -->|write trace JSON| T[data/traces]
+  T -->|read for trial inspector| API
 ```
 
 1. **Load tasks**: `seed` posts the catalog from [`tasks/`](tasks/) to the `api`, which stores it in `db`.
