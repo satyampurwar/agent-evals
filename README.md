@@ -111,46 +111,164 @@ The experiment compares two configs on the same tasks: memory on vs memory off, 
 | [EXPERIMENT.md](deliverables/EXPERIMENT.md) | Memory on vs off experiment and results |
 | [LIMITS.md](deliverables/LIMITS.md) | Known limits |
 | [COST.md](deliverables/COST.md) | Cost formula and spend |
-| [video.md](deliverables/video.md) | Demo video script and checklist |
 | [BUILD_LOG.md](BUILD_LOG.md) | Ordered application build steps |
 
 ## Code map
 
+Where each part of the system lives. The module header in each `src` file describes its local contract; start with [DESIGN.md](deliverables/DESIGN.md) for the system picture.
+
 | Path | Role |
 |---|---|
-| `apps/api` | Nest HTTP API + queue worker (`main.ts` / `worker.ts`); Postgres + BullMQ |
-| `apps/web` | Vue 3 UI (tasks, configs, experiments, compare, trial inspector) |
-| `packages/domain` | Shared Zod schemas and pricing helpers |
-| `packages/runner` | `runTrial`: sandbox → harness → graders → cleanup |
-| `packages/adapters-harness` | `baseline` + `hermes` client; tools / memory / skills |
-| `packages/adapters-model` | OpenRouter (+ mock/scripted for tests) |
-| `packages/graders` | exact_match, state_check, unit_test, llm_judge |
-| `packages/stats` | Bootstrap, McNemar, compare, failure categories |
-| `packages/sandbox` · `packages/trace` | Per-trial dirs; in-memory trace buffer |
-| `workers/python-worker` | Hermes FastAPI worker (`POST /run-trial`) |
-| `tasks/` · `fixtures/` · `scripts/` | Catalog, judge/stats fixtures, CLIs |
-| `data/traces/` | Trial JSON traces (gitignored; Compose bind-mount) |
-
-Module headers in each package/`src` file describe the local contract; start with [DESIGN.md](deliverables/DESIGN.md) for the system picture.
+| [`apps/api`](apps/api/) | Nest HTTP API + queue worker (`main.ts` / `worker.ts`); Postgres + BullMQ |
+| [`apps/web`](apps/web/) | Vue 3 UI (tasks, configs, experiments, compare, trial inspector) |
+| [`packages/domain`](packages/domain/) | Shared Zod schemas and pricing helpers |
+| [`packages/runner`](packages/runner/) | `runTrial`: sandbox → harness → graders → cleanup |
+| [`packages/adapters-harness`](packages/adapters-harness/) | Harnesses `baseline`, `hermes` (HTTP client) and `claude-agent` (Claude Agent SDK); tools / memory / skills |
+| [`packages/adapters-model`](packages/adapters-model/) | OpenRouter (+ mock/scripted for tests) |
+| [`packages/graders`](packages/graders/) | exact_match, state_check, unit_test, llm_judge |
+| [`packages/stats`](packages/stats/) | Bootstrap, McNemar, compare, failure categories |
+| [`packages/sandbox`](packages/sandbox/) · [`packages/trace`](packages/trace/) | Per-trial dirs; in-memory trace buffer |
+| [`workers/python-worker`](workers/python-worker/) | Hermes FastAPI worker (`POST /run-trial`) |
+| [`tasks/`](tasks/) · [`fixtures/`](fixtures/) · [`scripts/`](scripts/) | Catalog, judge/stats fixtures, CLIs |
+| [`data/traces/`](data/traces/) | Trial JSON traces (gitignored; Compose bind-mount) |
 
 ---
 
 ## Validate the LLM judge (human labels)
 
-Where a task uses `llm_judge`, check that the judge is trustworthy against a small set of human-labelled examples before trusting experiment scores.
+Where a task uses `llm_judge`, check the judge against a small set of human-labelled examples before trusting experiment scores. Run this after changing a rubric, threshold, or judge model.
 
-**Labels:** [`fixtures/judge-human-labels/`](fixtures/judge-human-labels/) — 25 answers (5 per judged task), each with `humanPassed` and notes. Rubrics and judge model come from the matching task under `tasks/judge/`.
+1. **Know the labels**: [`fixtures/judge-human-labels/`](fixtures/judge-human-labels/) holds 25 answers (5 per judged task), each with `humanPassed` and notes. Rubrics and the judge model come from the matching task under [`tasks/judge/`](tasks/judge/).
+2. **Run it**: needs `OPENROUTER_API_KEY` in `.env`, and calls the same `llmJudge()` path as trials.
+   ```bash
+   npx tsx scripts/validate-judge.ts | tee judge-validation.txt
+   ```
+   The CLI is [`scripts/validate-judge.ts`](scripts/validate-judge.ts).
+3. **Read the output**: agreement rate, Cohen’s κ, confusion matrix, per-task κ, and every disagreement with the judge’s reasoning.
+4. **Check the gate**: the script exits `0` only if κ ≥ 0.6 and every label was judged without setup errors; otherwise it exits `1`.
+5. **Save the result**: commit the new [`judge-validation.txt`](judge-validation.txt) if you want the artifact in the repo. The last saved run had 92% agreement (23/25) and κ = 0.826. The limits of this check (one labeller, n = 25) are in [LIMITS.md](deliverables/LIMITS.md) §2 and [DESIGN.md](deliverables/DESIGN.md) §5.
 
-**Run** (needs `OPENROUTER_API_KEY` in `.env`; calls the same `llmJudge()` path as trials):
+---
 
-```bash
-npx tsx scripts/validate-judge.ts | tee judge-validation.txt
+## How the containers work together
+
+`docker compose up` starts seven services from [`docker-compose.yml`](docker-compose.yml). Inside the stack they reach each other by service name.
+
+| Container | Image | Role | Talks to |
+|---|---|---|---|
+| `db` | `postgres:16` | Stores tasks, configs, experiments, trials and scores | `api`, `worker` |
+| `redis` | `redis:7` | Holds the BullMQ `trials` queue, one job per trial | `api`, `worker` |
+| `api` | `agent-evals-node` | HTTP API on `:3000`. Creates experiments, enqueues trials, serves compare / export / traces. Runs no trials (`TRIAL_WORKER=off`) | `db`, `redis`, `data/traces/` |
+| `worker` | `agent-evals-node` | Same image as `api`, started as [`worker.js`](apps/api/src/worker.ts). Takes jobs off the queue and runs each trial | `db`, `redis`, `python-worker`, OpenRouter |
+| `python-worker` | `agent-evals-python-worker` | Runs trials for the `hermes` harness (`POST /run-trial` on `:8001`) | `worker`, OpenRouter |
+| `web` | nginx + Vue build | UI on `:5173`; nginx proxies `/api/` to `api:3000` | `api` |
+| `seed` | `agent-evals-node` | One-shot: loads the task catalog through the API, then exits | `api` |
+
+**Start-up order** (`depends_on`): `db` and `redis` become healthy first, then `api`. `seed` and `web` wait for `api`. `worker` waits for both `api` and `python-worker`. Each healthy service shows `Healthy`; `seed` shows `Started` and exits once it has loaded the tasks.
+
+**Shared storage**
+
+- `sandboxes` volume, mounted at `/sandboxes` in `worker` and `python-worker`. Trial sandboxes are created under it (`TMPDIR=/sandboxes`), and the Hermes harness reads and writes them by the same absolute path.
+- `./data/traces`, bind-mounted into `api` and `worker`. The worker writes each trial’s JSON trace; the API reads it back for the trial inspector.
+- `pgdata` and `hermes` volumes keep Postgres data and the Hermes home between restarts.
+
+### How a task gets fulfilled
+
+```mermaid
+flowchart LR
+  UI[web] -->|/api/| API[api]
+  API -->|rows| DB[(db)]
+  API -->|enqueue jobs| R[(redis)]
+  R -->|next job| W[worker]
+  W -->|load trial, config, task| DB
+  W -->|hermes only| PW[python-worker]
+  W -->|baseline, claude-agent, llm_judge| OR[OpenRouter]
+  PW --> OR
+  W -->|trace JSON| T[data/traces]
+  W -->|outcome, score, cost| DB
 ```
 
-**What it prints:** agreement rate, Cohen’s κ, confusion matrix, per-task κ, and every disagreement with judge reasoning.
+1. **Load tasks**: `seed` posts the catalog from [`tasks/`](tasks/) to the `api`, which stores it in `db`.
+2. **Define the experiment**: in the `web` UI (or via the API) you create configs (harness × model × settings), then an experiment of tasks × configs × N trials. Requests go through nginx `/api/` to the `api`.
+3. **Start it**: `POST /experiments/:id/start` expands the matrix into one trial row per cell in `db`, then enqueues one job per trial in `redis`.
+4. **Pick up a job**: the `worker` takes a job (up to `TRIAL_CONCURRENCY` at once), marks the trial `running`, and loads its trial, config and task from `db` ([`trial-executor.service.ts`](apps/api/src/execution/trial-executor.service.ts)).
+5. **Run the trial**: `runTrial` in [`packages/runner`](packages/runner/) creates a sandbox under `/sandboxes`, then calls the harness chosen by the config:
+   - `baseline` and `claude-agent` run inside the `worker` and call the model through OpenRouter.
+   - `hermes` makes the `worker` POST the trial to `python-worker`, which runs the Hermes agent in the same sandbox path, calls OpenRouter, and returns the events and final answer.
+6. **Grade it**: still in the `worker`, the graders score the sandbox and answer. `llm_judge` graders call OpenRouter again.
+7. **Record it**: the `worker` writes the trace to `data/traces/`, then the outcome, score and cost to `db`, and updates the experiment status once all its trials are done. A retryable failure puts the trial back in `redis` for another attempt with backoff.
+8. **Read the results**: the `web` UI (or `GET /experiments/:id/compare` and `/export`) reads trial rows from `db` and traces from `data/traces/`. Comparison statistics are computed by the `api`.
 
-**Pass gate:** exit `0` only if κ ≥ 0.6 and every label was judged without setup errors; otherwise exit `1`.
+### Inspect the database
 
-**Last saved run** ([`judge-validation.txt`](judge-validation.txt)): 92% agreement (23/25), κ = 0.826. Limits of this check (one labeller, n = 25) are in [LIMITS.md](deliverables/LIMITS.md) §2 and [DESIGN.md](deliverables/DESIGN.md) §5.
+Open a `psql` shell inside the `db` container (the stack must be running):
 
-**After changing a rubric, threshold, or judge model:** re-run the command above and commit the new `judge-validation.txt` if you want the artifact in the repo.
+```bash
+docker compose exec db psql -U evals -d evals
+```
+
+Useful commands. `\` commands are psql meta-commands; type them at the `evals=#` prompt.
+
+```sql
+\dt                                   -- list tables: configs, experiments, tasks, trials
+\d trials                             -- show a table's columns and types
+\q                                    -- quit
+```
+
+Columns are camelCase, so quote them in SQL (for example `"taskId"`). Unquoted, Postgres folds them to lowercase and the query fails.
+
+```sql
+-- latest trials and their outcome
+SELECT id, "taskId", status, passed, score, "startedAt", "finishedAt"
+FROM trials
+ORDER BY "startedAt" DESC NULLS LAST
+LIMIT 10;
+
+-- experiments, newest first
+SELECT id, name, status, "nTrials", "createdAt"
+FROM experiments
+ORDER BY "createdAt" DESC;
+
+-- trial count per status for one experiment (replace the id)
+SELECT status, count(*)
+FROM trials
+WHERE "experimentId" = '<experiment-id>'
+GROUP BY status;
+
+-- configs in the database
+SELECT id, name, version, "contentHash" FROM configs;
+```
+
+`trials.status` is one of `queued`, `running`, `succeeded`, `failed`, `timeout` or `cancelled`. `trials."traceUri"` is the trace file's key under `data/traces/`.
+
+### Inspect the queue
+
+The trial queue lives in Redis under the BullMQ queue name `trials`. Run these from your Mac while the stack is up. Each command prints one number, which is the count of jobs in that state.
+
+| Status | Command | Meaning |
+|---|---|---|
+| waiting | `docker compose exec redis redis-cli llen bull:trials:wait` | Queued, not yet picked up by a worker |
+| active | `docker compose exec redis redis-cli llen bull:trials:active` | A worker is running the trial now |
+| delayed | `docker compose exec redis redis-cli zcard bull:trials:delayed` | Waiting out a retry backoff |
+| failed | `docker compose exec redis redis-cli zcard bull:trials:failed` | Failed after all attempts |
+| completed | `docker compose exec redis redis-cli zcard bull:trials:completed` | Finished; BullMQ keeps the most recent 1000 (the count stops at 1000) |
+
+For all five at once:
+
+```bash
+for s in wait active; do echo -n "$s: "; docker compose exec -T redis redis-cli llen bull:trials:$s; done
+for s in delayed failed completed; do echo -n "$s: "; docker compose exec -T redis redis-cli zcard bull:trials:$s; done
+```
+
+`wait` and `active` are lists, so they use `llen`. The other three are sorted sets, so they use `zcard`.
+
+To see the failed job IDs, or one job's details (the job ID is the trial ID):
+
+```bash
+docker compose exec redis redis-cli zrange bull:trials:failed 0 -1
+docker compose exec redis redis-cli hgetall bull:trials:<trial-id>
+```
+
+A job hash holds its `data` (including the trial ID), `atm` (attempts made) and, if it failed, `failedReason`.
+
+Which containers to rebuild after a change is covered in [Add a task](#add-a-task), [Add a harness](#add-a-harness) and [Add a model](#add-a-model).

@@ -11,6 +11,7 @@ pgdata/
 
 # Local trial traces (Docker bind-mounts ./data/traces → /data/traces). Never push.
 data/
+results/
 
 # CLI poll logs; keep compare/export JSON+CSV under results/ if you want them in git
 results/**/run.log
